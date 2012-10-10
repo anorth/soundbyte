@@ -13,10 +13,10 @@ pa = pyaudio.PyAudio()
 RATE = 44100
 CHANNELS = 1
 FORMAT = pyaudio.paInt16
-SYMBOLS_SEC = 20
+SYMBOLS_SEC = 10
 CHUNK = int(RATE / SYMBOLS_SEC)
 
-F_BASE = 16500
+F_BASE = 18000
 F_SPACE = 200
 SIGNAL = "abcd"
 
@@ -39,7 +39,7 @@ def sinewave(freq, cnt):
   return numpy.array(samples)
   
 def encode(floats):
-  #floats = numpy.hanning(len(floats)) * floats
+  floats = numpy.hanning(len(floats)) * floats
   shorts = [32767 * f for f in floats]
   return pack("%dh" % len(shorts), *shorts)
 
