@@ -262,5 +262,6 @@ class TapTester(object):
 if __name__ == "__main__":
   tt = TapTester()
 
+  print "Listening..."
   while True:
     tt.listen()
