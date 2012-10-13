@@ -28,26 +28,24 @@ def main():
   (options, args) = parseArgs()
 
   chunkSize = SAMPLE_RATE / options.rate
-  chunkTime = 1 / options.rate
+  chunkTime = 1.0 / options.rate
 
-  def run():
-    if options.send:
-      print 'hello'
-      sender = AudioSender()
-      sender.openStream()
-      carrier = False
-      while True:
-        c = getch()
-        if (not c) or ord(c) == 27:
-          break
-        sendChar(c, carrier, sender)
-        carrier = not carrier
+  def doSend():
+    sender = AudioSender()
+    sender.openStream()
+    carrier = False
+    while True:
+      c = getch()
+      if (not c) or ord(c) == 27:
+        break
+      sendChar(c, carrier, sender)
+      carrier = not carrier
 
-    elif options.listen:
-      receiver = AudioReceiver()
-      receiver.openStream()
-      while True:
-        listen(receiver)
+  def doListen():
+    receiver = AudioReceiver()
+    receiver.openStream()
+    while True:
+      listen(receiver)
 
 
   def sendChar(c, carrier, sender):
@@ -81,28 +79,30 @@ def main():
     sender.sendWaveForm(combine(waveforms))
   
 
-  INPUT_BLOCK_TIME = 0.01
+  CHIPS_PER_CHUNK = 10
   winFactor = 0.6
   thresh = 20
-  heartWin = int(chunkTime / INPUT_BLOCK_TIME)
+  heartWin = int(CHIPS_PER_CHUNK)
+  chipSize = chunkSize / CHIPS_PER_CHUNK
+  chipTime = chunkTime / CHIPS_PER_CHUNK
 
   class Crap:
     pass
 
   x = Crap()
 
-  x.bitsignals = [[0] * (int(winFactor * chunkTime / INPUT_BLOCK_TIME))] * options.numchans
+  x.bitsignals = [[0] * (int(winFactor * CHIPS_PER_CHUNK))] * options.numchans
   x.heartSignals = [0] * heartWin
 
   x.heartVal = 0
   x.lastHeart = 0
 
   def listen(receiver):
-    shorts = receiver.receiveBlock(chunkSize)
-    spectrum = fouriate(shorts, chunkTime)
+    shorts = receiver.receiveBlock(chipSize)
+    spectrum = fouriate(shorts, chipTime)
 
     chandiff = 2 * options.gap
-    assert options.gap * INPUT_BLOCK_TIME >= 2
+    assert options.gap * chipTime >= 2
     for i in range(0, options.numchans):
       ia = spectrum.intensity(options.base + i * chandiff)
       ib = spectrum.intensity(options.base + i * chandiff + options.gap)
@@ -111,7 +111,7 @@ def main():
     heartA = spectrum.intensity(options.base - chandiff)
     heartB = spectrum.intensity(options.base - chandiff + options.gap)
 
-    factor = 1.0
+    factor = 2.0
 
     inc = 3
     mx = thresh * inc
@@ -161,7 +161,10 @@ def main():
 
     sys.stdout.flush()
 
-  run()
+  if options.send:
+    doSend()
+  elif options.listen:
+    doListen()
 
 
 

@@ -39,6 +39,7 @@ def fouriate(shorts, timeLengthSeconds):
 
 class Spectrum(object):
   def __init__(self, data, timeLengthSeconds):
+    assert timeLengthSeconds > 0
     self.data = data
     self.timeLengthSeconds = timeLengthSeconds
 
