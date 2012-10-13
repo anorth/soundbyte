@@ -60,6 +60,19 @@ def createAudioStream(pa, isInput):
       output = (not isInput),
       format = FORMAT)
 
+
+# Implied:
+#
+# interface Receiver {
+#   short[] receiveBlock(int numSamples)
+# }
+#
+# interface Sender {
+#   void sendWaveForm(double[] waveForm)
+# }
+#
+
+# TODO: implement StdinReceiver, etc.
 class AudioReceiver(object):
   def __init__(self):
     self.stream = createAudioStream(pyaudio.PyAudio(), isInput=True)
