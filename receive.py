@@ -14,9 +14,9 @@ from matplotlib.pyplot import plot
 INITIAL_TAP_THRESHOLD = 0.010
 FORMAT = pyaudio.paInt16 
 SHORT_NORMALIZE = (1.0/32768.0)
-CHANNELS = 2
+CHANNELS = 1
 RATE = 44100  
-INPUT_BLOCK_TIME = 0.02
+INPUT_BLOCK_TIME = 0.01
 INPUT_FRAMES_PER_BLOCK = int(RATE*INPUT_BLOCK_TIME)
 # if we get this many noisy blocks in a row, increase the threshold
 OVERSENSITIVE = 15.0/INPUT_BLOCK_TIME          
@@ -25,7 +25,7 @@ UNDERSENSITIVE = 120.0/INPUT_BLOCK_TIME
 # if the noise was longer than this many blocks, it's not a 'tap'
 MAX_TAP_BLOCKS = 0.15/INPUT_BLOCK_TIME
 
-WINDOW_TIME = 0.1
+WINDOW_TIME = 0.05
 
 def get_rms( block ):
   # RMS amplitude is defined as the square root of the 
@@ -95,9 +95,10 @@ class TapTester(object):
     stream = self.pa.open(   format = FORMAT,
                  channels = CHANNELS,
                  rate = RATE,
+                 output = False,
                  input = True,
-                 input_device_index = device_index,
-                 frames_per_buffer = INPUT_FRAMES_PER_BLOCK)
+                 input_device_index = device_index)
+    #, frames_per_buffer = INPUT_FRAMES_PER_BLOCK)
 
     return stream
 
@@ -139,7 +140,7 @@ class TapTester(object):
       #print int(freq * INPUT_BLOCK_TIME),
       return abs(x[int(freq * INPUT_BLOCK_TIME)])
 
-    base = 18000
+    base = 15000
     chansibling = 200
     chandiff = 2 * chansibling
     assert chansibling * INPUT_BLOCK_TIME >= 2
