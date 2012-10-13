@@ -5,22 +5,10 @@ import numpy as np
 import pyaudio
 import struct
 
-pa = pyaudio.PyAudio()
-
-# CONSTS
-RATE = 44100
+# Consts
+SAMPLE_RATE = 44100
 CHANNELS = 1
 FORMAT = pyaudio.paInt16
-
-
-#PARAMS
-INPUT_BLOCK_TIME = 0.02
-SYMBOLS_SEC = 10
-CHUNK = int(RATE / SYMBOLS_SEC)
-F_BASE = 18000
-F_SPACE = 200
-
-
 
 
 def silence(count):
@@ -28,7 +16,7 @@ def silence(count):
   return np.array(samples)
 
 def sinewave(freq, count):
-  frate = float(RATE)
+  frate = float(SAMPLE_RATE)
   samples = []
   for i in xrange(count):
       samples.append(math.sin(2*math.pi*freq*(i/frate)))
@@ -38,6 +26,7 @@ def combine(waveforms):
     agg = sum(waveforms)
     # TODO: implement dynamic range compression instead
     agg = agg / max(agg)
+    return agg
 
 def encode(floats, smoothEdges=True):
   if smoothEdges:
@@ -70,7 +59,7 @@ class AudioHelper(object):
   def openStreamInner(self, isInput):
     # TODO: support file inputs.
     self.stream = self.pa.open(
-        rate = RATE,
+        rate = SAMPLE_RATE,
         channels = CHANNELS,
         input = isInput,
         output = (not isInput),
@@ -80,33 +69,29 @@ class AudioHelper(object):
     self.stream.close()
 
 class AudioReceiver(AudioHelper):
-  def __init__(self):
-    pass
 
   def openStream(self):
     self.openStreamInner(isInput=True)
 
-  def receiveBlock(self, timePeriodSeconds):
-    numFrames = timePeriodSeconds * RATE
+  def receiveBlock(self, numSamples):
     #try:
-    #  block = self.stream.read(numFrames)
+    #  block = self.stream.read(Samples)
     #except IOError, e:
     #  # dammit. 
     #  print( "(%d) Error recording: %s"%(self.errorcount,e) )
     #  return
-    block = self.stream.read(numFrames)
+    block = self.stream.read(numSamples)
     count = len(block) / 2
+    assert count == numSamples
     shorts = struct.unpack("%dh" % count, block)
 
     return shorts
 
 
 class AudioSender(AudioHelper):
-  def __init__(self):
-    pass
 
   def openStream(self):
     self.openStreamInner(isInput=False)
 
-  def sendWaveForm(floats):
-    stream.write(encode(floats))
+  def sendWaveForm(self, floats):
+    self.stream.write(encode(floats))
