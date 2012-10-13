@@ -3,6 +3,7 @@
 import math
 import numpy as np
 import pyaudio
+import socket
 import struct
 
 # Consts
@@ -90,6 +91,25 @@ class PyAudioReceiver(object):
     shorts = struct.unpack("%dh" % count, block)
 
     return shorts
+
+# Receiver which reads from an input stream
+class StreamReceiver(object):
+  def __init__(self, stream):
+    self.stream = stream
+    print self.stream
+
+  def receiveBlock(self, numSamples):
+    nBytes = numSamples * 2
+    block = ""
+    while len(block) < nBytes:
+      block = block + self.stream.read(nBytes - len(block))
+      #print "read", len(block), "bytes"
+      if len(block) == 0:
+        assert False
+
+    count = len(block) / 2
+    assert count == numSamples
+    return struct.unpack(">%dh" % count, block)
 
 
 class PyAudioSender(object):

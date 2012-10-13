@@ -12,6 +12,7 @@ def parseArgs():
   parser = OptionParser()
   parser.add_option('-l', '--listen', action='store_true')
   parser.add_option('-s', '--send', action='store_true')
+  parser.add_option('-i', '--stdin', action='store_true')
   parser.add_option('-b', '--base', default=15000, type='int',
       help='Base frequency (hz)')
   parser.add_option('-g', '--gap', default=200, type='int',
@@ -41,7 +42,10 @@ def main():
       carrier = not carrier
 
   def doListen():
-    receiver = PyAudioReceiver()
+    if options.stdin:
+      receiver = StreamReceiver(sys.stdin)
+    else:
+      receiver = PyAudioReceiver()
     while True:
       listen(receiver)
 

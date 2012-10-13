@@ -20,15 +20,19 @@ class AudioServer extends Thread {
 
   @Override
   public void run() {
+    ServerSocket server;
+    try {
+      server = new ServerSocket(MIC_PORT);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
     while (running) {
       // Wait for connection
       try {
-        ServerSocket server;
         Log.i(TAG, "Awaiting connection on port " + MIC_PORT);
-        server = new ServerSocket(MIC_PORT);
         client = server.accept();
         Log.i(TAG, "Received connection " + client.getInetAddress());
-        server.close();
       } catch (IOException e) {
         Log.e(TAG, "Error accepting socket", e);
         throw new RuntimeException(e);
@@ -46,7 +50,7 @@ class AudioServer extends Thread {
       } catch (IOException e) {
         Log.e(TAG, "IO exception writing to client: " + e.getMessage());
       }
-      
+
       if (client != null) {
         Log.i(TAG, "Closing client connection");
         try {
@@ -56,7 +60,12 @@ class AudioServer extends Thread {
         }
       }
     }
-    
+
+    try {
+      server.close();
+    } catch (IOException e) {
+      Log.e(TAG, "Error closing server", e);
+    }
     Log.i(TAG, "AudioServer exiting");
   }
 
@@ -64,7 +73,8 @@ class AudioServer extends Thread {
     if (client != null) {
       boolean ok = q.offer(buffer); // Might drop this buffer if queue is full
       if (!ok) {
-        // If the buffer was full, clear it entirely so that subsequent writes will be continuguous
+        // If the buffer was full, clear it entirely so that subsequent writes
+        // will be continuguous
         q.clear();
       }
       Log.d(TAG, (ok ? "Received" : "Dropped") + " buffer");
