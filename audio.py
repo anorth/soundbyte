@@ -52,27 +52,17 @@ class Spectrum(object):
     assert index == intIndex, 'suboptimal frequency choice %d' % freq
     return intIndex
 
+def createAudioStream(pa, isInput):
+  return pa.open(
+      rate = SAMPLE_RATE,
+      channels = CHANNELS,
+      input = isInput,
+      output = (not isInput),
+      format = FORMAT)
 
-class AudioHelper(object):
+class AudioReceiver(object):
   def __init__(self):
-    self.pa = pyaudio.PyAudio()
-
-  def openStreamInner(self, isInput):
-    # TODO: support file inputs.
-    self.stream = self.pa.open(
-        rate = SAMPLE_RATE,
-        channels = CHANNELS,
-        input = isInput,
-        output = (not isInput),
-        format = FORMAT)
-
-  def close(self):
-    self.stream.close()
-
-class AudioReceiver(AudioHelper):
-
-  def openStream(self):
-    self.openStreamInner(isInput=True)
+    self.stream = createAudioStream(pyaudio.PyAudio(), isInput=True)
 
   def receiveBlock(self, numSamples):
     #try:
@@ -89,10 +79,10 @@ class AudioReceiver(AudioHelper):
     return shorts
 
 
-class AudioSender(AudioHelper):
-
-  def openStream(self):
-    self.openStreamInner(isInput=False)
+class AudioSender(object):
+  def __init__(self):
+    self.stream = createAudioStream(
+      pyaudio.PyAudio(), isInput=False)
 
   def sendWaveForm(self, floats):
     self.stream.write(encode(floats))

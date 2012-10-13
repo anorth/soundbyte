@@ -32,7 +32,6 @@ def main():
 
   def doSend():
     sender = AudioSender()
-    sender.openStream()
     carrier = False
     while True:
       c = getch()
@@ -43,7 +42,6 @@ def main():
 
   def doListen():
     receiver = AudioReceiver()
-    receiver.openStream()
     while True:
       listen(receiver)
 
