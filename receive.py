@@ -14,9 +14,9 @@ from matplotlib.pyplot import plot
 INITIAL_TAP_THRESHOLD = 0.010
 FORMAT = pyaudio.paInt16 
 SHORT_NORMALIZE = (1.0/32768.0)
-CHANNELS = 2
+CHANNELS = 1
 RATE = 44100  
-INPUT_BLOCK_TIME = 0.02
+INPUT_BLOCK_TIME = 0.01
 INPUT_FRAMES_PER_BLOCK = int(RATE*INPUT_BLOCK_TIME)
 # if we get this many noisy blocks in a row, increase the threshold
 OVERSENSITIVE = 15.0/INPUT_BLOCK_TIME          
@@ -59,7 +59,7 @@ class TapTester(object):
     self.errorcount = 0
 
     self.thresh = 20
-    self.winFactor = 0.6
+    self.winFactor = 0.7
     self.heartWin = int(WINDOW_TIME / INPUT_BLOCK_TIME)
     self.win = int(self.winFactor * WINDOW_TIME / INPUT_BLOCK_TIME)
     self.numchans = 7
@@ -95,9 +95,10 @@ class TapTester(object):
     stream = self.pa.open(   format = FORMAT,
                  channels = CHANNELS,
                  rate = RATE,
+                 output = False,
                  input = True,
-                 input_device_index = device_index,
-                 frames_per_buffer = INPUT_FRAMES_PER_BLOCK)
+                 input_device_index = device_index)
+    #, frames_per_buffer = INPUT_FRAMES_PER_BLOCK)
 
     return stream
 
@@ -139,7 +140,7 @@ class TapTester(object):
       #print int(freq * INPUT_BLOCK_TIME),
       return abs(x[int(freq * INPUT_BLOCK_TIME)])
 
-    base = 16500
+    base = 15000
     chansibling = 200
     chandiff = 2 * chansibling
     assert chansibling * INPUT_BLOCK_TIME >= 2
@@ -151,7 +152,7 @@ class TapTester(object):
     heartA = freqVal(base - chandiff)
     heartB = freqVal(base - chandiff + chansibling)
 
-    factor = 1.0
+    factor =  2.7
 
     inc = 3
 
@@ -182,25 +183,6 @@ class TapTester(object):
         gotBeat = True
         self.lastHeart = np.sign(heartSum)
 
-    #print self.heartVal,
-
-    #if self.lastHeart == 1:
-    #  self.heartVal = max(0, self.heartVal)
-    #if self.lastHeart == -1:
-    #  self.heartVal = min(0, self.heartVal)
-
-    #gotBeat = False
-    #
-    #if self.heartVal == dt and self.lastHeart != 1:
-    #  print 'A>>',
-    #  self.lastHeart = 1
-    #  gotBeat = True
-
-    #if self.heartVal == -dt and self.lastHeart != -1:
-    #  print 'B>>',
-    #  self.lastHeart = -1
-    #  gotBeat = True
-
     if gotBeat:
       v = 0
       pos = 1
@@ -223,41 +205,6 @@ class TapTester(object):
 
     sys.stdout.flush()
 
-
-
-    #print x, len(x), count
-    #plot(x)
-    #print "THERE"
-    #time.sleep(2)
-
-  def otherlisten(self):
-    try:
-      block = self.stream.read(INPUT_FRAMES_PER_BLOCK)
-    except IOError, e:
-      # dammit. 
-      self.errorcount += 1
-      print( "(%d) Error recording: %s"%(self.errorcount,e) )
-      self.noisycount = 1
-      return
-
-    amplitude = get_rms( block )
-    if amplitude > self.tap_threshold:
-      # noisy block
-      self.quietcount = 0
-      self.noisycount += 1
-      if self.noisycount > OVERSENSITIVE:
-        # turn down the sensitivity
-        self.tap_threshold *= 1.1
-    else:      
-      # quiet block.
-
-      if 1 <= self.noisycount <= MAX_TAP_BLOCKS:
-        self.tapDetected()
-      self.noisycount = 0
-      self.quietcount += 1
-      if self.quietcount > UNDERSENSITIVE:
-        # turn up the sensitivity
-        self.tap_threshold *= 0.9
 
 if __name__ == "__main__":
   tt = TapTester()
