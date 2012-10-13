@@ -73,7 +73,7 @@ def createAudioStream(pa, isInput):
 #
 
 # TODO: implement StdinReceiver, etc.
-class AudioReceiver(object):
+class PyAudioReceiver(object):
   def __init__(self):
     self.stream = createAudioStream(pyaudio.PyAudio(), isInput=True)
 
@@ -92,7 +92,7 @@ class AudioReceiver(object):
     return shorts
 
 
-class AudioSender(object):
+class PyAudioSender(object):
   def __init__(self):
     self.stream = createAudioStream(
       pyaudio.PyAudio(), isInput=False)

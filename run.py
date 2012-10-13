@@ -31,7 +31,7 @@ def main():
   chunkTime = 1.0 / options.rate
 
   def doSend():
-    sender = AudioSender()
+    sender = PyAudioSender()
     carrier = False
     while True:
       c = getch()
@@ -41,7 +41,7 @@ def main():
       carrier = not carrier
 
   def doListen():
-    receiver = AudioReceiver()
+    receiver = PyAudioReceiver()
     while True:
       listen(receiver)
 
