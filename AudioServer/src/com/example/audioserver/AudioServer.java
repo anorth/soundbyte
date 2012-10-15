@@ -87,7 +87,7 @@ class AudioServer extends Thread {
         Log.i(TAG, "Queue was full when data offered, emptying");
         q.clear();
       }
-      Log.d(TAG, (ok ? "Received" : "Dropped") + " buffer");
+      //Log.v(TAG, (ok ? "Received" : "Dropped") + " buffer");
 
     }
   }

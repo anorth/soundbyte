@@ -50,7 +50,8 @@ class AudioIn extends Thread {
             Log.v(TAG, "Received audio buffer of " + (bytesRead / BYTES_PER_SAMPLE) + " samples");
             process(buffer, 0, bytesRead);
           } else {
-            Log.e(TAG, "AudioRecord.read returned " + bytesRead);            
+            Log.e(TAG, "AudioRecord.read returned " + bytesRead);
+            currentThread().sleep(1000);
           }
         }
       } else {
@@ -58,8 +59,11 @@ class AudioIn extends Thread {
       }
     } catch (RuntimeException e) {
       Log.e(TAG, "Failed", e);
-    } catch (Throwable t) {
-      Log.e(TAG, "Failed", t);      
+      throw e;
+    } catch (InterruptedException e) {
+      Log.e(TAG, "Interrupted", e);
+      Thread.currentThread().interrupt();
+      throw new RuntimeException(e);
     } finally {
       Log.w(TAG, "AudioIn exiting");
       if (recorder != null) {

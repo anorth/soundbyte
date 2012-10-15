@@ -16,17 +16,25 @@ public class MainActivity extends Activity {
     Log.w(TAG, "Received onCreate");
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-
-    server = new AudioServer();
-    server.start();
-    audio = new AudioIn(server);
-    audio.start();
   }
-
+  
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     getMenuInflater().inflate(R.menu.activity_main, menu);
     return true;
+  }
+
+  @Override
+  public void onStart() {
+    super.onStart();
+    Log.w(TAG, "Received onStart");
+    if (server == null) {
+      server = new AudioServer();
+      server.start();
+      audio = new AudioIn(server);
+      audio.start();      
+    }
+    getWindow().getDecorView().getRootView().setKeepScreenOn(true);
   }
   
   @Override
@@ -35,5 +43,12 @@ public class MainActivity extends Activity {
     audio.close();
     server.close();
     super.onStop();
+    
+  }
+  
+  @Override
+  public void onDestroy() {
+    Log.w(TAG, "Received onDestroy");
+    super.onDestroy();
   }
 }

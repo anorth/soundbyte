@@ -17,17 +17,18 @@ def silence(count):
   return np.array(samples)
 
 def sinewave(freq, count):
-  frate = float(SAMPLE_RATE)
+  twoPiFOnRate = 2 * math.pi * freq / float(SAMPLE_RATE)
   samples = []
   for i in xrange(count):
-      samples.append(math.sin(2*math.pi*freq*(i/frate)))
+      samples.append(math.sin(i * twoPiFOnRate))
   return np.array(samples)
 
 def combine(waveforms):
-    agg = sum(waveforms)
-    # TODO: implement dynamic range compression instead
-    agg = agg / max(agg)
-    return agg
+  agg = sum(waveforms)
+  # Normalise
+  # TODO: implement dynamic range compression instead
+  agg = agg / max(agg)
+  return agg
 
 def encode(floats, smoothEdges=True):
   if smoothEdges:
@@ -108,7 +109,6 @@ class StreamReceiver(object):
     count = len(block) / 2
     # Shorts are expected little-endian
     shorts = struct.unpack("<%dh" % count, block)
-    #print shorts[0]
     return shorts
 
 
