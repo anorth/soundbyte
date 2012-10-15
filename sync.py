@@ -50,7 +50,7 @@ class Util(object):
 
   def align(self, receiver, chunkSize, pattern):
     pattern = np.array(pattern)
-    opposite = -pattern
+    opposite = np.array([1-b for b in pattern])
 
     # XXX XXX
     # applying the detector to a sliding window should produce

@@ -28,7 +28,7 @@ def combine(waveforms):
     agg = agg / max(agg)
     return agg
 
-def encode(floats, smoothEdges=True):
+def encode(floats, smoothEdges=False):
   if smoothEdges:
     floats = np.hanning(len(floats)) * floats
   shorts = [32767 * f for f in floats]
