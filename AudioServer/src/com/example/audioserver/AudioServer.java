@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
 
@@ -40,11 +41,17 @@ class AudioServer extends Thread {
 
       try {
         while (client != null && running) {
-          byte[] buffer = q.take();
-          Log.d(TAG, "Writing chunk of size " + buffer.length);
-          client.getOutputStream().write(buffer);
+          Log.v(TAG, "Waiting for data, q has " + q.size());
+          byte[] buffer = q.poll(1, TimeUnit.SECONDS);
+          if (buffer != null) {
+            Log.v(TAG, "Writing chunk of size " + buffer.length);
+            client.getOutputStream().write(buffer);            
+          } else {
+            Log.w(TAG, "Timed out waiting for audio");
+          }
         }
       } catch (InterruptedException e) {
+        Log.e(TAG, "Interrupted, quitting");
         Thread.currentThread().interrupt();
         return;
       } catch (IOException e) {
@@ -55,18 +62,20 @@ class AudioServer extends Thread {
         Log.i(TAG, "Closing client connection");
         try {
           client.close();
+          client = null;
         } catch (IOException e) {
           Log.e(TAG, "IO exception closing client", e);
         }
       }
     }
 
+    Log.i(TAG, "Shutting down server");
     try {
       server.close();
     } catch (IOException e) {
       Log.e(TAG, "Error closing server", e);
     }
-    Log.i(TAG, "AudioServer exiting");
+    Log.w(TAG, "AudioServer thread exiting");
   }
 
   public void send(byte[] buffer) {
@@ -75,6 +84,7 @@ class AudioServer extends Thread {
       if (!ok) {
         // If the buffer was full, clear it entirely so that subsequent writes
         // will be continuguous
+        Log.i(TAG, "Queue was full when data offered, emptying");
         q.clear();
       }
       Log.d(TAG, (ok ? "Received" : "Dropped") + " buffer");

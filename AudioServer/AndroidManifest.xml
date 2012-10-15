@@ -15,7 +15,7 @@
         android:theme="@style/AppTheme" android:persistent="false">
         <activity
             android:name=".MainActivity"
-            android:label="@string/title_activity_main" >
+            android:label="@string/title_activity_main" android:stateNotNeeded="true" android:noHistory="true" android:launchMode="singleInstance" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

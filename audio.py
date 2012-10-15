@@ -96,20 +96,20 @@ class PyAudioReceiver(object):
 class StreamReceiver(object):
   def __init__(self, stream):
     self.stream = stream
-    print self.stream
 
   def receiveBlock(self, numSamples):
     nBytes = numSamples * 2
     block = ""
     while len(block) < nBytes:
       block = block + self.stream.read(nBytes - len(block))
-      #print "read", len(block), "bytes"
       if len(block) == 0:
         assert False
 
     count = len(block) / 2
-    assert count == numSamples
-    return struct.unpack(">%dh" % count, block)
+    # Shorts are expected little-endian
+    shorts = struct.unpack("<%dh" % count, block)
+    #print shorts[0]
+    return shorts
 
 
 class PyAudioSender(object):
