@@ -3,6 +3,7 @@
 import math
 import numpy as np
 import pyaudio
+import socket
 import struct
 
 # Consts
@@ -16,17 +17,18 @@ def silence(count):
   return np.array(samples)
 
 def sinewave(freq, count):
-  frate = float(SAMPLE_RATE)
+  twoPiFOnRate = 2 * math.pi * freq / float(SAMPLE_RATE)
   samples = []
   for i in xrange(count):
-      samples.append(math.sin(2*math.pi*freq*(i/frate)))
+      samples.append(math.sin(i * twoPiFOnRate))
   return np.array(samples)
 
 def combine(waveforms):
-    agg = sum(waveforms)
-    # TODO: implement dynamic range compression instead
-    agg = agg / max(agg)
-    return agg
+  agg = sum(waveforms)
+  # Normalise
+  # TODO: implement dynamic range compression instead
+  agg = agg / max(agg)
+  return agg
 
 def encode(floats, smoothEdges=False):
   if smoothEdges:
@@ -34,23 +36,34 @@ def encode(floats, smoothEdges=False):
   shorts = [32767 * f for f in floats]
   return struct.pack("%dh" % len(shorts), *shorts)
 
-def fouriate(shorts, timeLengthSeconds):
-  return Spectrum(np.fft.rfft(np.array(shorts)), timeLengthSeconds)
+# Computes DFT over an array of time-domain samples
+# BucketWidth is the 
+def fouriate(samples):
+  # rfft computes FFT of real-valued inputs, producing n/2+1 amplitude values.
+  # buckets[0] is the zero-frequency term (i.e. signal mean/DC offset)
+  buckets = np.fft.rfft(np.array(samples))
+  bucketWidth = SAMPLE_RATE / len(samples)
+  return Spectrum(buckets, bucketWidth)
 
 class Spectrum(object):
-  def __init__(self, data, timeLengthSeconds):
-    assert timeLengthSeconds > 0
+  def __init__(self, data, bucketWidth):
+    assert bucketWidth > 0
     self.data = data
-    self.timeLengthSeconds = timeLengthSeconds
+    self.bucketWidth = bucketWidth
 
-  def intensity(self, freq):
+  # The amplitude of the signal around freq
+  def amplitude(self, freq):
     return abs(self.data[self.getIndex(freq)])
 
+  # The power of the signal around freq
+  def power(self, freq):
+    return self.amplitude(freq)**2
+
+  # The complex-valued FFT value around freq
   def getIndex(self, freq):
-    index = freq * self.timeLengthSeconds
-    intIndex = int(index)
-    assert index == intIndex, 'suboptimal frequency choice %d' % freq
-    return intIndex
+    assert freq % self.bucketWidth == 0, '%fHz is not a bucket centre' % freq
+    index = freq / self.bucketWidth
+    return index
 
 def createAudioStream(pa, isInput):
   return pa.open(
@@ -89,6 +102,24 @@ class PyAudioReceiver(object):
     assert count == numSamples
     shorts = struct.unpack("%dh" % count, block)
 
+    return shorts
+
+# Receiver which reads from an input stream
+class StreamReceiver(object):
+  def __init__(self, stream):
+    self.stream = stream
+
+  def receiveBlock(self, numSamples):
+    nBytes = numSamples * 2
+    block = ""
+    while len(block) < nBytes:
+      block = block + self.stream.read(nBytes - len(block))
+      if len(block) == 0:
+        assert False
+
+    count = len(block) / 2
+    # Shorts are expected little-endian
+    shorts = struct.unpack("<%dh" % count, block)
     return shorts
 
 

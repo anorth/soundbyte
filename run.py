@@ -12,12 +12,15 @@ def parseArgs():
   parser = OptionParser()
   parser.add_option('-l', '--listen', action='store_true')
   parser.add_option('-s', '--send', action='store_true')
+  parser.add_option('-i', '--stdin', action='store_true')
   parser.add_option('-b', '--base', default=15000, type='int',
       help='Base frequency (hz)')
-  parser.add_option('-g', '--gap', default=200, type='int',
-      help='Channel gap (hz)')
-  parser.add_option('-r', '--rate', default=10, type='float',
-      help='Chunks per second')
+  parser.add_option('-p', '--spacing', default=2, type='int',
+      help='Channel spacing (# subcarriers)')
+  parser.add_option('-r', '--rate', default=100, type='int',
+      help='Chip rate (hz)')
+  parser.add_option('-c', '--symbolchips', default=10, type='int',
+      help='Chips per symbol')
   parser.add_option('-n', '--numchans', default=7, type='int',
       help='Number of frequency channels')
 
@@ -27,8 +30,29 @@ def parseArgs():
 def main():
   (options, args) = parseArgs()
 
-  chunkSize = SAMPLE_RATE / options.rate
-  chunkTime = 1.0 / options.rate
+  chipDuration = 1.0 / options.rate
+  chipSamples = int(SAMPLE_RATE * chipDuration)
+
+  symbolRate = options.rate / options.symbolchips
+  symbolDuration = chipDuration * options.symbolchips
+  symbolSamples = chipSamples * options.symbolchips
+
+  subcarrierSpacing = int(SAMPLE_RATE / chipSamples)
+  assert subcarrierSpacing == int(1.0 / chipDuration)
+  channelGap = subcarrierSpacing * options.spacing
+
+  if options.base % subcarrierSpacing != 0:
+    print "Base", options.base, "Hz is not a subcarrier multiple, rounding down"
+    options.base -= (options.base % subcarrierSpacing)
+
+  print "Chip rate", options.rate, "Hz,", "duration", int(chipDuration * 1000), "ms,", \
+      chipSamples, "samples/chip"
+  print "Symbol rate", symbolRate, "Hz,", "duration", int(symbolDuration * 1000), "ms,", \
+      options.symbolchips, "chips/symbol"
+  print chipSamples / 2, "FFT buckets, subcarrier spacing", subcarrierSpacing, "Hz,", \
+      "channel spacing", options.spacing
+  print "Base frequency", options.base, "Hz,", options.numchans, "channels, total bandwidth", \
+    options.numchans * channelGap, "Hz"
 
   def doSend():
     sender = PyAudioSender()
@@ -41,7 +65,10 @@ def main():
       carrier = not carrier
 
   def doListen():
-    receiver = PyAudioReceiver()
+    if options.stdin:
+      receiver = StreamReceiver(sys.stdin)
+    else:
+      receiver = PyAudioReceiver()
     while True:
       listen(receiver)
 
@@ -66,56 +93,44 @@ def main():
     print carrier_bits, signal_bits
 
     waveforms = []
-    if carrier_bits[0]: waveforms.append(sinewave(options.base - 2*options.gap, chunkSize))
-    if carrier_bits[1]: waveforms.append(sinewave(options.base - options.gap, chunkSize))
+    if carrier_bits[0]: waveforms.append(sinewave(options.base - 2*channelGap, symbolSamples))
+    if carrier_bits[1]: waveforms.append(sinewave(options.base - channelGap, symbolSamples))
     f = options.base
     for bit in signal_bits:
       if bit:
-        waveforms.append(sinewave(f, chunkSize))
-      f += options.gap
+        waveforms.append(sinewave(f, symbolSamples))
+      f += channelGap
 
     sender.sendWaveForm(combine(waveforms))
   
 
-  CHIPS_PER_CHUNK = 10
   winFactor = 0.6
-  thresh = 20
-  heartWin = int(CHIPS_PER_CHUNK)
-  chipSize = chunkSize / CHIPS_PER_CHUNK
-  chipTime = chunkTime / CHIPS_PER_CHUNK
 
   class Crap:
     pass
 
   x = Crap()
 
-  x.bitsignals = [[0] * (int(winFactor * CHIPS_PER_CHUNK))] * options.numchans
-  x.heartSignals = [0] * heartWin
+  x.bitsignals = [[0] * (int(winFactor * options.symbolchips))] * options.numchans
+  x.heartSignals = [0] * options.symbolchips
 
-  x.heartVal = 0
   x.lastHeart = 0
 
   def listen(receiver):
-    shorts = receiver.receiveBlock(chipSize)
-    spectrum = fouriate(shorts, chipTime)
+    shorts = receiver.receiveBlock(chipSamples)
+    spectrum = fouriate(shorts)
 
-    chandiff = 2 * options.gap
-    assert options.gap * chipTime >= 2
+    # Each channel uses 2 subcarriers
+    chandiff = 2 * channelGap
     for i in range(0, options.numchans):
-      ia = spectrum.intensity(options.base + i * chandiff)
-      ib = spectrum.intensity(options.base + i * chandiff + options.gap)
+      ia = spectrum.amplitude(options.base + i * chandiff)
+      ib = spectrum.amplitude(options.base + i * chandiff + channelGap)
       x.bitsignals[i] = x.bitsignals[i][1:] + [ia > ib and 1 or 0]
 
-    heartA = spectrum.intensity(options.base - chandiff)
-    heartB = spectrum.intensity(options.base - chandiff + options.gap)
+    heartA = spectrum.amplitude(options.base - chandiff)
+    heartB = spectrum.amplitude(options.base - chandiff + channelGap)
 
     factor = 2.0
-
-    inc = 3
-    mx = thresh * inc
-    dt = mx
-
-    x.heartVal = min(mx, max(-mx, x.heartVal))
 
     if (heartA > heartB * factor):
       x.heartSignals = x.heartSignals[1:] + [1]
@@ -130,7 +145,7 @@ def main():
 
     gotBeat = False
     heartSum = sum(x.heartSignals)
-    if abs(heartSum) >= winFactor * heartWin:
+    if abs(heartSum) >= winFactor * options.symbolchips:
       h = np.sign(heartSum)
       if h != x.lastHeart:
         gotBeat = True

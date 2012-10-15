@@ -1,0 +1,8 @@
+<resources>
+
+    <string name="app_name">AudioServer</string>
+    <string name="hello_world">Listening on port 16000</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_main">Audio Server</string>
+
+</resources>
