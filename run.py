@@ -23,6 +23,7 @@ def parseArgs():
       help='Chips per symbol')
   parser.add_option('-n', '--numchans', default=7, type='int',
       help='Number of frequency channels')
+  parser.add_option('-v', '--verbose', action='store_true')
 
   return parser.parse_args()
 
@@ -109,43 +110,49 @@ def main():
   
 
   winFactor = 0.6
+  # Minimum SNR to detect a heartbeat signal (dB)
+  minHeartbeatSnr = 4.0
 
-  class Crap:
+  class State:
     pass
 
-  x = Crap()
-
+  x = State()
+  x.count = 0
   x.bitsignals = [[0] * (int(winFactor * options.symbolchips))] * options.numchans
   x.heartSignals = [0] * options.symbolchips
-
   x.lastHeart = 0
+  # Moving average signal and noise
+  x.noise = MovingAverage(options.symbolchips * 2)
+  x.signal = MovingAverage(options.symbolchips * 2)
 
   def listen(receiver):
+    x.count += 1
     waveform = receiver.receiveBlock(chipSamples)
     spectrum = fouriate(waveform)
 
     # Each channel uses 2 subcarriers
     chandiff = 2 * channelGap
     for i in range(0, options.numchans):
-      ia = spectrum.amplitude(options.base + i * chandiff)
-      ib = spectrum.amplitude(options.base + i * chandiff + channelGap)
+      ia = spectrum.power(options.base + i * chandiff)
+      ib = spectrum.power(options.base + i * chandiff + channelGap)
       x.bitsignals[i] = x.bitsignals[i][1:] + [ia > ib and 1 or 0]
 
-    heartA = spectrum.amplitude(options.base - chandiff)
-    heartB = spectrum.amplitude(options.base - chandiff + channelGap)
+    heartA = spectrum.power(options.base - chandiff)
+    heartB = spectrum.power(options.base - chandiff + channelGap)
+    # Note: the SNR is a bit BS because we don't actually know if there's a signal
+    heartbeatSnr = abs(dbPower(heartA, heartB))
+    x.noise.sample(min(heartA, heartB))
+    x.signal.sample(max(heartA, heartB))
 
-    factor = 2.0
-
-    if (heartA > heartB * factor):
-      x.heartSignals = x.heartSignals[1:] + [1]
-      #print '_',
-    elif (heartB > heartA * factor):
-      x.heartSignals = x.heartSignals[1:] + [-1]
-      #print 'X',
+    if heartbeatSnr > minHeartbeatSnr:
+      if (heartA > heartB):
+        x.heartSignals = x.heartSignals[1:] + [1]
+        if options.verbose: print '_',
+      else:
+        x.heartSignals = x.heartSignals[1:] + [-1]
+        if options.verbose: print 'X',
     else:
       x.heartSignals = x.heartSignals[1:] + [0]
-      #print ' ',
-      pass
 
     gotBeat = False
     heartSum = sum(x.heartSignals)
@@ -159,21 +166,23 @@ def main():
     if gotBeat:
       v = 0
       pos = 1
-      #print '=============================='
+      #if options.verbose: print '================'
       for s in x.bitsignals:
         if np.mean(s) >= 0.5:
-          #print 1,
+          #if options.verbose: print 1,
           v += pos
         else:
-          #print 0,
+          #if options.verbose: print 0,
           pass
         pos *= 2
-      #print
+      if options.verbose: print
 
       if v != 0: 
         if v == 13: print
-        #print '==============================', chr(v), '=======================\n'
+        if options.verbose: print '=================>', chr(v), '<================='
         else: sys.stdout.write(chr(v))
+    if options.verbose and not (x.count % (options.symbolchips * 3)):
+      print "SNR: %.1fdB" % dbPower(x.signal.avg(), x.noise.avg())
 
 
     sys.stdout.flush()

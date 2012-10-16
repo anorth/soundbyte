@@ -39,14 +39,13 @@ def window(waveform):
 
 # Encodes waveform amplitudes as a little-endian PCM-16 stream
 def encode(waveform):
-  # FIXME use numpy
   shorts = [math.floor(PCM_QUANT * f) for f in waveform]
   return struct.pack("<%dh" % len(shorts), *shorts)
 
 # Decodes a stream of little-endian PCM-16 into waveform amplitudes
 def decode(block):
   shorts = struct.unpack("<%dh" % (len(block) / 2), block)
-  return (np.array(shorts) + 0.5) / PCM_QUANT
+  return window((np.array(shorts) + 0.5) / PCM_QUANT)
 
 # Computes DFT over an array of time-domain samples
 # BucketWidth is the 
@@ -56,6 +55,16 @@ def fouriate(samples):
   buckets = np.fft.rfft(np.array(samples))
   bucketWidth = SAMPLE_RATE / len(samples)
   return Spectrum(buckets, bucketWidth)
+
+# Computes the decibel ratio between two power quantities
+def dbPower(a, b):
+  return 10 * math.log10(a / b)
+
+# Computes the decibel ratio between two amplitude quantities
+def dbAmplitude(a, b):
+  return 2 * dbPower(a, b)
+  # == 10 * log10(a**2 / b**2)
+
 
 class Spectrum(object):
   def __init__(self, data, bucketWidth):
