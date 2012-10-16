@@ -10,12 +10,14 @@ import struct
 SAMPLE_RATE = 44100
 CHANNELS = 1
 FORMAT = pyaudio.paInt16
+PCM_QUANT = 32767.5
 
-
+# Returns count samples of zero
 def silence(count):
   samples = [0] * count
   return np.array(samples)
 
+# Returns a sine wave at freq Hz for count samples, varying between +/-1.0
 def sinewave(freq, count):
   twoPiFOnRate = 2 * math.pi * freq / float(SAMPLE_RATE)
   samples = []
@@ -23,6 +25,7 @@ def sinewave(freq, count):
       samples.append(math.sin(i * twoPiFOnRate))
   return np.array(samples)
 
+# Sums and normalizes a collection of waveforms to +/- 1.0
 def combine(waveforms):
   agg = sum(waveforms)
   # Normalise
@@ -30,11 +33,20 @@ def combine(waveforms):
   agg = agg / max(agg)
   return agg
 
-def encode(floats, smoothEdges=True):
-  if smoothEdges:
-    floats = np.hanning(len(floats)) * floats
-  shorts = [32767 * f for f in floats]
-  return struct.pack("%dh" % len(shorts), *shorts)
+# Envelopes a waveform by a window function
+def window(waveform):
+    return np.hanning(len(waveform)) * waveform
+
+# Encodes waveform amplitudes as a little-endian PCM-16 stream
+def encode(waveform):
+  # FIXME use numpy
+  shorts = [math.floor(PCM_QUANT * f) for f in waveform]
+  return struct.pack("<%dh" % len(shorts), *shorts)
+
+# Decodes a stream of little-endian PCM-16 into waveform amplitudes
+def decode(block):
+  shorts = struct.unpack("<%dh" % (len(block) / 2), block)
+  return (np.array(shorts) + 0.5) / PCM_QUANT
 
 # Computes DFT over an array of time-domain samples
 # BucketWidth is the 
@@ -85,7 +97,7 @@ def createAudioStream(pa, isInput):
 # }
 #
 
-# TODO: implement StdinReceiver, etc.
+# Receiver which reads from PyAudio's default input device
 class PyAudioReceiver(object):
   def __init__(self):
     self.stream = createAudioStream(pyaudio.PyAudio(), isInput=True)
@@ -98,11 +110,8 @@ class PyAudioReceiver(object):
     #  print( "(%d) Error recording: %s"%(self.errorcount,e) )
     #  return
     block = self.stream.read(numSamples)
-    count = len(block) / 2
-    assert count == numSamples
-    shorts = struct.unpack("%dh" % count, block)
-
-    return shorts
+    assert len(block) / 2 == numSamples
+    return decode(block)
 
 # Receiver which reads from an input stream
 class StreamReceiver(object):
@@ -116,11 +125,7 @@ class StreamReceiver(object):
       block = block + self.stream.read(nBytes - len(block))
       if len(block) == 0:
         assert False
-
-    count = len(block) / 2
-    # Shorts are expected little-endian
-    shorts = struct.unpack("<%dh" % count, block)
-    return shorts
+    return decode(shorts)
 
 
 class PyAudioSender(object):
@@ -128,5 +133,6 @@ class PyAudioSender(object):
     self.stream = createAudioStream(
       pyaudio.PyAudio(), isInput=False)
 
-  def sendWaveForm(self, floats):
-    self.stream.write(encode(floats))
+  def sendWaveForm(self, waveform):
+    #waveform = window(waveform)
+    self.stream.write(encode(waveform))

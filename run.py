@@ -121,8 +121,8 @@ def main():
   x.lastHeart = 0
 
   def listen(receiver):
-    shorts = receiver.receiveBlock(chipSamples)
-    spectrum = fouriate(shorts)
+    waveform = receiver.receiveBlock(chipSamples)
+    spectrum = fouriate(waveform)
 
     # Each channel uses 2 subcarriers
     chandiff = 2 * channelGap
