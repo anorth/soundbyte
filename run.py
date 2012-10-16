@@ -75,7 +75,9 @@ def main():
     else:
       receiver = PyAudioReceiver()
     while True:
+      # Use one of these at a time
       listen(receiver)
+      #receivePacket(receiver)
 
 
   def sendChar(c, carrier, sender):
@@ -186,6 +188,68 @@ def main():
 
 
     sys.stdout.flush()
+
+  # WIP alternatve to listen() that receives a packet, being a marker followed
+  # by data. This is a placeholder for real marker detection to come.
+  def receivePacket(receiver):
+    # Each channel uses 2 subcarriers
+    chandiff = 2 * channelGap
+
+    markerChipsRequired = int(options.symbolchips * 0.8)
+    markerChipsReceived = 0
+    markerPolarity = False
+
+    # First wait for a marker
+    while markerChipsReceived < markerChipsRequired:
+      waveform = receiver.receiveBlock(chipSamples)
+      spectrum = fouriate(waveform)
+
+      heartA = spectrum.power(options.base - chandiff)
+      heartB = spectrum.power(options.base - chandiff + channelGap)
+      # Note: the SNR is a bit BS because we don't actually know if there's a signal
+      heartbeatSnr = abs(dbPower(heartA, heartB))
+
+      if heartbeatSnr > minHeartbeatSnr:
+        polarity = heartA > heartB
+        if polarity == markerPolarity:
+          markerChipsReceived += 1
+          if options.verbose: print "+",
+        else:
+          markerChipsReceived = 0
+          markerPolarity = polarity
+          if options.verbose: print "-",
+      else:
+        pass
+
+    # Marker finished!
+    if options.verbose: print
+    bitsignals = [[0] * (options.symbolchips)] * options.numchans
+    for si in xrange(20):
+      for i in xrange(options.symbolchips):
+        waveform = receiver.receiveBlock(chipSamples)
+        spectrum = fouriate(waveform)
+
+        for ci in range(0, options.numchans):
+          ia = spectrum.power(options.base + ci * chandiff)
+          ib = spectrum.power(options.base + ci * chandiff + channelGap)
+          bitsignals[ci] = bitsignals[ci][1:] + [ia > ib and 1 or 0]
+
+      # All chips for a symbol received, output best-effort data
+      received = 0
+      bit = 1
+      for s in bitsignals:
+        if np.mean(s) >= 0.5:
+          #if options.verbose: print 1,
+          received += bit
+        else:
+          #if options.verbose: print 0,
+          pass
+        bit <<= 1
+      sys.stdout.write(chr(received))
+
+    # Finished receiving packet
+    if options.verbose: print "\n== packet done =="
+
 
   if options.send:
     doSend()
