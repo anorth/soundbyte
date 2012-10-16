@@ -57,12 +57,16 @@ def main():
   def doSend():
     sender = PyAudioSender()
     carrier = False
-    while True:
-      c = getch()
-      if (not c) or ord(c) == 27:
-        break
-      sendChar(c, carrier, sender)
-      carrier = not carrier
+    eof = False
+    while not eof:
+      # Terminal input will be line-buffered, but read 1 byte at a time.
+      chars = sys.stdin.read(1)
+      for c in chars:
+        sendChar(c, carrier, sender)
+        carrier = not carrier
+      if not chars:
+        eof = True
+
 
   def doListen():
     if options.stdin:
