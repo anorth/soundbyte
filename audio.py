@@ -98,7 +98,7 @@ def createAudioStream(pa, isInput):
 # Implied:
 #
 # interface Receiver {
-#   short[] receiveBlock(int numSamples)
+#   double[] receiveBlock(int numSamples)
 # }
 #
 # interface Sender {

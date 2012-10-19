@@ -18,3 +18,6 @@ class MovingAverage(object):
   def avg(self):
     return self.__avg
 
+def flatten(listOfLists):
+  # O(n) implementation
+  return [item for sublist in l for item in sublist]
