@@ -7,6 +7,7 @@ from optparse import OptionParser
 
 from util import *
 from audio import *
+from packet import *
 
 def parseArgs():
   parser = OptionParser()
@@ -21,7 +22,7 @@ def parseArgs():
       help='Chip rate (hz)')
   parser.add_option('-c', '--symbolchips', default=10, type='int',
       help='Chips per symbol')
-  parser.add_option('-n', '--numchans', default=7, type='int',
+  parser.add_option('-n', '--numchans', default=8, type='int',
       help='Number of frequency channels')
   parser.add_option('-v', '--verbose', action='store_true')
 
@@ -68,7 +69,6 @@ def main():
       if not chars:
         eof = True
 
-
   def doListen():
     if options.stdin:
       receiver = StreamReceiver(sys.stdin)
@@ -79,31 +79,20 @@ def main():
       listen(receiver)
       #receivePacket(receiver)
 
-
+  # TODO: replace this with a packet sender
   def sendChar(c, carrier, sender):
-    # Whether each audio signal is high, in pairs
-    carrier_bits = [0] * 2
-    if carrier:
-      carrier_bits[0] = 1
-    else:
-      carrier_bits[1] = 1
-    
-    signal_bits = [] # lsb first, in pairs
-    print "'%s' (%d)" % (c, ord(c))
-    c = ord(c)
-    for i in xrange(options.numchans):
-      if (c >> i) % 2:
-        signal_bits.extend([1, 0])
-      else:
-        signal_bits.extend([0, 1])
+    base = options.base - 2 * channelGap # carrier goes below base
 
-    print carrier_bits, signal_bits
-
+    bitstring = carrier and [0, 1] or [1, 0]
+    # NOTE: we should change options.numchans to not assume pairwise
+    chips = makePacketPayload(c, options.numchans * 2)
+    #print "chips:", chips
+    assert len(chips) == 1, "numchans must be >= 8 until we do proper packets"
+    bitstring.extend(chips[0])
+    print "'%s' (%d) bits: %s" % (c, ord(c), bitstring)
     waveforms = []
-    if carrier_bits[0]: waveforms.append(sinewave(options.base - 2*channelGap, symbolSamples))
-    if carrier_bits[1]: waveforms.append(sinewave(options.base - channelGap, symbolSamples))
-    f = options.base
-    for bit in signal_bits:
+    f = base
+    for bit in bitstring:
       if bit:
         waveforms.append(sinewave(f, symbolSamples))
       f += channelGap
