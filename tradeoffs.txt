@@ -8,7 +8,7 @@ MORE FREQS / LONGER BLOCK BETTER
 
 LESS FREQS / SHORTER BLOCK BETTER
 - energy concentrated into fewer bands
-- 
-- 
+- can do correllations on individual frequencies more efficiently than fft for all frequencies 
+- just by ear, using more frequencies seems to have some kind of odd artifacts going on, could just be subjective though.
 
 
