@@ -8,6 +8,7 @@ from optparse import OptionParser
 from util import *
 from audio import *
 from packet import *
+from sync import SyncUtil
 
 def parseArgs():
   parser = OptionParser()
@@ -76,6 +77,7 @@ def main():
       receiver = PyAudioReceiver()
     while True:
       # Use one of these at a time
+      #testSync(receiver)
       listen(receiver)
       #receivePacket(receiver)
 
@@ -178,9 +180,15 @@ def main():
 
     sys.stdout.flush()
 
+  def testSync(receiver):
+    baseBucket = options.base * chipSamples / SAMPLE_RATE
+    sync = SyncUtil(baseBucket, options.spacing, options.numchans)
+    sync.align(receiver, chipSamples)
+
   # WIP alternatve to listen() that receives a packet, being a marker followed
   # by data. This is a placeholder for real marker detection to come.
   def receivePacket(receiver):
+
     # Each channel uses 2 subcarriers
     chandiff = 2 * channelGap
 
@@ -209,6 +217,8 @@ def main():
           if options.verbose: print "-",
       else:
         pass
+
+    
 
     # Marker finished!
     if options.verbose: print

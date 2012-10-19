@@ -1,5 +1,6 @@
 import numpy as np
 import math as m
+import sys
 from cmath import phase
 from util import flatten
 
@@ -24,14 +25,19 @@ def vectorCosineDetector(bucketVals, bitpattern):
 
   return result
 
+def logret(val, text='%s'):
+  print text % val
+  return val
 
-def log(text):
-  print text
+def log(text='', newline=True):
+  sys.stdout.write(text)
+  if newline: sys.stdout.write('\n')
+  sys.stdout.flush()
 
 class SyncUtil(object):
   def __init__(self, baseBucket, spacing, numchans,
-      chunksPerSyncPulse=3, numChunkPulses=6,
-      signalFactor=1.0,
+      chunksPerSyncPulse=2, numChunkPulses=6,
+      signalFactor=0.2,
       detectStrategy=vectorCosineDetector,
       detectionSamplesPerPulse = 20,
       misalignmentTolerance = 0.2
@@ -66,42 +72,50 @@ class SyncUtil(object):
     self.misalignmentTolerance = misalignmentTolerance
 
 
-  def align(self, receiver, chunkSize, patternUnit = [1,0]):
+  def align(self, receiver, chunkSize, patternUnit = [1,0,1,0]):
     """Listens for a sync signal from the receiver and aligns to it.
     Because it reads ahead, it returns the start of the data section
     following the sync signal that it read ahead into. The size of the
     data section read into will be aligned to chunkSize, so subsequent
     reads from receiver can simply be of size chunkSize.
+
+    NOTE: XXX XXX currently doesn't actually do this. just loops forever
+    printing out signal detection and alignment information.
     """
     assert self.numchans % len(patternUnit) == 0
     pattern = np.array(patternUnit * (self.numchans / len(patternUnit)))
+    assert len(pattern) == self.numchans
 
     pulseSize = self.chunksPerSyncPulse * chunkSize
     pulseWindow = pulseSize
 
     signalCycleSize = 2 * pulseSize
-    metaSignalBucket = 1 # don't increase unless fix code to avoid redundant work
+    metaSignalBucket = 4 # TODO: fix code to avoid redundant work
 
-    signalWindow = 1 + metaSignalBucket * signalCycleSize
+    signalWindow = (1 + metaSignalBucket * 2) * pulseSize
 
-    metaSamplesPerCycle = 2 * detectionSamplesPerPulse
-    samplesPerMetaSample = signalCycleSize / metaSamplesPerCycle
+    metaSamplesPerCycle = 2 * self.detectionSamplesPerPulse
+    samplesPerMetaSample = float(signalCycleSize) / metaSamplesPerCycle
 
+    assert self.chunksPerSyncPulse == (pulseWindow / chunkSize)
     bucketIndices = [
-      (pulseWindow / chunkSize) * (self.baseBucket + i * self.spacing)
+      self.chunksPerSyncPulse * (self.baseBucket + i * self.spacing)
       for i in xrange(self.numchans)]
 
-    data = receiver.receiveBlock(signalWindow)
+    data = list(receiver.receiveBlock(signalWindow))
 
-    alignment = 0
     confidence = -1
 
     while True:
       metaSignal = []
 
-      for i in xrange(metaSamplesPerCycle * metaSignalBucket):
-        start = i * samplesPerMetaSample
+      #print signalWindow / chunkSize, len(data), samplesPerMetaSample, chunkSize
+      for i in xrange(metaSamplesPerCycle * metaSignalBucket + 1):
+        start = int(i * samplesPerMetaSample)
         end = start + pulseWindow
+        #print 'Loop %s (%s:%s - %s/%s)' %(i, start, end, end-start, len(data))
+        #print i, metaSamplesPerCycle * metaSignalBucket
+        assert end <= len(data)
         spectrum = np.fft.rfft(data[start:end])
         bucketVals = [spectrum[b] for b in bucketIndices]
         match = self.detectStrategy(bucketVals, pattern)
@@ -115,19 +129,31 @@ class SyncUtil(object):
           abs(metaSpectrum[b]) for b in xrange(len(metaSpectrum))
           if b != 0 and b != metaSignalBucket])
 
+
+      #log('\n\n========================')
+      #print metaSignal
+      #log('')
+      #log(['%.2f' % np.abs(v) for v in metaSpectrum[:8]])
+      misalignment = 0
       if (abs(result) > self.signalFactor * sumRemainingAmplitudes):
-        log('Detected sync signal')
         misalignment = phase(result) / PI2
         misalignmentPerChunk = misalignment * signalCycleSize / chunkSize
-        if confidence == -1: confidence = 0 # don't consider misalignment on first go
-        elif misalignmentPerChunk <= self.misalignmentTolerance:
-          log('Aligned %s' % confidence)
+        if confidence == -1:
+          log('*', False)
+          confidence = 0 # don't consider misalignment on first go
+        elif abs(misalignmentPerChunk) <= self.misalignmentTolerance:
+          log('Aligned %.3f %s' % (abs(misalignmentPerChunk), confidence))
+          #log(' %s ' % confidence, False)
           confidence += 1
         else:
-          log('MISALIGNED')
+          #log('!', False)
+          log('MISALIGNED %.2f' % (misalignmentPerChunk))
           confidence = 0 # couldn't have been a good signal
       else:
-        log('No sync signal (%s vs %s)' % (resultAmplitude, sumRemainingAmplitudes))
+        confidence = -1
+        #log('No sync signal (%.1f vs %.1f)' % (resultAmplitude, sumRemainingAmplitudes))
+        log('.', False)
 
-      data = data[signalCycleSize:] + receiver.receiveBlock(signalCycleSize)
+      alignedAmount = int(signalCycleSize * (1 - misalignment))
+      data = data[alignedAmount:] + list(receiver.receiveBlock(alignedAmount))
 
