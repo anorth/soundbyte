@@ -1,18 +1,20 @@
-import sys
-import termios
-import tty
+#!/usr/bin/env python
 
-def getch():
-  fd = sys.stdin.fileno()
-  old_settings = None
-  try:
-    old_settings = termios.tcgetattr(fd)
-    tty.setraw(sys.stdin.fileno())
-    ch = sys.stdin.read(1)
-  except:
-    ch = sys.stdin.read(1)
-  finally:
-    if old_settings is not None:
-      termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-  return ch
+import math
+import numpy as np
+import struct
+
+class MovingAverage(object):
+  def __init__(self, window):
+    self.__avg = None
+    self.__window = window
+
+  def sample(self, v):
+    if self.__avg is None:
+      self.__avg = v
+    else:
+      self.__avg = ((self.__window - 1) * self.__avg + v) / self.__window
+
+  def avg(self):
+    return self.__avg
 
