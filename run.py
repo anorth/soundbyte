@@ -63,11 +63,38 @@ def main():
     while not eof:
       # Terminal input will be line-buffered, but read 1 byte at a time.
       chars = sys.stdin.read(1)
+      # Uncomment to test sending sync signal
+      #sendSync(sender)
+
       for c in chars:
         sendChar(c, carrier, sender)
         carrier = not carrier
       if not chars:
         eof = True
+
+  def sendSync(sender):
+    base = options.base
+
+    assert options.numchans % 2 == 0
+    pattern = [1,0,1,0] * (options.numchans / 4)
+    opposite = [1-b for b in pattern]
+    p = pattern
+
+    data = []
+    # combine a decent chunk or we get a buffer underrun.
+    for i in xrange(20):
+      p = (p == opposite) and pattern or opposite
+      waveforms = []
+      f = base
+      for bit in p:
+        if bit:
+          waveforms.append(sinewave(f, 2*chipSamples))
+        f += channelGap
+
+      data += list(combine(waveforms))
+    while True:
+
+      sender.sendWaveForm(np.array(data))
 
   def doListen():
     if options.stdin:
