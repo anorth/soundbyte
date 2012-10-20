@@ -89,6 +89,7 @@ class PairwiseAssigner(object):
         currentchip = []
     if len(currentchip):
       pad(currentchip, 0, self.nchans)
+      assert len(currentchip) == self.nchans
       chips.append(currentchip)
     return chips
 
@@ -98,6 +99,8 @@ class PairwiseAssigner(object):
       assert len(c) == self.nchans
       for pair in partition(c, 2):
         bits.append(pair[0] > pair[1] and 1 or 0)
+    # Strip any trailing probably-zeros if we didn't get a multiple of 8.
+    bits = bits[:-(len(bits) % 8)]
     return bits
 
   def symbolsForBits(self, nbits):
@@ -110,7 +113,7 @@ def partition(sequence, n):
 
 # Pads a list with value to some total length
 def pad(lst, value, tolen):
-  lst.extend([value] * (len(lst) - tolen))
+  lst.extend([value] * (tolen - len(lst)))
  
 # A generator that yields one bit at a time from a string of bytes
 def toBits(bytesequence):
@@ -121,7 +124,7 @@ def toBits(bytesequence):
 # A generator that yields bytes (as 1-char strings) from a sequence of bits
 # (or bit likelihoods)
 def toBytes(bitsequence):
-  assert len(bitsequence) % 8 == 0, "invalid bitsequence " + str(bitsequence)
+  assert len(bitsequence) % 8 == 0, "invalid bitsequence len %d" % len(bitsequence)
   for byte in partition(bitsequence, 8):
     b = 0
     for i in xrange(8):
