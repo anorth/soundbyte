@@ -3,6 +3,7 @@
 import sys
 import math
 import numpy as np
+import random
 from optparse import OptionParser
 
 from util import *
@@ -25,6 +26,8 @@ def parseArgs():
       help='Chips per symbol')
   parser.add_option('-n', '--numchans', default=16, type='int',
       help='Number of frequency channels')
+  parser.add_option('-t', '--test', action='store_true',
+      help='Run in test mode with known data')
   parser.add_option('-v', '--verbose', action='store_true')
 
   return parser.parse_args()
@@ -68,10 +71,13 @@ def main():
       # Uncomment to test sending sync signal
       #sendSync(sender)
 
-      # Terminal input will be line-buffered, but read PACKET bytes at a time.
-      chars = sys.stdin.read(PACKET_SYMBOLS)
-      if not chars:
-        eof = True
+      if options.test:
+        chars = genTestData(PACKET_SYMBOLS)
+      else:
+        # Terminal input will be line-buffered, but read PACKET bytes at a time.
+        chars = sys.stdin.read(PACKET_SYMBOLS)
+        if not chars:
+          eof = True
 
       if chars:
         sendPacket(chars, sender)
@@ -107,7 +113,16 @@ def main():
       receiver = PyAudioReceiver()
     while True:
       #testSync(receiver)
-      receivePacket(receiver)
+      s = receivePacket(receiver)
+      if options.test:
+        expected = genTestData(PACKET_SYMBOLS)
+        nbits = PACKET_SYMBOLS * 8
+        biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
+        print "Bit errors %d/%d (%.3f)" % (biterrs, nbits, 1.0*biterrs/nbits)
+      else:
+        sys.stdout.write(s)
+        sys.stdout.flush()
+
 
 
   def testSync(receiver):
@@ -180,6 +195,7 @@ def main():
     # Marker finished!
     if options.verbose: print
     numCarriers = options.numchans
+    packetChips = []
     packetSnrs = []
     for symbolIndex in xrange(PACKET_SYMBOLS):
       # Array of # carriers x # chips of channel values
@@ -219,13 +235,13 @@ def main():
       packetSnrs.append(snr)
       #print chipSnrs
       #print "SNR avg: %.1f, worst: %.1f" % (snr, min(chipSnrs))
-      s = decodePacketPayload([superChip])
-      sys.stdout.write(s)
-      sys.stdout.flush()
+      packetChips.append(superChip)
       
     # Finished receiving packet
     if options.verbose: 
       print "\n== packet done, SNR: %.1f, worst: %.1f==" % (np.average(packetSnrs), min(packetSnrs))
+
+    return decodePacketPayload(packetChips)
 
 
   if options.send:
@@ -234,6 +250,9 @@ def main():
     doListen()
 
 
+def genTestData(nbytes):
+  random.seed(1)
+  return ''.join( (chr(random.randint(0, 255)) for i in xrange(nbytes)) )
 
 
 if __name__ == "__main__":

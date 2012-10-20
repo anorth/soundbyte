@@ -21,3 +21,11 @@ class MovingAverage(object):
 def flatten(listOfLists):
   # O(n) implementation
   return [item for sublist in l for item in sublist]
+
+def countbits(v):
+  c = 0;
+  while v != 0:
+    v &= v - 1; # clear the least significant bit set
+    c += 1
+  return c
+
