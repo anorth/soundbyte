@@ -30,7 +30,7 @@ def parseArgs():
   return parser.parse_args()
 
 # Symbols per packet, until a header advertises a length
-PACKET_SYMBOLS = 20
+PACKET_SYMBOLS = 10
 
 
 def main():
@@ -65,16 +65,16 @@ def main():
     carrier = False
     eof = False
     while not eof:
-      # Terminal input will be line-buffered, but read 1 byte at a time.
-      chars = sys.stdin.read(1)
       # Uncomment to test sending sync signal
       #sendSync(sender)
 
-      for c in chars:
-        sendChar(c, carrier, sender)
-        carrier = not carrier
+      # Terminal input will be line-buffered, but read PACKET bytes at a time.
+      chars = sys.stdin.read(PACKET_SYMBOLS)
       if not chars:
         eof = True
+
+      if chars:
+        sendPacket(chars, sender)
 
   def sendSync(sender):
     base = options.base
@@ -106,125 +106,57 @@ def main():
     else:
       receiver = PyAudioReceiver()
     while True:
-      # Use one of these at a time
       #testSync(receiver)
-      #listen(receiver)
       receivePacket(receiver)
 
-  # TODO: replace this with a packet sender
-  def sendChar(c, carrier, sender):
-    base = options.base - 2 * channelGap # carrier goes below base
-
-    bitstring = carrier and [0, 1] or [1, 0]
-    # NOTE: we should change options.numchans to not assume pairwise
-    chips = makePacketPayload(c, options.numchans * 2)
-    #print "chips:", chips
-    assert len(chips) == 1, "numchans must be >= 8 until we do proper packets"
-    bitstring.extend(chips[0])
-    print "'%s' (%d) bits: %s" % (c, ord(c), bitstring)
-    waveforms = []
-    f = base
-    for bit in bitstring:
-      if bit:
-        waveforms.append(sinewave(f, symbolSamples))
-      f += channelGap
-
-    sender.sendWaveForm(combine(waveforms))
-  
-
-  winFactor = 0.6
-  # Minimum SNR to detect a heartbeat signal (dB)
-  minHeartbeatSnr = 4.0
-
-  class State:
-    pass
-
-  x = State()
-  x.count = 0
-  x.bitsignals = [[0] * (int(winFactor * options.symbolchips))] * options.numchans
-  x.heartSignals = [0] * options.symbolchips
-  x.lastHeart = 0
-  # Moving average signal and noise
-  x.noise = MovingAverage(options.symbolchips * 2)
-  x.signal = MovingAverage(options.symbolchips * 2)
-
-  def listen(receiver):
-    x.count += 1
-    waveform = receiver.receiveBlock(chipSamples)
-    spectrum = fouriate(waveform)
-
-    # Each channel uses 2 subcarriers
-    chandiff = 2 * channelGap
-    for i in range(0, options.numchans):
-      ia = spectrum.power(options.base + i * chandiff)
-      ib = spectrum.power(options.base + i * chandiff + channelGap)
-      x.bitsignals[i] = x.bitsignals[i][1:] + [ia > ib and 1 or 0]
-
-    heartA = spectrum.power(options.base - chandiff)
-    heartB = spectrum.power(options.base - chandiff + channelGap)
-    # Note: the SNR is a bit BS because we don't actually know if there's a signal
-    heartbeatSnr = abs(dbPower(heartA, heartB))
-    x.noise.sample(min(heartA, heartB))
-    x.signal.sample(max(heartA, heartB))
-
-    if heartbeatSnr > minHeartbeatSnr:
-      if (heartA > heartB):
-        x.heartSignals = x.heartSignals[1:] + [1]
-        if options.verbose: print '_',
-      else:
-        x.heartSignals = x.heartSignals[1:] + [-1]
-        if options.verbose: print 'X',
-    else:
-      x.heartSignals = x.heartSignals[1:] + [0]
-
-    gotBeat = False
-    heartSum = sum(x.heartSignals)
-    if abs(heartSum) >= winFactor * options.symbolchips:
-      h = np.sign(heartSum)
-      if h != x.lastHeart:
-        gotBeat = True
-        x.lastHeart = np.sign(heartSum)
-
-
-    if gotBeat:
-      v = 0
-      pos = 1
-      #if options.verbose: print '================'
-      for s in x.bitsignals:
-        if np.mean(s) >= 0.5:
-          #if options.verbose: print 1,
-          v += pos
-        else:
-          #if options.verbose: print 0,
-          pass
-        pos *= 2
-      if options.verbose: print
-
-      if v != 0: 
-        if v == 13: print
-        if options.verbose: print '=================>', chr(v), '<================='
-        else: sys.stdout.write(chr(v))
-    if options.verbose and not (x.count % (options.symbolchips * 3)):
-      print "SNR: %.1fdB" % dbPower(x.signal.avg(), x.noise.avg())
-
-
-    sys.stdout.flush()
 
   def testSync(receiver):
     baseBucket = options.base * chipSamples / SAMPLE_RATE
     sync = SyncUtil(baseBucket, options.spacing, options.numchans)
     sync.align(receiver, chipSamples)
 
-  # WIP alternatve to listen() that receives a packet, being a marker followed
+
+  def sendPacket(data, sender):
+    assert len(data) == PACKET_SYMBOLS, "data length must match packet length"
+
+    # First send marker, which is just one symbol length of the old carrier in False polarity
+    # TODO: replace this with sync signal
+    headerBase = options.base - 2 * channelGap # carrier goes below base
+    bitstring = [1, 0]
+    sender.sendWaveForm(buildWaveform(bitstring, headerBase, channelGap))
+
+    # NOTE: we should change options.numchans to not assume pairwise
+    chips = encodePacketPayload(data, options.numchans * 2)
+    #print "chips:", chips
+    print "data: '%s'" % data
+    for chip in chips:
+      print "chip: %s" % (chip)
+      sender.sendWaveForm(buildWaveform(chip, options.base, channelGap))
+
+  # Compute a signal with energy at each frequency corresponding to a
+  # non-zero number in chip
+  def buildWaveform(chip, baseFrequency, frequencySpacing):
+    # TODO: consider using inverse FFT to build this
+    waveforms = []
+    f = baseFrequency
+    for subcarrier in chip:
+      if subcarrier > 0:
+        waveforms.append(sinewave(f, symbolSamples))
+      f += frequencySpacing
+    return combine(waveforms)
+
+
+  # Receives a packet, being a marker followed
   # by data. This is a placeholder for real marker detection to come.
   def receivePacket(receiver):
+    # Minimum SNR to detect a marker signal (dB)
+    minMarkerSnr = 6.0
 
     # Each channel uses 2 subcarriers
     chandiff = 2 * channelGap
 
     markerChipsRequired = int(options.symbolchips * 0.8)
     markerChipsReceived = 0
-    markerPolarity = False
 
     # First wait for a marker
     while markerChipsReceived < markerChipsRequired:
@@ -234,60 +166,73 @@ def main():
       heartA = spectrum.power(options.base - chandiff)
       heartB = spectrum.power(options.base - chandiff + channelGap)
       # Note: the SNR is a bit BS because we don't actually know if there's a signal
-      heartbeatSnr = abs(dbPower(heartA, heartB))
+      markerSnr = abs(dbPower(heartA, heartB))
 
-      if heartbeatSnr > minHeartbeatSnr:
-        polarity = heartA > heartB
-        if polarity == markerPolarity:
+      if markerSnr > minMarkerSnr:
+        if heartA > heartB:
           markerChipsReceived += 1
           if options.verbose: print "+",
         else:
           markerChipsReceived = 0
-          markerPolarity = polarity
           if options.verbose: print "-",
       else:
         pass
 
-
     # Marker finished!
     if options.verbose: print
     numCarriers = options.numchans * 2 # FIXME remove hardcoded pairing
+    packetSnrs = []
     for symbolIndex in xrange(PACKET_SYMBOLS):
       # Array of # carriers x # chips of subcarrier values
       subcarrierSeqs = []
+      # SNRs for chips in this symbol
+      chipSnrs = []
       for i in xrange(numCarriers):
         subcarrierSeqs.append([])
       for i in xrange(options.symbolchips):
         waveform = receiver.receiveBlock(chipSamples)
         spectrum = fouriate(waveform)
 
-        # look at pairs of subcarriers to compare them
+        # Sum of signal and noise power in this chip
+        signal = 0
+        noise = 0
+        # look at pairs of subcarriers to compare them and record bit likelihoods
+        # as -1 or 1
         for carrierIdx in xrange(0, numCarriers, 2):
           ia = spectrum.power(options.base + carrierIdx * channelGap)
           ib = spectrum.power(options.base + (carrierIdx + 1) * channelGap)
           if ia > ib:
-            subcarrierSeqs[carrierIdx].append(1)
-            subcarrierSeqs[carrierIdx + 1].append(0)
+            subcarrierSeqs[carrierIdx].append(1.0)
+            subcarrierSeqs[carrierIdx + 1].append(-1.0)
+            signal += ia
+            noise += ib
           else:
-            subcarrierSeqs[carrierIdx].append(0)
-            subcarrierSeqs[carrierIdx + 1].append(1)
+            subcarrierSeqs[carrierIdx].append(-1.0)
+            subcarrierSeqs[carrierIdx + 1].append(1.0)
+            signal += ib
+            noise += ia
+        chipSnrs.append(dbPower(signal, noise))
 
-      # Compute a superchip as the mean of the chips
+      # Compute a superchip as the mean bit likelihoods of the chips
       superChip = map(np.mean, subcarrierSeqs)
       #print "chip", superChip
-      s = receivePacketPayload([superChip])
+      snr = np.average(chipSnrs)
+      packetSnrs.append(snr)
+      #print chipSnrs
+      #print "SNR avg: %.1f, worst: %.1f" % (snr, min(chipSnrs))
+      s = decodePacketPayload([superChip])
       sys.stdout.write(s)
-      continue
+      sys.stdout.flush()
       
     # Finished receiving packet
-    if options.verbose: print "\n== packet done =="
+    if options.verbose: 
+      print "\n== packet done, SNR: %.1f, worst: %.1f==" % (np.average(packetSnrs), min(packetSnrs))
 
 
   if options.send:
     doSend()
   elif options.listen:
     doListen()
-
 
 
 

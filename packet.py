@@ -8,11 +8,11 @@ import struct
 
 # Builds a packet payload, encoding a string of bytes into a sequence
 # of chips (sequence of 1/0), each nChannels wide.
-def makePacketPayload(data, nChannels):
+def encodePacketPayload(data, nChannels):
   encoded = encodeBits(data)
   return PairwiseAssigner().encodeChips(toBits(data), nChannels)
 
-def receivePacketPayload(chips):
+def decodePacketPayload(chips):
   encoded = PairwiseAssigner().decodeChips(chips)
   return ''.join(toBytes(decodeBits(encoded)))
 
