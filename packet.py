@@ -13,6 +13,9 @@ import struct
 #
 # - decodePacket(chips):
 # Decodes a packet of chips into data.
+# 
+# - symbolsForBytes(nBytes)
+# Returns number of symbols to transmit nbytes of data
 class Packeter(object):
   def __init__(self, encoder, assigner):
     self.encoder = encoder
@@ -20,39 +23,37 @@ class Packeter(object):
 
   def encodePacket(self, data):
     encoded = self.encoder.encode(data)
-    return self.assigner.encodeChips(toBits(data))
+    return self.assigner.encodeChips(encoded)
 
   def decodePacket(self, chips):
     encoded = self.assigner.decodeChips(chips)
-    return ''.join(toBytes(self.encoder.decode(encoded)))
+    return ''.join(self.encoder.decode(encoded))
 
-# Builds a packet payload, encoding a string of bytes into a sequence
-# of chips (sequence of 1/0), each nChannels wide.
-#def encodePacketPayload(data, nChannels):
-#  encoded = IdentityEncoder().encode(data)
-#  return PairwiseAssigner().encodeChips(toBits(data), nChannels)
-
-#def decodePacketPayload(chips):
-#  encoded = PairwiseAssigner().decodeChips(chips)
-#  return ''.join(toBytes(IdentityEncoder().decode(encoded)))
-
+  def symbolsForBytes(self, nbytes):
+    return self.assigner.symbolsForBits(self.encoder.encodedBitsForBytes(nbytes))
 
 # Interface Encoder
 # - encode(bytes):
-# Transforms raw bytes to (possibly more) encoded bytes
+# Transforms raw bytes to a list of encoded bits
 #
-# decode(bytes):
-# Transforms encoded byts to raw bytes, or None
+# - decode(bitLikelihoods):
+# Transforms encoded bit likelihoods to raw data, or None
+# 
+# - encodedBitsForBytes(nBytes):
+# The number of bits needed to encode n data bits
 class IdentityEncoder(object):
   def encode(self, data):
     # TODO: recursive systematic convolution to distribute bits?
     # TODO: add ECC, LDPC?
-    return data
+    return toBits(data)
 
   # Decode
-  def decode(self, data):
+  def decode(self, bits):
      # TODO see encode
-    return data
+    return toBytes(bits)
+
+  def encodedBitsForBytes(self, nbytes):
+    return nbytes * 8
 
 # Interface CarrierAssigner
 # - encode(bits):
@@ -63,6 +64,9 @@ class IdentityEncoder(object):
 # - decode(chips):
 # Transforms a sequence of chips (lists of power values for channels)
 # into a bit sequence, with probabilities [-1.0..1.0]
+#
+# - symbolsForBits(nbits):
+# The number of symbols required to transmit n bits
 
 # Assigns each bit to two channels, setting one high:
 # 0 => (0, 1)
@@ -95,6 +99,9 @@ class PairwiseAssigner(object):
       for pair in partition(c, 2):
         bits.append(pair[0] > pair[1] and 1 or 0)
     return bits
+
+  def symbolsForBits(self, nbits):
+    return nbits / (self.nchans / 2)
 
 
 # Partitions a sequence into subsequences of length n

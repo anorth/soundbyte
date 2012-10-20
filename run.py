@@ -199,8 +199,7 @@ def main():
     numCarriers = options.numchans
     packetChips = []
     packetSnrs = []
-    # FIXME calculate this from knowledge of underlying encoder/assigner
-    packetSymbols = PACKET_DATA_BYTES
+    packetSymbols = packeter.symbolsForBytes(PACKET_DATA_BYTES)
     for symbolIndex in xrange(packetSymbols):
       # Array of # carriers x # chips of channel values
       subcarrierSeqs = []
