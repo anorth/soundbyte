@@ -23,7 +23,7 @@ def parseArgs():
       help='Chip rate (hz)')
   parser.add_option('-c', '--symbolchips', default=10, type='int',
       help='Chips per symbol')
-  parser.add_option('-n', '--numchans', default=8, type='int',
+  parser.add_option('-n', '--numchans', default=16, type='int',
       help='Number of frequency channels')
   parser.add_option('-v', '--verbose', action='store_true')
 
@@ -80,7 +80,7 @@ def main():
     base = options.base
 
     assert options.numchans % 2 == 0
-    pattern = [1,0,1,0] * (options.numchans / 4)
+    pattern = [1,0,1,0] * (options.numchans / 8)
     opposite = [1-b for b in pattern]
     p = pattern
 
@@ -112,7 +112,7 @@ def main():
 
   def testSync(receiver):
     baseBucket = options.base * chipSamples / SAMPLE_RATE
-    sync = SyncUtil(baseBucket, options.spacing, options.numchans)
+    sync = SyncUtil(baseBucket, options.spacing, options.numchans / 2)
     sync.align(receiver, chipSamples)
 
 
@@ -125,8 +125,7 @@ def main():
     bitstring = [1, 0]
     sender.sendWaveForm(buildWaveform(bitstring, headerBase, channelGap))
 
-    # NOTE: we should change options.numchans to not assume pairwise
-    chips = encodePacketPayload(data, options.numchans * 2)
+    chips = encodePacketPayload(data, options.numchans)
     #print "chips:", chips
     print "data: '%s'" % data
     for chip in chips:
@@ -139,8 +138,8 @@ def main():
     # TODO: consider using inverse FFT to build this
     waveforms = []
     f = baseFrequency
-    for subcarrier in chip:
-      if subcarrier > 0:
+    for channel in chip:
+      if channel > 0:
         waveforms.append(sinewave(f, symbolSamples))
       f += frequencySpacing
     return combine(waveforms)
@@ -180,10 +179,10 @@ def main():
 
     # Marker finished!
     if options.verbose: print
-    numCarriers = options.numchans * 2 # FIXME remove hardcoded pairing
+    numCarriers = options.numchans
     packetSnrs = []
     for symbolIndex in xrange(PACKET_SYMBOLS):
-      # Array of # carriers x # chips of subcarrier values
+      # Array of # carriers x # chips of channel values
       subcarrierSeqs = []
       # SNRs for chips in this symbol
       chipSnrs = []
