@@ -112,13 +112,17 @@ class PyAudioReceiver(object):
     self.stream = createAudioStream(pyaudio.PyAudio(), isInput=True)
 
   def receiveBlock(self, numSamples):
-    #try:
-    #  block = self.stream.read(Samples)
-    #except IOError, e:
-    #  # dammit. 
-    #  print( "(%d) Error recording: %s"%(self.errorcount,e) )
-    #  return
-    block = self.stream.read(numSamples)
+    block = None
+    while block is None:
+      try:
+        #print self.stream.get_read_available(), "frames available"
+        block = self.stream.read(numSamples)
+        #print "Read", numSamples, "samples"
+      except IOError as ex:
+        if ex[1] != pyaudio.paInputOverflowed:
+          raise
+        print "Dropped audio frame attempting to read", numSamples, "samples! Input overflowed."
+
     assert len(block) / 2 == numSamples
     return decode(block)
 
