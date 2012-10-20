@@ -29,6 +29,9 @@ def parseArgs():
 
   return parser.parse_args()
 
+# Symbols per packet, until a header advertises a length
+PACKET_SYMBOLS = 20
+
 
 def main():
   (options, args) = parseArgs()
@@ -105,8 +108,8 @@ def main():
     while True:
       # Use one of these at a time
       #testSync(receiver)
-      listen(receiver)
-      #receivePacket(receiver)
+      #listen(receiver)
+      receivePacket(receiver)
 
   # TODO: replace this with a packet sender
   def sendChar(c, carrier, sender):
@@ -245,34 +248,37 @@ def main():
       else:
         pass
 
-    
 
     # Marker finished!
     if options.verbose: print
-    bitsignals = [[0] * (options.symbolchips)] * options.numchans
-    for si in xrange(20):
+    numCarriers = options.numchans * 2 # FIXME remove hardcoded pairing
+    for symbolIndex in xrange(PACKET_SYMBOLS):
+      # Array of # carriers x # chips of subcarrier values
+      subcarrierSeqs = []
+      for i in xrange(numCarriers):
+        subcarrierSeqs.append([])
       for i in xrange(options.symbolchips):
         waveform = receiver.receiveBlock(chipSamples)
         spectrum = fouriate(waveform)
 
-        for ci in range(0, options.numchans):
-          ia = spectrum.power(options.base + ci * chandiff)
-          ib = spectrum.power(options.base + ci * chandiff + channelGap)
-          bitsignals[ci] = bitsignals[ci][1:] + [ia > ib and 1 or 0]
+        # look at pairs of subcarriers to compare them
+        for carrierIdx in xrange(0, numCarriers, 2):
+          ia = spectrum.power(options.base + carrierIdx * channelGap)
+          ib = spectrum.power(options.base + (carrierIdx + 1) * channelGap)
+          if ia > ib:
+            subcarrierSeqs[carrierIdx].append(1)
+            subcarrierSeqs[carrierIdx + 1].append(0)
+          else:
+            subcarrierSeqs[carrierIdx].append(0)
+            subcarrierSeqs[carrierIdx + 1].append(1)
 
-      # All chips for a symbol received, output best-effort data
-      received = 0
-      bit = 1
-      for s in bitsignals:
-        if np.mean(s) >= 0.5:
-          #if options.verbose: print 1,
-          received += bit
-        else:
-          #if options.verbose: print 0,
-          pass
-        bit <<= 1
-      sys.stdout.write(chr(received))
-
+      # Compute a superchip as the mean of the chips
+      superChip = map(np.mean, subcarrierSeqs)
+      #print "chip", superChip
+      s = receivePacketPayload([superChip])
+      sys.stdout.write(s)
+      continue
+      
     # Finished receiving packet
     if options.verbose: print "\n== packet done =="
 

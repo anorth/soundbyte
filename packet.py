@@ -12,10 +12,19 @@ def makePacketPayload(data, nChannels):
   encoded = encodeBits(data)
   return PairwiseAssigner().encodeChips(toBits(data), nChannels)
 
+def receivePacketPayload(chips):
+  encoded = PairwiseAssigner().decodeChips(chips)
+  return ''.join(toBytes(decodeBits(encoded)))
+
 # Encodes data into a packet (as a byte string)
 def encodeBits(data):
   # TODO: recursive systematic convolution to distribute bits?
   # TODO: add ECC, LDPC?
+  return data
+
+# Decode
+def decodeBits(data):
+   # TODO see encodeBits
   return data
 
 # Interface CarrierAssigner
@@ -72,7 +81,9 @@ def toBits(bytesequence):
       yield (b & (1 << i)) >> i
       
 # A generator that yields bytes (as 1-char strings) from a sequence of bits
+# (or bit likelihoods)
 def toBytes(bitsequence):
+  assert len(bitsequence) % 8 == 0, "invalid bitsequence " + str(bitsequence)
   for byte in partition(bitsequence, 8):
     b = 0
     for i in xrange(8):
