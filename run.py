@@ -33,7 +33,7 @@ def parseArgs():
   return parser.parse_args()
 
 # Symbols per packet, until a header advertises a length
-PACKET_SYMBOLS = 10
+PACKET_DATA_BYTES = 10
 
 
 def main():
@@ -63,6 +63,8 @@ def main():
   print "Base frequency", options.base, "Hz,", options.numchans, "channels, total bandwidth", \
     options.numchans * channelGap, "Hz"
 
+  packeter = Packeter(IdentityEncoder(), PairwiseAssigner(options.numchans))
+
   def doSend():
     sender = PyAudioSender()
     carrier = False
@@ -72,10 +74,10 @@ def main():
       #sendSync(sender)
 
       if options.test:
-        chars = genTestData(PACKET_SYMBOLS)
+        chars = genTestData(PACKET_DATA_BYTES)
       else:
         # Terminal input will be line-buffered, but read PACKET bytes at a time.
-        chars = sys.stdin.read(PACKET_SYMBOLS)
+        chars = sys.stdin.read(PACKET_DATA_BYTES)
         if not chars:
           eof = True
 
@@ -115,8 +117,8 @@ def main():
       #testSync(receiver)
       s = receivePacket(receiver)
       if options.test:
-        expected = genTestData(PACKET_SYMBOLS)
-        nbits = PACKET_SYMBOLS * 8
+        expected = genTestData(PACKET_DATA_BYTES)
+        nbits = PACKET_DATA_BYTES * 8
         biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
         print "Bit errors %d/%d (%.3f)" % (biterrs, nbits, 1.0*biterrs/nbits)
       else:
@@ -132,7 +134,7 @@ def main():
 
 
   def sendPacket(data, sender):
-    assert len(data) == PACKET_SYMBOLS, "data length must match packet length"
+    assert len(data) == PACKET_DATA_BYTES, "data length must match packet length"
 
     # First send marker, which is just one symbol length of the old carrier in False polarity
     # TODO: replace this with sync signal
@@ -140,7 +142,7 @@ def main():
     bitstring = [1, 0]
     sender.sendWaveForm(buildWaveform(bitstring, headerBase, channelGap))
 
-    chips = encodePacketPayload(data, options.numchans)
+    chips = packeter.encodePacket(data)
     #print "chips:", chips
     print "data: '%s'" % data
     for chip in chips:
@@ -197,7 +199,9 @@ def main():
     numCarriers = options.numchans
     packetChips = []
     packetSnrs = []
-    for symbolIndex in xrange(PACKET_SYMBOLS):
+    # FIXME calculate this from knowledge of underlying encoder/assigner
+    packetSymbols = PACKET_DATA_BYTES
+    for symbolIndex in xrange(packetSymbols):
       # Array of # carriers x # chips of channel values
       subcarrierSeqs = []
       # SNRs for chips in this symbol
@@ -241,7 +245,7 @@ def main():
     if options.verbose: 
       print "\n== packet done, SNR: %.1f, worst: %.1f==" % (np.average(packetSnrs), min(packetSnrs))
 
-    return decodePacketPayload(packetChips)
+    return packeter.decodePacket(packetChips)
 
 
   if options.send:
