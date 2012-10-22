@@ -22,8 +22,8 @@ def parseArgs():
       help='Channel spacing (# subcarriers)')
   parser.add_option('-r', '--rate', default=100, type='int',
       help='Chip rate (hz)')
-  parser.add_option('-c', '--symbolchips', default=10, type='int',
-      help='Chips per symbol')
+  parser.add_option('-e', '--redundancy', default=10.0, type='float',
+      help='Encoder redundancy ratio (encoder-dependent)')
   parser.add_option('-n', '--numchans', default=16, type='int',
       help='Number of frequency channels')
   parser.add_option('-t', '--test', action='store_true',
@@ -32,19 +32,20 @@ def parseArgs():
 
   return parser.parse_args()
 
-# Symbols per packet, until a header advertises a length
+# Bytes per packet, until a header advertises a length
 PACKET_DATA_BYTES = 10
 
 
 def main():
   (options, args) = parseArgs()
 
+  packeter = Packeter(MajorityEncoder(options.redundancy, options.numchans / 2), 
+      PairwiseAssigner(options.numchans))
+
   chipDuration = 1.0 / options.rate
   chipSamples = int(SAMPLE_RATE * chipDuration)
-
-  symbolRate = options.rate / options.symbolchips
-  symbolDuration = chipDuration * options.symbolchips
-  symbolSamples = chipSamples * options.symbolchips
+  chipsPerByte = packeter.symbolsForBytes(100)/100.0
+  byteRate = options.rate / chipsPerByte
 
   subcarrierSpacing = int(SAMPLE_RATE / chipSamples)
   assert subcarrierSpacing == int(1.0 / chipDuration)
@@ -54,16 +55,14 @@ def main():
     print "Base", options.base, "Hz is not a subcarrier multiple, rounding down"
     options.base -= (options.base % subcarrierSpacing)
 
-  print "Chip rate", options.rate, "Hz,", "duration", int(chipDuration * 1000), "ms,", \
-      chipSamples, "samples/chip"
-  print "Symbol rate", symbolRate, "Hz,", "duration", int(symbolDuration * 1000), "ms,", \
-      options.symbolchips, "chips/symbol"
   print chipSamples / 2, "FFT buckets, subcarrier spacing", subcarrierSpacing, "Hz,", \
       "channel spacing", options.spacing
   print "Base frequency", options.base, "Hz,", options.numchans, "channels, total bandwidth", \
     options.numchans * channelGap, "Hz"
-
-  packeter = Packeter(IdentityEncoder(), PairwiseAssigner(options.numchans))
+  print "Chip rate", options.rate, "Hz,", "duration", int(chipDuration * 1000), "ms,", \
+      chipSamples, "samples/chip"
+  print options.redundancy, "encoder redundancy,", chipsPerByte, "chips/byte,", byteRate, \
+      "bytes/sec"
 
   def doSend():
     sender = PyAudioSender()
@@ -140,24 +139,25 @@ def main():
     # TODO: replace this with sync signal
     headerBase = options.base - 2 * channelGap # carrier goes below base
     bitstring = [1, 0]
-    sender.sendWaveForm(buildWaveform(bitstring, headerBase, channelGap))
+    headerSamples = int(chipSamples * options.redundancy)
+    sender.sendWaveForm(buildWaveform(bitstring, headerBase, channelGap, headerSamples))
 
     chips = packeter.encodePacket(data)
     #print "chips:", chips
     print "data: '%s'" % data
     for chip in chips:
       print "chip: %s" % (chip)
-      sender.sendWaveForm(buildWaveform(chip, options.base, channelGap))
+      sender.sendWaveForm(buildWaveform(chip, options.base, channelGap, chipSamples))
 
   # Compute a signal with energy at each frequency corresponding to a
   # non-zero number in chip
-  def buildWaveform(chip, baseFrequency, frequencySpacing):
+  def buildWaveform(chip, baseFrequency, frequencySpacing, samples):
     # TODO: consider using inverse FFT to build this
     waveforms = []
     f = baseFrequency
     for channel in chip:
       if channel > 0:
-        waveforms.append(sinewave(f, symbolSamples))
+        waveforms.append(sinewave(f, samples))
       f += frequencySpacing
     return combine(waveforms)
 
@@ -171,7 +171,7 @@ def main():
     # Each channel uses 2 subcarriers
     chandiff = 2 * channelGap
 
-    markerChipsRequired = int(options.symbolchips * 0.8)
+    markerChipsRequired = int(options.redundancy * 0.8)
     markerChipsReceived = 0
 
     # First wait for a marker
@@ -181,7 +181,6 @@ def main():
 
       heartA = spectrum.power(options.base - chandiff)
       heartB = spectrum.power(options.base - chandiff + channelGap)
-      # Note: the SNR is a bit BS because we don't actually know if there's a signal
       markerSnr = abs(dbPower(heartA, heartB))
 
       if markerSnr > minMarkerSnr:
@@ -196,53 +195,23 @@ def main():
 
     # Marker finished!
     if options.verbose: print
-    numCarriers = options.numchans
     packetChips = []
-    packetSnrs = []
-    packetSymbols = packeter.symbolsForBytes(PACKET_DATA_BYTES)
-    for symbolIndex in xrange(packetSymbols):
-      # Array of # carriers x # chips of channel values
-      subcarrierSeqs = []
-      # SNRs for chips in this symbol
-      chipSnrs = []
-      for i in xrange(numCarriers):
-        subcarrierSeqs.append([])
-      for i in xrange(options.symbolchips):
-        waveform = receiver.receiveBlock(chipSamples)
-        spectrum = fouriate(waveform)
+    numPacketSymbols = packeter.symbolsForBytes(PACKET_DATA_BYTES)
+    #print "expecting", numPacketSymbols, "chips for", PACKET_DATA_BYTES, "bytes"
+    for symbolIndex in xrange(numPacketSymbols):
+      waveform = receiver.receiveBlock(chipSamples)
+      spectrum = fouriate(waveform)
 
-        # Sum of signal and noise power in this chip
-        signal = 0
-        noise = 0
-        # look at pairs of subcarriers to compare them and record bit likelihoods
-        # as -1 or 1
-        for carrierIdx in xrange(0, numCarriers, 2):
-          ia = spectrum.power(options.base + carrierIdx * channelGap)
-          ib = spectrum.power(options.base + (carrierIdx + 1) * channelGap)
-          if ia > ib:
-            subcarrierSeqs[carrierIdx].append(1.0)
-            subcarrierSeqs[carrierIdx + 1].append(-1.0)
-            signal += ia
-            noise += ib
-          else:
-            subcarrierSeqs[carrierIdx].append(-1.0)
-            subcarrierSeqs[carrierIdx + 1].append(1.0)
-            signal += ib
-            noise += ia
-        chipSnrs.append(dbPower(signal, noise))
+      chip = []
+      for f in xrange(options.base, options.base + (channelGap*options.numchans), channelGap):
+        chip.append(spectrum.power(f))
 
-      # Compute a superchip as the mean bit likelihoods of the chips
-      superChip = map(np.mean, subcarrierSeqs)
-      #print "chip", superChip
-      snr = np.average(chipSnrs)
-      packetSnrs.append(snr)
-      #print chipSnrs
-      #print "SNR avg: %.1f, worst: %.1f" % (snr, min(chipSnrs))
-      packetChips.append(superChip)
+      #print "*** chip", chip
+      packetChips.append(chip)
       
     # Finished receiving packet
-    if options.verbose: 
-      print "\n== packet done, SNR: %.1f, worst: %.1f==" % (np.average(packetSnrs), min(packetSnrs))
+    #if options.verbose: 
+    #  print "\n== packet done, SNR: %.1f, worst: %.1f==" % (np.average(packetSnrs), min(packetSnrs))
 
     return packeter.decodePacket(packetChips)
 

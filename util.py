@@ -29,3 +29,6 @@ def countbits(v):
     c += 1
   return c
 
+# +/- 1.0
+def signum(x):
+  return math.copysign(1, x)

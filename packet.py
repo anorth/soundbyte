@@ -5,6 +5,8 @@ import math
 import numpy as np
 import struct
 
+from util import *
+
 
 # Interface Packeter
 # - encodePacket(data):
@@ -55,6 +57,46 @@ class IdentityEncoder(object):
   def encodedBitsForBytes(self, nbytes):
     return nbytes * 8
 
+# Encoder which repeats width-length chunks of the data N times and 
+# takes a majority vote when decoding
+class MajorityEncoder(object):
+  def __init__(self, n, width):
+    self.n = int(n)
+    self.width = int(width)
+    assert self.n > 0
+
+  def encode(self, data):
+    bits = list(toBits(data))
+    encoded = []
+    for chunk in partition(bits, self.width):
+      pad(chunk, 0, self.width) # pad final chunk
+      encoded.extend(chunk * self.n)
+    return encoded
+
+  def decode(self, signals):
+    assert len(signals) % self.width == 0
+    assert len(signals) % self.n == 0
+    decodedLength = len(signals) / self.n
+    signals = map(signum, signals)
+    decoded = []
+    chunks = partition(signals, self.width)
+    for chunkList in partition(chunks, self.n):
+      counts = [ sum(b) for b in zip(*chunkList) ]
+      bits = map(signum, counts)
+      decoded.extend(bits)
+    # Strip trailing non-byte signals
+    if len(decoded) % 8:
+      decoded = decoded[:-(len(decoded)%8)]
+    return toBytes(decoded)
+
+  def encodedBitsForBytes(self, nbytes):
+    bits = nbytes * 8
+    pad = 0
+    if bits % self.width:
+      pad = self.width - bits % self.width
+    return (bits + pad) * self.n
+
+
 # Interface CarrierAssigner
 # - encode(bits):
 # Transforms a sequence of bits (0/1) into a sequence of 
@@ -98,7 +140,8 @@ class PairwiseAssigner(object):
     for c in chips:
       assert len(c) == self.nchans
       for pair in partition(c, 2):
-        bits.append(pair[0] > pair[1] and 1 or 0)
+        if len(pair) == 2:
+          bits.append(pair[0] > pair[1] and 1.0 or -1.0)
     return bits
 
   def symbolsForBits(self, nbits):
