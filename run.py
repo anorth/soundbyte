@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
-import sys
+import binascii
 import math
 import numpy as np
 import random
+import sys
+import time
 from optparse import OptionParser
 
 from util import *
@@ -140,14 +142,22 @@ def main():
     headerBase = options.base - 2 * channelGap # carrier goes below base
     bitstring = [1, 0]
     headerSamples = int(chipSamples * options.redundancy)
-    sender.sendWaveForm(buildWaveform(bitstring, headerBase, channelGap, headerSamples))
+    header = buildWaveform(bitstring, headerBase, channelGap, headerSamples)
+    fadein(header, chipSamples / 20)
+    fadeout(header, chipSamples / 20)
+    sender.sendWaveForm(header)
 
     chips = packeter.encodePacket(data)
     #print "chips:", chips
-    print "data: '%s'" % data
+    print "data: '%s'" % binascii.hexlify(data)
     for chip in chips:
       print "chip: %s" % (chip)
-      sender.sendWaveForm(buildWaveform(chip, options.base, channelGap, chipSamples))
+      waveform = buildWaveform(chip, options.base, channelGap, chipSamples)
+      if chip is chips[0]:
+        fadein(waveform, int(chipSamples / 20))
+      if chip is chips[-1]:
+        fadeout(waveform, int(chipSamples / 20))
+      sender.sendWaveForm(waveform)
 
   # Compute a signal with energy at each frequency corresponding to a
   # non-zero number in chip

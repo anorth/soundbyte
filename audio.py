@@ -59,6 +59,18 @@ def combine(waveforms):
 def window(waveform):
     return np.hanning(len(waveform)) * waveform
 
+# Fades a waveform in-place
+def fadein(waveform, samples):
+  n = min(len(waveform), samples)
+  for i in xrange(samples):
+    waveform[i] *= (float(i) / samples)
+
+# Fades a waveform in-place
+def fadeout(waveform, samples):
+  n = min(len(waveform), samples)
+  for i in xrange(len(waveform) - n, len(waveform)):
+    waveform[i] *= (len(waveform) - i) / float(n)
+
 # Encodes waveform amplitudes as a little-endian PCM-16 stream
 def encode(waveform):
   shorts = [math.floor(PCM_QUANT * f) for f in waveform]
