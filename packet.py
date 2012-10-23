@@ -99,8 +99,6 @@ class PairwiseAssigner(object):
       assert len(c) == self.nchans
       for pair in partition(c, 2):
         bits.append(pair[0] > pair[1] and 1 or 0)
-    # Strip any trailing probably-zeros if we didn't get a multiple of 8.
-    bits = bits[:-(len(bits) % 8)]
     return bits
 
   def symbolsForBits(self, nbits):
