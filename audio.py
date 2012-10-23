@@ -5,6 +5,7 @@ import numpy as np
 import pyaudio
 import socket
 import struct
+import time
 
 # Consts
 SAMPLE_RATE = 44100
@@ -12,18 +13,39 @@ CHANNELS = 1
 FORMAT = pyaudio.paInt16
 PCM_QUANT = 32767.5
 
-# Returns count samples of zero
-def silence(count):
-  samples = [0] * count
+# Returns nsamples samples of zero
+def silence(nsamples):
+  samples = [0] * nsamples
   return np.array(samples)
 
-# Returns a sine wave at freq Hz for count samples, varying between +/-1.0
-def sinewave(freq, count):
+# Returns a sine wave at freq Hz for nsamples samples, varying between +/-1.0
+def sinewave(freq, nsamples):
   twoPiFOnRate = 2 * math.pi * freq / float(SAMPLE_RATE)
   samples = []
-  for i in xrange(count):
+  for i in xrange(nsamples):
       samples.append(math.sin(i * twoPiFOnRate))
   return np.array(samples)
+
+def sinewaves(freqs, nsamples):
+  #begin = time.time()
+  # Direct sum of sinewaves
+  #waveforms = [ sinewave(f, nsamples) for f in freqs ]
+  #waveform = combine(waveforms)
+  #print time.time() - begin
+  #return waveform
+
+  # Or, inverse FFT, ~10x faster
+  # A zero-frequency bucket, then nsamples/2 frequency buckets
+  buckets = [0] * (nsamples / 2 + 1)
+  for f in freqs:
+    bucket = f / float(SAMPLE_RATE) * nsamples
+    #assert bucket == int(bucket)
+    buckets[int(bucket)] = 1.0
+  waveform = np.fft.irfft(buckets, nsamples)
+  # Normalize
+  waveform = waveform / max(waveform)
+  #print time.time() - begin
+  return waveform
 
 # Sums and normalizes a collection of waveforms to +/- 1.0
 def combine(waveforms):

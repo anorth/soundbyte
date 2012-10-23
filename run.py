@@ -151,16 +151,9 @@ def main():
 
   # Compute a signal with energy at each frequency corresponding to a
   # non-zero number in chip
-  def buildWaveform(chip, baseFrequency, frequencySpacing, samples):
-    # TODO: consider using inverse FFT to build this
-    waveforms = []
-    f = baseFrequency
-    for channel in chip:
-      if channel > 0:
-        waveforms.append(sinewave(f, samples))
-      f += frequencySpacing
-    return combine(waveforms)
-
+  def buildWaveform(chip, base, spacing, samples):
+    freqs = [ base + spacing * i for i in xrange(len(chip)) if chip[i] > 0 ]
+    return sinewaves(freqs, samples)
 
   # Receives a packet, being a marker followed
   # by data. This is a placeholder for real marker detection to come.
