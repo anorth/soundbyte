@@ -39,7 +39,7 @@ def log(text='', newline=True):
 class SyncUtil(object):
   def __init__(self, baseBucket, spacing, numchans,
       chunksPerSyncPulse=3, numCyclesAsReadyPulses=1,
-      signalFactor=0.25,
+      signalFactor=1.25,
       detectStrategy=vectorCosineDetector,
       detectionSamplesPerPulse = 20,
       misalignmentTolerance = 0.2
@@ -97,7 +97,7 @@ class SyncUtil(object):
     pulseWindow = pulseSize
 
     signalCycleSize = 2 * pulseSize
-    metaSignalBucket = 3 # TODO: fix code to avoid redundant work
+    metaSignalBucket = 2 # TODO: fix code to avoid redundant work
     readyMetaSignalBucket = metaSignalBucket * self.chunksPerSyncPulse
 
     signalWindow = (1 + metaSignalBucket * 2) * pulseSize
@@ -119,6 +119,7 @@ class SyncUtil(object):
     confidence2 = -1
 
     tries = 0
+    oldMetaSignal = None
     while True:
       metaSignal = []
 
@@ -134,27 +135,37 @@ class SyncUtil(object):
         match = self.detectStrategy(bucketVals, pattern)
         metaSignal.append(match)
 
-      if not self.plotter:
-        self.plotter = Plot([(len(metaSignal), -1.5, 1.5)])
-      self.plotter.plot(0, metaSignal)
-
       metaSpectrum = np.fft.rfft(metaSignal)
+      metaSpectrumA = np.fft.rfft(metaSignal[:-metaSamplesPerCycle])
+      metaSpectrumB = np.fft.rfft(metaSignal[-metaSamplesPerCycle:])
 
-      def sumRemaining(notBucket):
-        return sum([
-            abs(metaSpectrum[b]) for b in xrange(len(metaSpectrum))
+      spectrumPlotSize = len(metaSpectrum)
+      if not self.plotter:
+        self.plotter = Plot([
+            (len(data), -0.5, 0.5),
+            (len(metaSignal), -1.0, 1.0),
+            (spectrumPlotSize, 0, 50)
+            ])
+      self.plotter.plot(0, data)
+      self.plotter.plot(1, metaSignal)
+      self.plotter.plot(2, abs(np.array([0] + list(metaSpectrum[1:spectrumPlotSize]))))
+
+      def largestOther(spectrum, notBucket):
+        return max([
+            abs(spectrum[b]) for b in xrange(len(spectrum))
             if b != 0 and b != notBucket])
 
-      def getAlignment(bucket, state, cycleSize, dbg=False):
+      def getAlignment(spectrum, bucket, state, cycleSize, dbg=False):
         label = bucket == metaSignalBucket and '.' or '!' # for logging
-        bucketValue = metaSpectrum[bucket]
+        bucketValue = spectrum[bucket]
         resultAmplitude = abs(bucketValue)
-        sumRemainingAmplitudes = sumRemaining(metaSignalBucket)
+        largestRemaining = largestOther(spectrum, bucket)
+        #log('REMAINING: %s' % largestRemaining)
         misalignment = 0
 
         #log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
-        if (abs(bucketValue) > self.signalFactor * sumRemainingAmplitudes):
-          #log('%s, %s' % (abs(bucketValue), sumRemainingAmplitudes))
+        if (abs(bucketValue) > self.signalFactor * largestRemaining):
+          #log('%s, %s' % (abs(bucketValue), largestRemaining))
           misalignment = phase(bucketValue) / PI2
           misalignmentPerChunk = misalignment * cycleSize / chunkSize
           if state == -1:
@@ -162,6 +173,8 @@ class SyncUtil(object):
             result = 0 # don't consider misalignment on first go
           elif abs(misalignmentPerChunk) <= self.misalignmentTolerance:
             result = 1
+            if dbg: 
+              log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
             log('Aligned%s %.3f' % (label, abs(misalignmentPerChunk)))
           else:
             log('<%s>' % label, False)
@@ -171,20 +184,12 @@ class SyncUtil(object):
           result = -1
           log(label, False)
           if dbg: 
-            #log('%s:%s, %s' % (phase(bucketValue), abs(bucketValue), [phase(x) for x in metaSpectrum][:30] ))
             log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
 
         return (result, misalignment)
 
-      # Check for, and align to, the long signal
-      #log('L')
-      (newState, misalignment) = getAlignment(
-          metaSignalBucket, state, signalCycleSize)
 
-      if newState < 0:
-        misalignment = 0
-
-      if state == 1:
+      if state == 2:
         #log(metaSignal)
         #if newState == -1:
         #  tries += 1
@@ -195,16 +200,44 @@ class SyncUtil(object):
 
         # check for, and verify alignment to, the ready signal
         #log('A')
-        (result, dummy) = getAlignment(
+        (result, dummy) = getAlignment(metaSpectrum,
             readyMetaSignalBucket, 1, 2*chunkSize, True)
+        #print 'THIS: ', readyMetaSignalBucket
         if result == 1:
           # Got ready signal, aligned and ready!
           return
-        # Otherwise, fall through and continue checking alignment to
-        # long signal
 
-      state = newState
+        # Fail. start again.
+        state = -1
+        #import time
+        #time.sleep(10)
 
-      alignedAmount = int(signalCycleSize * (1 - misalignment))
+
+      if state == 1:
+        (result1, dummy) = getAlignment(metaSpectrumA,
+            metaSignalBucket - 1, 1, signalCycleSize)
+        (result2, dummy) = getAlignment(metaSpectrumB,
+            1, 1, signalCycleSize)
+        #(result2, dummy) = getAlignment(metaSpectrumB,
+        #    self.chunksPerSyncPulse, 1, 2*chunkSize)
+        if result1 == 1 and result2 == -1:
+          state = 2
+
+
+      if state < 2:
+        # Check for, and align to, the long signal
+        #log('L')
+        (state, misalignment) = getAlignment(metaSpectrum,
+            metaSignalBucket, state, signalCycleSize)
+
+      if state < 0:
+        misalignment = 0
+
+      if state < 2:
+        alignedAmount = int(signalCycleSize * (1 - misalignment))
+      else:
+        alignedAmount = signalCycleSize * (metaSignalBucket - 1)
+        print 'aligning +%d cycles' % (metaSignalBucket - 1)
+
       data = data[alignedAmount:] + list(receiver.receiveBlock(alignedAmount))
 

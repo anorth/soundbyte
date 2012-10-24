@@ -8,7 +8,7 @@ class Plot(object):
     if len(axis_params) == 1:
       self.axes = [self.axes]
 
-    styles = ['r-', 'g-', 'y-', 'm-', 'k-', 'c-']
+    styles = ['r-', 'g-', 'b-', 'm-', 'k-', 'c-']
     
     def x_axis(i):
       return np.arange(0, axis_params[i][0], 1)
