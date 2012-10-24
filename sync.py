@@ -84,10 +84,9 @@ class SyncUtil(object):
 
   def align(self, receiver, chunkSize, patternUnit = [1,0,1,0]):
     """Listens for a sync signal from the receiver and aligns to it.
-    Because it reads ahead, it returns the start of the data section
-    following the sync signal that it read ahead into. The size of the
-    data section read into will be aligned to chunkSize, so subsequent
-    reads from receiver can simply be of size chunkSize.
+
+    Blocks, and when it returns, the receiver will be aligned to the start
+    of the data to be read.
     """
     assert self.numchans % len(patternUnit) == 0
     pattern = np.array(patternUnit * (self.numchans / len(patternUnit)))
@@ -115,6 +114,7 @@ class SyncUtil(object):
     # -1: nothing
     #  0: got signal, alignment attempted for next cycle
     #  1: got signal and aligned
+    #  2: expecting 'ready for data' cycle
     state = -1
     confidence2 = -1
 
