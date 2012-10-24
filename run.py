@@ -71,7 +71,7 @@ def main():
     eof = False
     while not eof:
       # Uncomment to test sending sync signal
-      #sendSync(sender)
+      sendSync(sender)
 
       if options.test:
         chars = genTestData(PACKET_DATA_BYTES)
@@ -90,23 +90,33 @@ def main():
     assert options.numchans % 2 == 0
     pattern = [1,0,1,0] * (options.numchans / 8)
     opposite = [1-b for b in pattern]
-    p = pattern
 
-    data = []
     # combine a decent chunk or we get a buffer underrun.
-    for i in xrange(20):
-      p = (p == opposite) and pattern or opposite
-      waveforms = []
-      f = base
-      for bit in p:
-        if bit:
-          waveforms.append(sinewave(f, 2*chipSamples))
-        f += channelGap
+    def createSyncSignal(chipsPerPulse):
+      p = pattern
 
-      data += list(combine(waveforms))
-    while True:
+      def createPulse(pattern):
+        waveforms = []
+        f = base
+        for bit in pattern:
+          if bit:
+            waveforms.append(sinewave(f, chipsPerPulse*chipSamples))
+          f += channelGap
+        return list(combine(waveforms))
 
-      sender.sendWaveForm(np.array(data))
+      return createPulse(pattern) + createPulse(opposite)
+
+    chipsPerLongPulse = 3
+    metaSignalBucket = 2
+    syncLong = createSyncSignal(chipsPerLongPulse) * 8
+    syncReady = createSyncSignal(1) * chipsPerLongPulse * metaSignalBucket
+
+    # silence is not actually necessary, it's just to prevent
+    # buffer underruns with the audio output since we're not
+    # sending any data here
+    silenc = list(silence(chipSamples * 20))
+
+    sender.sendWaveForm(np.array(syncLong + syncReady + silenc))
 
   def doListen():
     if options.stdin:
