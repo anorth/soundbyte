@@ -114,7 +114,7 @@ def main():
     else:
       receiver = PyAudioReceiver()
     while True:
-      #testSync(receiver)
+      testSync(receiver)
       s = receivePacket(receiver)
       if options.test:
         expected = genTestData(PACKET_DATA_BYTES)
@@ -126,11 +126,14 @@ def main():
         sys.stdout.flush()
 
 
-
   def testSync(receiver):
     baseBucket = options.base * chipSamples / SAMPLE_RATE
     sync = SyncUtil(baseBucket, options.spacing, options.numchans / 2)
     sync.align(receiver, chipSamples)
+
+    # Alex: now aligned. Start reading data chips at the chip rate.
+    print "ALIGNED"
+    sys.exit()
 
 
   def sendPacket(data, sender):
