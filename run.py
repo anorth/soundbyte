@@ -36,6 +36,7 @@ def parseArgs():
 
 # Bytes per packet, until a header advertises a length
 PACKET_DATA_BYTES = 10
+USE_SYNC = True
 
 
 def main():
@@ -52,6 +53,9 @@ def main():
   subcarrierSpacing = int(SAMPLE_RATE / chipSamples)
   assert subcarrierSpacing == int(1.0 / chipDuration)
   channelGap = subcarrierSpacing * options.spacing
+
+  baseBucket = options.base * chipSamples / SAMPLE_RATE
+  syncer = SyncUtil(baseBucket, options.spacing, options.numchans / 2)
 
   if options.base % subcarrierSpacing != 0:
     print "Base", options.base, "Hz is not a subcarrier multiple, rounding down"
@@ -72,7 +76,7 @@ def main():
     eof = False
     while not eof:
       # Uncomment to test sending sync signal
-      sendSync(sender)
+      #sendSync(sender)
 
       if options.test:
         chars = genTestData(PACKET_DATA_BYTES)
@@ -115,7 +119,7 @@ def main():
     # silence is not actually necessary, it's just to prevent
     # buffer underruns with the audio output since we're not
     # sending any data here
-    silenc = list(silence(chipSamples * 20))
+    silenc = []#list(silence(chipSamples * 20))
 
     sender.sendWaveForm(np.array(syncLong + syncReady + silenc))
 
@@ -125,7 +129,7 @@ def main():
     else:
       receiver = PyAudioReceiver()
     while True:
-      testSync(receiver)
+      #testSync(receiver)
       s = receivePacket(receiver)
       if options.test:
         expected = genTestData(PACKET_DATA_BYTES)
@@ -138,9 +142,7 @@ def main():
 
 
   def testSync(receiver):
-    baseBucket = options.base * chipSamples / SAMPLE_RATE
-    sync = SyncUtil(baseBucket, options.spacing, options.numchans / 2)
-    sync.align(receiver, chipSamples)
+    syncer.align(receiver, chipSamples)
 
     # Alex: now aligned. Start reading data chips at the chip rate.
     print "ALIGNED"
@@ -150,15 +152,7 @@ def main():
   def sendPacket(data, sender):
     assert len(data) == PACKET_DATA_BYTES, "data length must match packet length"
 
-    # First send marker, which is just one symbol length of the old carrier in False polarity
-    # TODO: replace this with sync signal
-    headerBase = options.base - 2 * channelGap # carrier goes below base
-    bitstring = [1, 0]
-    headerSamples = int(chipSamples * options.redundancy)
-    header = buildWaveform(bitstring, headerBase, channelGap, headerSamples)
-    fadein(header, chipSamples / 20)
-    fadeout(header, chipSamples / 20)
-    sender.sendWaveForm(header)
+    sendPreamble(sender)
 
     chips = packeter.encodePacket(data)
     #print "chips:", chips
@@ -181,36 +175,8 @@ def main():
   # Receives a packet, being a marker followed
   # by data. This is a placeholder for real marker detection to come.
   def receivePacket(receiver):
-    # Minimum SNR to detect a marker signal (dB)
-    minMarkerSnr = 6.0
+    receivePreamble(receiver)
 
-    # Each channel uses 2 subcarriers
-    chandiff = 2 * channelGap
-
-    markerChipsRequired = int(options.redundancy * 0.8)
-    markerChipsReceived = 0
-
-    # First wait for a marker
-    while markerChipsReceived < markerChipsRequired:
-      waveform = receiver.receiveBlock(chipSamples)
-      spectrum = fouriate(waveform)
-
-      heartA = spectrum.power(options.base - chandiff)
-      heartB = spectrum.power(options.base - chandiff + channelGap)
-      markerSnr = abs(dbPower(heartA, heartB))
-
-      if markerSnr > minMarkerSnr:
-        if heartA > heartB:
-          markerChipsReceived += 1
-          if options.verbose: print "+",
-        else:
-          markerChipsReceived = 0
-          if options.verbose: print "-",
-      else:
-        pass
-
-    # Marker finished!
-    if options.verbose: print
     packetChips = []
     numPacketSymbols = packeter.symbolsForBytes(PACKET_DATA_BYTES)
     #print "expecting", numPacketSymbols, "chips for", PACKET_DATA_BYTES, "bytes"
@@ -230,6 +196,58 @@ def main():
     #  print "\n== packet done, SNR: %.1f, worst: %.1f==" % (np.average(packetSnrs), min(packetSnrs))
 
     return packeter.decodePacket(packetChips)
+
+  # Sends a packet preamble, signals to allow the receiver to align
+  def sendPreamble(sender):
+    if USE_SYNC:
+      sendSync(sender)
+    else:
+      # First send marker, which is just one symbol length of the old carrier in False polarity
+      headerBase = options.base - 2 * channelGap # carrier goes below base
+      bitstring = [1, 0]
+      headerSamples = int(chipSamples * options.redundancy)
+      header = buildWaveform(bitstring, headerBase, channelGap, headerSamples)
+      fadein(header, chipSamples / 20)
+      fadeout(header, chipSamples / 20)
+      sender.sendWaveForm(header)
+
+
+  # Receives a packet preamble, leaving the audio stream aligned to receive
+  # the first data chip.
+  def receivePreamble(receiver):
+    if USE_SYNC:
+      syncer.align(receiver, chipSamples)
+    else:
+      # Minimum SNR to detect a marker signal (dB)
+      minPreambleSnr = 6.0
+
+      # Each channel uses 2 subcarriers
+      chandiff = 2 * channelGap
+
+      markerChipsRequired = int(options.redundancy * 0.8)
+      markerChipsReceived = 0
+
+      while markerChipsReceived < markerChipsRequired:
+        waveform = receiver.receiveBlock(chipSamples)
+        spectrum = fouriate(waveform)
+
+        heartA = spectrum.power(options.base - chandiff)
+        heartB = spectrum.power(options.base - chandiff + channelGap)
+        snr = abs(dbPower(heartA, heartB))
+
+        if snr > minPreambleSnr:
+          if heartA > heartB:
+            markerChipsReceived += 1
+            if options.verbose: print "+",
+          else:
+            markerChipsReceived = 0
+            if options.verbose: print "-",
+        else:
+          pass
+
+    # Preamble finished!
+    if options.verbose: print
+
 
 
   if options.send:

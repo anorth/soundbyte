@@ -140,15 +140,15 @@ class SyncUtil(object):
       metaSpectrumB = np.fft.rfft(metaSignal[-metaSamplesPerCycle:])
 
       spectrumPlotSize = len(metaSpectrum)
-      if not self.plotter:
-        self.plotter = Plot([
-            (len(data), -0.5, 0.5),
-            (len(metaSignal), -1.0, 1.0),
-            (spectrumPlotSize, 0, 50)
-            ])
-      self.plotter.plot(0, data)
-      self.plotter.plot(1, metaSignal)
-      self.plotter.plot(2, abs(np.array([0] + list(metaSpectrum[1:spectrumPlotSize]))))
+      #if not self.plotter:
+      #  self.plotter = Plot([
+      #      (len(data), -0.5, 0.5),
+      #      (len(metaSignal), -1.0, 1.0),
+      #      (spectrumPlotSize, 0, 50)
+      #      ])
+      #self.plotter.plot(0, data)
+      #self.plotter.plot(1, metaSignal)
+      #self.plotter.plot(2, abs(np.array([0] + list(metaSpectrum[1:spectrumPlotSize]))))
 
       def largestOther(spectrum, notBucket):
         return max([
