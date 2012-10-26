@@ -24,7 +24,7 @@ def parseArgs():
       help='Channel spacing (# subcarriers)')
   parser.add_option('-r', '--rate', default=100, type='int',
       help='Chip rate (hz)')
-  parser.add_option('-e', '--redundancy', default=10.0, type='float',
+  parser.add_option('-e', '--redundancy', default=5.0, type='float',
       help='Encoder redundancy ratio (encoder-dependent)')
   parser.add_option('-n', '--numchans', default=16, type='int',
       help='Number of frequency channels')
@@ -42,11 +42,16 @@ USE_SYNC = True
 def main():
   (options, args) = parseArgs()
 
-  packeter = Packeter(MajorityEncoder(options.redundancy, options.numchans / 2), 
-      PairwiseAssigner(options.numchans))
+  # Fixme: calculate width from the assigner, bitsPerChip
+  #assigner = PairwiseAssigner(options.numchans)
+  assigner = CombinadicAssigner(options.numchans)
+  encoder = MajorityEncoder(options.redundancy, assigner.bitsPerChip())
+  packeter = Packeter(encoder, assigner)
 
   chipDuration = 1.0 / options.rate
   chipSamples = int(SAMPLE_RATE * chipDuration)
+  bitsPerChip = packeter.bitsPerChip()
+  bitsPerSecond = bitsPerChip * options.rate
   chipsPerByte = packeter.symbolsForBytes(100)/100.0
   byteRate = options.rate / chipsPerByte
 
@@ -67,8 +72,8 @@ def main():
     options.numchans * channelGap, "Hz"
   print "Chip rate", options.rate, "Hz,", "duration", int(chipDuration * 1000), "ms,", \
       chipSamples, "samples/chip"
-  print options.redundancy, "encoder redundancy,", chipsPerByte, "chips/byte,", byteRate, \
-      "bytes/sec"
+  print options.redundancy, "encoder redundancy,", bitsPerChip, "bits/chip,", bitsPerSecond, \
+      "bits/sec"
 
   def doSend():
     sender = PyAudioSender()
@@ -119,7 +124,8 @@ def main():
     # silence is not actually necessary, it's just to prevent
     # buffer underruns with the audio output since we're not
     # sending any data here
-    silenc = []#list(silence(chipSamples * 20))
+    # FIXME this shouldn't be necessary
+    silenc = list(silence(chipSamples * 3))
 
     sender.sendWaveForm(np.array(syncLong + syncReady + silenc))
 
@@ -135,7 +141,10 @@ def main():
         expected = genTestData(PACKET_DATA_BYTES)
         nbits = PACKET_DATA_BYTES * 8
         biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
-        print "Data errors %d/%d (%.3f)" % (biterrs, nbits, 1.0*biterrs/nbits)
+        if biterrs:
+          print "Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits)
+        else:
+          print PACKET_DATA_BYTES, "bytes ok"
       else:
         sys.stdout.write(s)
         sys.stdout.flush()
@@ -158,7 +167,7 @@ def main():
     #print "chips:", chips
     print "data: '%s'" % binascii.hexlify(data)
     for chip in chips:
-      print "chip: %s" % (chip)
+      if options.verbose: print "chip: %s" % (chip)
       waveform = buildWaveform(chip, options.base, channelGap, chipSamples)
       if chip is chips[0]:
         fadein(waveform, int(chipSamples / 20))
@@ -195,7 +204,7 @@ def main():
 
     # Finished receiving packet
     if options.verbose: 
-      print "\n== packet done, signal error %.3f==" % (packeter.lastErrorRate())
+      print "\n== packet done, bit error rate %.3f ==" % (packeter.lastErrorRate())
 
     return data
 

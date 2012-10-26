@@ -175,7 +175,7 @@ class SyncUtil(object):
             result = 1
             if dbg: 
               log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
-            log('Aligned%s %.3f' % (label, abs(misalignmentPerChunk)))
+            #log('Aligned%s %.3f' % (label, abs(misalignmentPerChunk)))
           else:
             log('<%s>' % label, False)
             #log('MISALIGNED %s %.2f' % (label, misalignmentPerChunk))
