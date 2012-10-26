@@ -135,7 +135,7 @@ def main():
         expected = genTestData(PACKET_DATA_BYTES)
         nbits = PACKET_DATA_BYTES * 8
         biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
-        print "Bit errors %d/%d (%.3f)" % (biterrs, nbits, 1.0*biterrs/nbits)
+        print "Data errors %d/%d (%.3f)" % (biterrs, nbits, 1.0*biterrs/nbits)
       else:
         sys.stdout.write(s)
         sys.stdout.flush()
@@ -191,11 +191,13 @@ def main():
       #print "*** chip", chip
       packetChips.append(chip)
       
-    # Finished receiving packet
-    #if options.verbose: 
-    #  print "\n== packet done, SNR: %.1f, worst: %.1f==" % (np.average(packetSnrs), min(packetSnrs))
+    data = packeter.decodePacket(packetChips)
 
-    return packeter.decodePacket(packetChips)
+    # Finished receiving packet
+    if options.verbose: 
+      print "\n== packet done, signal error %.3f==" % (packeter.lastErrorRate())
+
+    return data
 
   # Sends a packet preamble, signals to allow the receiver to align
   def sendPreamble(sender):
@@ -257,7 +259,7 @@ def main():
 
 
 def genTestData(nbytes):
-  random.seed(1)
+  random.seed(2)
   return ''.join( (chr(random.randint(0, 255)) for i in xrange(nbytes)) )
 
 

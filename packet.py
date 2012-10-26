@@ -18,6 +18,9 @@ from util import *
 # 
 # - symbolsForBytes(nBytes)
 # Returns number of symbols to transmit nbytes of data
+#
+# - lastErrorRate():
+# Bit error rate of the last signal decoded.
 class Packeter(object):
   def __init__(self, encoder, assigner):
     self.encoder = encoder
@@ -33,6 +36,9 @@ class Packeter(object):
 
   def symbolsForBytes(self, nbytes):
     return self.assigner.symbolsForBits(self.encoder.encodedBitsForBytes(nbytes))
+
+  def lastErrorRate(self):
+    return self.encoder.lastErrorRate()
 
 # Interface Encoder
 # - encode(bytes):
@@ -57,12 +63,17 @@ class IdentityEncoder(object):
   def encodedBitsForBytes(self, nbytes):
     return nbytes * 8
 
+  def lastErrorRate(self):
+    return 0.0
+
 # Encoder which repeats width-length chunks of the data N times and 
 # takes a majority vote when decoding
 class MajorityEncoder(object):
   def __init__(self, n, width):
     self.n = int(n)
     self.width = int(width)
+    # Last bit error rate
+    self.err = 0.0
     assert self.n > 0
 
   def encode(self, data):
@@ -76,14 +87,32 @@ class MajorityEncoder(object):
   def decode(self, signals):
     assert len(signals) % self.width == 0
     assert len(signals) % self.n == 0
+    agreement = []
     decodedLength = len(signals) / self.n
     signals = map(signum, signals)
     decoded = []
+    errors = 0
     chunks = partition(signals, self.width)
     for chunkList in partition(chunks, self.n):
       counts = [ sum(b) for b in zip(*chunkList) ]
+      #print counts
+      errors += sum([ self.n - abs(c) for c in counts ]) / 2
       bits = map(signum, counts)
       decoded.extend(bits)
+    # Compute errors
+    self.err = float(errors) / (len(signals))
+    for (decision, cs) in zip(partition(decoded, self.width), partition(chunks, self.n)):
+      c = []
+      for cc in cs:
+        es = [cc[i] == decision[i] and 1 or 0 for i in xrange(len(decision))]
+        c.append(es)
+      agreement.append(c)
+    #print "agreement"
+    #print '\n'.join(map(str, agreement))
+
+    #print "chips"
+    #print '\n'.join(map(str, chunks))
+
     # Strip trailing non-byte signals
     if len(decoded) % 8:
       decoded = decoded[:-(len(decoded)%8)]
@@ -95,6 +124,9 @@ class MajorityEncoder(object):
     if bits % self.width:
       pad = self.width - bits % self.width
     return (bits + pad) * self.n
+
+  def lastErrorRate(self):
+    return self.err
 
 
 # Interface CarrierAssigner
