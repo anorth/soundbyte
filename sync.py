@@ -27,22 +27,14 @@ def vectorCosineDetector(bucketVals, bitpattern):
 
   return result
 
-def logret(val, text='%s'):
-  print text % val
-  return val
-
-def log(text='', newline=True):
-  sys.stdout.write(str(text))
-  if newline: sys.stdout.write('\n')
-  sys.stdout.flush()
-
 class SyncUtil(object):
   def __init__(self, baseBucket, spacing, numchans,
       chunksPerSyncPulse=3, numCyclesAsReadyPulses=1,
       signalFactor=1.25,
       detectStrategy=vectorCosineDetector,
       detectionSamplesPerPulse = 20,
-      misalignmentTolerance = 0.2
+      misalignmentTolerance = 0.2,
+      verbose = False
       ):
     """sync utility for sync signals of form SyncPulse ++ ChunkPulse, e.g.
     AAABBBAAABBBAAABBBABABABAB - the groups of 3 are the sync pulses, and then
@@ -78,8 +70,15 @@ class SyncUtil(object):
     self.detectionSamplesPerPulse = detectionSamplesPerPulse
     self.misalignmentTolerance = misalignmentTolerance
     self.numCyclesAsReadyPulses = numCyclesAsReadyPulses
+    self.verbose = verbose
 
     self.plotter = None
+
+  def log(self, text='', newline=True):
+    if self.verbose:
+      sys.stdout.write(str(text))
+      if newline: sys.stdout.write('\n')
+      sys.stdout.flush()
 
 
   def align(self, receiver, chunkSize, patternUnit = [1,0,1,0]):
@@ -160,37 +159,37 @@ class SyncUtil(object):
         bucketValue = spectrum[bucket]
         resultAmplitude = abs(bucketValue)
         largestRemaining = largestOther(spectrum, bucket)
-        #log('REMAINING: %s' % largestRemaining)
+        #self.log('REMAINING: %s' % largestRemaining)
         misalignment = 0
 
-        #log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
+        #self.log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
         if (abs(bucketValue) > self.signalFactor * largestRemaining):
-          #log('%s, %s' % (abs(bucketValue), largestRemaining))
+          #self.log('%s, %s' % (abs(bucketValue), largestRemaining))
           misalignment = phase(bucketValue) / PI2
           misalignmentPerChunk = misalignment * cycleSize / chunkSize
           if state == -1:
-            log('[%s]' % label, False)
+            self.log('[%s]' % label, False)
             result = 0 # don't consider misalignment on first go
           elif abs(misalignmentPerChunk) <= self.misalignmentTolerance:
             result = 1
             if dbg: 
-              log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
-            #log('Aligned%s %.3f' % (label, abs(misalignmentPerChunk)))
+              self.log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
+            self.log('Aligned%s %.3f' % (label, abs(misalignmentPerChunk)))
           else:
-            log('<%s>' % label, False)
-            #log('MISALIGNED %s %.2f' % (label, misalignmentPerChunk))
+            self.log('<%s>' % label, False)
+            self.log('MISALIGNED %s %.2f' % (label, misalignmentPerChunk))
             result = 0 # couldn't have been a good signal
         else:
           result = -1
-          log(label, False)
+          self.log(label, False)
           if dbg: 
-            log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
+            self.log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
 
         return (result, misalignment)
 
 
       if state == 2:
-        #log(metaSignal)
+        #self.log(metaSignal)
         #if newState == -1:
         #  tries += 1
         #  if tries < 3:
@@ -199,7 +198,7 @@ class SyncUtil(object):
         #    tries = 0
 
         # check for, and verify alignment to, the ready signal
-        #log('A')
+        #self.log('A')
         (result, dummy) = getAlignment(metaSpectrum,
             readyMetaSignalBucket, 1, 2*chunkSize, True)
         #print 'THIS: ', readyMetaSignalBucket
@@ -226,7 +225,7 @@ class SyncUtil(object):
 
       if state < 2:
         # Check for, and align to, the long signal
-        #log('L')
+        #self.log('L')
         (state, misalignment) = getAlignment(metaSpectrum,
             metaSignalBucket, state, signalCycleSize)
 
@@ -237,7 +236,7 @@ class SyncUtil(object):
         alignedAmount = int(signalCycleSize * (1 - misalignment))
       else:
         alignedAmount = signalCycleSize * (metaSignalBucket - 1)
-        print 'aligning +%d cycles' % (metaSignalBucket - 1)
+        self.log('aligning +%d cycles' % (metaSignalBucket - 1))
 
       data = data[alignedAmount:] + list(receiver.receiveBlock(alignedAmount))
 

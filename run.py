@@ -60,7 +60,7 @@ def main():
   channelGap = subcarrierSpacing * options.spacing
 
   baseBucket = options.base * chipSamples / SAMPLE_RATE
-  syncer = SyncUtil(baseBucket, options.spacing, options.numchans / 2)
+  syncer = SyncUtil(baseBucket, options.spacing, options.numchans / 2, verbose = options.verbose)
 
   if options.base % subcarrierSpacing != 0:
     print "Base", options.base, "Hz is not a subcarrier multiple, rounding down"
@@ -106,13 +106,7 @@ def main():
       p = pattern
 
       def createPulse(pattern):
-        waveforms = []
-        f = base
-        for bit in pattern:
-          if bit:
-            waveforms.append(sinewave(f, chipsPerPulse*chipSamples))
-          f += channelGap
-        return list(combine(waveforms))
+        return list(buildWaveform(pattern, base, channelGap, chipsPerPulse * chipSamples))
 
       return createPulse(pattern) + createPulse(opposite)
 
@@ -120,6 +114,9 @@ def main():
     metaSignalBucket = 2
     syncLong = createSyncSignal(chipsPerLongPulse) * 8
     syncReady = createSyncSignal(1) * chipsPerLongPulse * metaSignalBucket
+
+    fadein(syncLong, chipSamples / 20)
+    fadeout(syncReady, chipSamples / 20)
 
     # silence is not actually necessary, it's just to prevent
     # buffer underruns with the audio output since we're not
