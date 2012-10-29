@@ -55,7 +55,7 @@ def main():
   channelGap = subcarrierSpacing * options.spacing
 
   baseBucket = options.base * chipSamples / SAMPLE_RATE
-  syncer = SyncUtil(baseBucket, options.spacing, options.numchans / 2)
+  syncer = SyncUtil(baseBucket, options.spacing, options.numchans)
 
   if options.base % subcarrierSpacing != 0:
     print "Base", options.base, "Hz is not a subcarrier multiple, rounding down"
@@ -146,6 +146,8 @@ def main():
 
     # Alex: now aligned. Start reading data chips at the chip rate.
     print "ALIGNED"
+    import time
+    time.sleep(30)
     sys.exit()
 
 
