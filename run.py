@@ -39,7 +39,7 @@ def parseArgs():
   return parser.parse_args()
 
 # Bytes per packet, until a header advertises a length
-PACKET_DATA_BYTES = 100
+PACKET_DATA_BYTES = 256
 USE_SYNC = True
 
 
@@ -80,7 +80,9 @@ def main():
 
   print chipSamples / 2, "FFT buckets, subcarrier spacing", subcarrierSpacing, "Hz,", \
       "channel spacing", options.spacing
-  print "Base frequency", options.base, "Hz,", options.numchans, "channels, total bandwidth", \
+  print "Base frequency", options.base, "Hz,",  \
+    "Top frequency", options.base +  options.numchans * channelGap, \
+    options.numchans, "channels, total bandwidth", \
     options.numchans * channelGap, "Hz"
   print "Chip rate", options.rate, "Hz,", "duration", int(chipDuration * 1000), "ms,", \
       chipSamples, "samples/chip"
@@ -107,7 +109,7 @@ def main():
       if chars:
         sendPacket(chars, sender)
 
-  def sendSync(sender):
+  def genSync():
     base = options.base
 
     syncPairs = numSyncChans / 2
@@ -141,14 +143,14 @@ def main():
     # FIXME this shouldn't be necessary
     #silenc = list(silence(chipSamples * 3))
 
-    #silenc = list(silence(10000))
     silenc = []
+    silenc = list(silence(10000))
 
-    ttt =  time.time()
-    print 'start'
+    #ttt =  time.time()
+    #time.sleep(2)
    # for i in xrange(10)
-    sender.sendWaveForm(np.array(syncLong + syncReady + silenc))
-    print time.time() - ttt
+    return np.array(silenc + syncLong + syncReady )
+    #print time.time() - ttt
 
   def doListen():
     if options.stdin:
@@ -185,11 +187,12 @@ def main():
   def sendPacket(data, sender):
     assert len(data) == PACKET_DATA_BYTES, "data length must match packet length"
 
-    sendPreamble(sender)
-
     chips = packeter.encodePacket(data)
+
     #print "chips:", chips
     print "data: '%s'" % binascii.hexlify(data)
+    preamble = genPreamble()
+    final = list(preamble)
     for chip in chips:
       if options.verbose: print "chip: %s" % (chip)
       waveform = buildWaveform(chip, options.base, channelGap, chipSamples)
@@ -197,7 +200,19 @@ def main():
         fadein(waveform, int(chipSamples / 20))
       if chip is chips[-1]:
         fadeout(waveform, int(chipSamples / 20))
-      sender.sendWaveForm(waveform)
+#      if len(waveforms) == 0:
+#        waveform = list(genPreamble()) + list(waveform)
+      final += list(waveform)
+
+    sender.sendWaveForm(final)
+    #time.sleep(2)
+    #print '==== BEGIN ===='
+    #for waveform in waveforms:
+    #  print len(waveform),
+    #  #print 'HELLO'
+    #  sender.sendWaveForm(waveform)
+    #  print 'x',
+    #print '\n==== END ===='
 
   # Compute a signal with energy at each frequency corresponding to a
   # non-zero number in chip
@@ -233,10 +248,11 @@ def main():
     return data
 
   # Sends a packet preamble, signals to allow the receiver to align
-  def sendPreamble(sender):
+  def genPreamble():
     if USE_SYNC:
-      sendSync(sender)
+      return genSync()
     else:
+      assert False
       # First send marker, which is just one symbol length of the old carrier in False polarity
       headerBase = options.base - 2 * channelGap # carrier goes below base
       bitstring = [1, 0]
