@@ -38,7 +38,7 @@ class Packeter(object):
     return self.assigner.symbolsForBits(self.encoder.encodedBitsForBytes(nbytes))
 
   def bitsPerChip(self):
-    return float(self.assigner.bitsPerChip()) / (self.encoder.encodedBitsForBytes(1) / 8)
+    return float(self.assigner.bitsPerChip()) / (self.encoder.encodedBitsForBytes(100) / 800)
 
   def lastErrorRate(self):
     return self.encoder.lastErrorRate()

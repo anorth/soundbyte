@@ -74,8 +74,8 @@ def main():
     options.numchans * channelGap, "Hz"
   print "Chip rate", options.rate, "Hz,", "duration", int(chipDuration * 1000), "ms,", \
       chipSamples, "samples/chip"
-  print options.redundancy, "encoder redundancy,", bitsPerChip, "bits/chip,", bitsPerSecond, \
-      "bits/sec"
+  print options.redundancy, "encoder redundancy,", assigner.bitsPerChip(), "raw bits/chip,", \
+      bitsPerChip, "corrected bits/chip,", bitsPerSecond, "bits/sec"
 
   def doSend():
     sender = PyAudioSender()
