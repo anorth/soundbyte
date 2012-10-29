@@ -24,6 +24,8 @@ def parseArgs():
       help='Channel spacing (# subcarriers)')
   parser.add_option('-r', '--rate', default=100, type='int',
       help='Chip rate (hz)')
+  parser.add_option('-R', '--syncrate', default=200, type='int',
+      help='Sync chip rate (hz)')
   parser.add_option('-e', '--redundancy', default=5.0, type='float',
       help='Encoder redundancy ratio (encoder-dependent)')
   parser.add_option('-n', '--numchans', default=16, type='int',
@@ -82,6 +84,7 @@ def main():
     while not eof:
       # Uncomment to test sending sync signal
       #sendSync(sender)
+      #break
 
       if options.test:
         chars = genTestData(PACKET_DATA_BYTES)
@@ -97,34 +100,48 @@ def main():
   def sendSync(sender):
     base = options.base
 
-    assert options.numchans % 2 == 0
-    pattern = [1,0,1,0] * (options.numchans / 8)
+    ratio = (options.syncrate / options.rate)
+    syncChipSamples = chipSamples / ratio
+    syncChannelGap = channelGap * ratio
+    syncPairs = options.numchans / ratio / 2
+    pattern = [1,0] * syncPairs
     opposite = [1-b for b in pattern]
 
     # combine a decent chunk or we get a buffer underrun.
-    def createSyncSignal(chipsPerPulse):
+    def createSyncSignal(chipsPerPulse, repeats):
       p = pattern
 
       def createPulse(pattern):
-        return list(buildWaveform(pattern, base, channelGap, chipsPerPulse * chipSamples))
+        return list(buildWaveform(pattern, base, syncChannelGap, chipsPerPulse * syncChipSamples))
+        return list(window(buildWaveform(pattern, base, syncChannelGap, chipsPerPulse * syncChipSamples)))
 
-      return createPulse(pattern) + createPulse(opposite)
+      p1 = createPulse(pattern)
+      p2 = createPulse(opposite)
 
-    chipsPerLongPulse = 3
+      return (p1 + p2) * repeats + p1
+
+    chipsPerLongPulse = 2
     metaSignalBucket = 2
-    syncLong = createSyncSignal(chipsPerLongPulse) * 8
-    syncReady = createSyncSignal(1) * chipsPerLongPulse * metaSignalBucket
+    syncLong = createSyncSignal(chipsPerLongPulse, metaSignalBucket + 1)
+    syncReady = createSyncSignal(1, chipsPerLongPulse * 2) # * chipsPerLongPulse * metaSignalBucket
 
-    fadein(syncLong, chipSamples / 20)
-    fadeout(syncReady, chipSamples / 20)
+    #fadein(syncLong, chipSamples / 20)
+    #fadeout(syncReady, chipSamples / 20)
 
     # silence is not actually necessary, it's just to prevent
     # buffer underruns with the audio output since we're not
     # sending any data here
     # FIXME this shouldn't be necessary
-    silenc = list(silence(chipSamples * 3))
+    #silenc = list(silence(chipSamples * 3))
 
+    #silenc = list(silence(10000))
+    silenc = []
+
+    ttt =  time.time()
+    print 'start'
+   # for i in xrange(10)
     sender.sendWaveForm(np.array(syncLong + syncReady + silenc))
+    print time.time() - ttt
 
   def doListen():
     if options.stdin:
