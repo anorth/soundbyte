@@ -24,10 +24,14 @@ def parseArgs():
       help='Channel spacing (# subcarriers)')
   parser.add_option('-r', '--rate', default=100, type='int',
       help='Chip rate (hz)')
-  parser.add_option('-e', '--redundancy', default=10.0, type='float',
+  parser.add_option('-R', '--syncrate', default=200, type='int',
+      help='Sync chip rate (hz)')
+  parser.add_option('-e', '--redundancy', default=5.0, type='float',
       help='Encoder redundancy ratio (encoder-dependent)')
   parser.add_option('-n', '--numchans', default=16, type='int',
       help='Number of frequency channels')
+  parser.add_option('-N', '--numsyncchans', default=8, type='int',
+      help='Number of sync frequency channels')
   parser.add_option('-t', '--test', action='store_true',
       help='Run in test mode with known data')
   parser.add_option('-v', '--verbose', action='store_true')
@@ -35,18 +39,23 @@ def parseArgs():
   return parser.parse_args()
 
 # Bytes per packet, until a header advertises a length
-PACKET_DATA_BYTES = 10
+PACKET_DATA_BYTES = 100
 USE_SYNC = True
 
 
 def main():
   (options, args) = parseArgs()
 
-  packeter = Packeter(MajorityEncoder(options.redundancy, options.numchans / 2), 
-      PairwiseAssigner(options.numchans))
+  # Fixme: calculate width from the assigner, bitsPerChip
+  #assigner = PairwiseAssigner(options.numchans)
+  assigner = CombinadicAssigner(options.numchans)
+  encoder = MajorityEncoder(options.redundancy, assigner.bitsPerChip())
+  packeter = Packeter(encoder, assigner)
 
   chipDuration = 1.0 / options.rate
-  chipSamples = int(SAMPLE_RATE * chipDuration)
+  chipSamples = int(SAMPLE_RATE / options.rate)
+  bitsPerChip = packeter.bitsPerChip()
+  bitsPerSecond = bitsPerChip * options.rate
   chipsPerByte = packeter.symbolsForBytes(100)/100.0
   byteRate = options.rate / chipsPerByte
 
@@ -55,7 +64,15 @@ def main():
   channelGap = subcarrierSpacing * options.spacing
 
   baseBucket = options.base * chipSamples / SAMPLE_RATE
-  syncer = SyncUtil(baseBucket, options.spacing, options.numchans)
+
+  syncRatio = (options.syncrate / options.rate)
+  syncChipSamples = int(SAMPLE_RATE / options.syncrate)
+  syncChannelGap = channelGap * syncRatio
+  numSyncChans = options.numsyncchans
+  print "num sync chans: ", numSyncChans
+  syncBaseBucket = options.base * syncChipSamples / SAMPLE_RATE
+  assert numSyncChans >= 4 # want at least 4
+  syncer = SyncUtil(syncBaseBucket, options.spacing, numSyncChans, verbose = options.verbose)
 
   if options.base % subcarrierSpacing != 0:
     print "Base", options.base, "Hz is not a subcarrier multiple, rounding down"
@@ -67,8 +84,8 @@ def main():
     options.numchans * channelGap, "Hz"
   print "Chip rate", options.rate, "Hz,", "duration", int(chipDuration * 1000), "ms,", \
       chipSamples, "samples/chip"
-  print options.redundancy, "encoder redundancy,", chipsPerByte, "chips/byte,", byteRate, \
-      "bytes/sec"
+  print options.redundancy, "encoder redundancy,", assigner.bitsPerChip(), "raw bits/chip,", \
+      bitsPerChip, "corrected bits/chip,", bitsPerSecond, "bits/sec"
 
   def doSend():
     sender = PyAudioSender()
@@ -77,6 +94,7 @@ def main():
     while not eof:
       # Uncomment to test sending sync signal
       #sendSync(sender)
+      #break
 
       if options.test:
         chars = genTestData(PACKET_DATA_BYTES)
@@ -92,36 +110,45 @@ def main():
   def sendSync(sender):
     base = options.base
 
-    assert options.numchans % 2 == 0
-    pattern = [1,0,1,0] * (options.numchans / 8)
+    syncPairs = numSyncChans / 2
+    pattern = [1,0] * syncPairs
     opposite = [1-b for b in pattern]
 
     # combine a decent chunk or we get a buffer underrun.
-    def createSyncSignal(chipsPerPulse):
+    def createSyncSignal(chipsPerPulse, repeats):
       p = pattern
 
       def createPulse(pattern):
-        waveforms = []
-        f = base
-        for bit in pattern:
-          if bit:
-            waveforms.append(sinewave(f, chipsPerPulse*chipSamples))
-          f += channelGap
-        return list(combine(waveforms))
+        return list(buildWaveform(pattern, base, syncChannelGap, chipsPerPulse * syncChipSamples))
+        return list(window(buildWaveform(pattern, base, syncChannelGap, chipsPerPulse * syncChipSamples)))
 
-      return createPulse(pattern) + createPulse(opposite)
+      p1 = createPulse(pattern)
+      p2 = createPulse(opposite)
 
-    chipsPerLongPulse = 3
+      return (p1 + p2) * repeats + p1
+
+    chipsPerLongPulse = 2
     metaSignalBucket = 2
-    syncLong = createSyncSignal(chipsPerLongPulse) * 8
-    syncReady = createSyncSignal(1) * chipsPerLongPulse * metaSignalBucket
+    syncLong = createSyncSignal(chipsPerLongPulse, metaSignalBucket + 1)
+    syncReady = createSyncSignal(1, chipsPerLongPulse * 2) # * chipsPerLongPulse * metaSignalBucket
+
+    #fadein(syncLong, chipSamples / 20)
+    #fadeout(syncReady, chipSamples / 20)
 
     # silence is not actually necessary, it's just to prevent
     # buffer underruns with the audio output since we're not
     # sending any data here
-    silenc = []#list(silence(chipSamples * 20))
+    # FIXME this shouldn't be necessary
+    #silenc = list(silence(chipSamples * 3))
 
+    #silenc = list(silence(10000))
+    silenc = []
+
+    ttt =  time.time()
+    print 'start'
+   # for i in xrange(10)
     sender.sendWaveForm(np.array(syncLong + syncReady + silenc))
+    print time.time() - ttt
 
   def doListen():
     if options.stdin:
@@ -130,19 +157,23 @@ def main():
       receiver = PyAudioReceiver()
     while True:
       #testSync(receiver)
+      #break
       s = receivePacket(receiver)
       if options.test:
         expected = genTestData(PACKET_DATA_BYTES)
         nbits = PACKET_DATA_BYTES * 8
         biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
-        print "Bit errors %d/%d (%.3f)" % (biterrs, nbits, 1.0*biterrs/nbits)
+        if biterrs:
+          print "Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits)
+        else:
+          print PACKET_DATA_BYTES, "bytes ok"
       else:
         sys.stdout.write(s)
         sys.stdout.flush()
 
 
   def testSync(receiver):
-    syncer.align(receiver, chipSamples)
+    syncer.align(receiver, syncChipSamples)
 
     # Alex: now aligned. Start reading data chips at the chip rate.
     print "ALIGNED"
@@ -160,7 +191,7 @@ def main():
     #print "chips:", chips
     print "data: '%s'" % binascii.hexlify(data)
     for chip in chips:
-      print "chip: %s" % (chip)
+      if options.verbose: print "chip: %s" % (chip)
       waveform = buildWaveform(chip, options.base, channelGap, chipSamples)
       if chip is chips[0]:
         fadein(waveform, int(chipSamples / 20))
@@ -193,11 +224,13 @@ def main():
       #print "*** chip", chip
       packetChips.append(chip)
       
-    # Finished receiving packet
-    #if options.verbose: 
-    #  print "\n== packet done, SNR: %.1f, worst: %.1f==" % (np.average(packetSnrs), min(packetSnrs))
+    data = packeter.decodePacket(packetChips)
 
-    return packeter.decodePacket(packetChips)
+    # Finished receiving packet
+    if options.verbose: 
+      print "\n== packet done, bit error rate %.3f ==" % (packeter.lastErrorRate())
+
+    return data
 
   # Sends a packet preamble, signals to allow the receiver to align
   def sendPreamble(sender):
@@ -218,7 +251,7 @@ def main():
   # the first data chip.
   def receivePreamble(receiver):
     if USE_SYNC:
-      syncer.align(receiver, chipSamples)
+      syncer.align(receiver, syncChipSamples)
     else:
       # Minimum SNR to detect a marker signal (dB)
       minPreambleSnr = 6.0
@@ -259,7 +292,7 @@ def main():
 
 
 def genTestData(nbytes):
-  random.seed(1)
+  random.seed(2)
   return ''.join( (chr(random.randint(0, 255)) for i in xrange(nbytes)) )
 
 
