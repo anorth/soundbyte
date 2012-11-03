@@ -11,7 +11,7 @@ from optparse import OptionParser
 from util import *
 from audio import *
 from packet import *
-from sync import SyncUtil
+from sync import genSync, SyncUtil
 
 def parseArgs():
   parser = OptionParser()
@@ -40,14 +40,11 @@ def parseArgs():
 
 # Bytes per packet, until a header advertises a length
 PACKET_DATA_BYTES = 20
-USE_SYNC = True
 
 
 def main():
   (options, args) = parseArgs()
 
-  # Fixme: calculate width from the assigner, bitsPerChip
-  #assigner = PairwiseAssigner(options.numchans)
   assigner = CombinadicAssigner(options.numchans)
   encoder = MajorityEncoder(options.redundancy, assigner.bitsPerChip())
   packeter = Packeter(encoder, assigner)
@@ -114,49 +111,6 @@ def main():
         # Send a 1-chip silence buffer
         sender.sendBlock(silence(chipSamples))
 
-  def genSync():
-    base = options.base
-
-    syncPairs = numSyncChans / 2
-    pattern = [1,0] * syncPairs
-    opposite = [1-b for b in pattern]
-
-    # combine a decent chunk or we get a buffer underrun.
-    def createSyncSignal(chipsPerPulse, repeats):
-      p = pattern
-
-      def createPulse(pattern):
-        return list(buildWaveform(pattern, base, syncChannelGap, chipsPerPulse * syncChipSamples))
-        return list(window(buildWaveform(pattern, base, syncChannelGap, chipsPerPulse * syncChipSamples)))
-
-      p1 = createPulse(pattern)
-      p2 = createPulse(opposite)
-
-      return (p1 + p2) * repeats + p1
-
-    chipsPerLongPulse = 2
-    metaSignalBucket = 2
-    syncLong = createSyncSignal(chipsPerLongPulse, metaSignalBucket + 1)
-    syncReady = createSyncSignal(1, chipsPerLongPulse * 2) # * chipsPerLongPulse * metaSignalBucket
-
-    #fadein(syncLong, chipSamples / 20)
-    #fadeout(syncReady, chipSamples / 20)
-
-    # silence is not actually necessary, it's just to prevent
-    # buffer underruns with the audio output since we're not
-    # sending any data here
-    # FIXME this shouldn't be necessary
-    #silenc = list(silence(chipSamples * 3))
-
-    silenc = []
-    silenc = list(silence(10000))
-
-    #ttt =  time.time()
-    #time.sleep(2)
-   # for i in xrange(10)
-    return np.array(silenc + syncLong + syncReady )
-    #print time.time() - ttt
-
   def doListen():
     if options.stdin:
       receiver = StreamReceiver(sys.stdin)
@@ -219,11 +173,6 @@ def main():
     #  print 'x',
     #print '\n==== END ===='
 
-  # Compute a signal with energy at each frequency corresponding to a
-  # non-zero number in chip
-  def buildWaveform(chip, base, spacing, samples):
-    freqs = [ base + spacing * i for i in xrange(len(chip)) if chip[i] > 0 ]
-    return sinewaves(freqs, samples)
 
   # Receives a packet, being a marker followed
   # by data. This is a placeholder for real marker detection to come.
@@ -254,57 +203,14 @@ def main():
 
   # Sends a packet preamble, signals to allow the receiver to align
   def genPreamble():
-    if USE_SYNC:
-      return genSync()
-    else:
-      assert False
-      # First send marker, which is just one symbol length of the old carrier in False polarity
-      headerBase = options.base - 2 * channelGap # carrier goes below base
-      bitstring = [1, 0]
-      headerSamples = int(chipSamples * options.redundancy)
-      header = buildWaveform(bitstring, headerBase, channelGap, headerSamples)
-      fadein(header, chipSamples / 20)
-      fadeout(header, chipSamples / 20)
-      sender.sendBlock(header)
+    return genSync(options.base, numSyncChans, syncChannelGap, syncChipSamples)
 
 
   # Receives a packet preamble, leaving the audio stream aligned to receive
   # the first data chip.
   def receivePreamble(receiver):
-    if USE_SYNC:
-      syncer.align(receiver, syncChipSamples)
-    else:
-      # Minimum SNR to detect a marker signal (dB)
-      minPreambleSnr = 6.0
-
-      # Each channel uses 2 subcarriers
-      chandiff = 2 * channelGap
-
-      markerChipsRequired = int(options.redundancy * 0.8)
-      markerChipsReceived = 0
-
-      while markerChipsReceived < markerChipsRequired:
-        waveform = receiver.receiveBlock(chipSamples)
-        spectrum = fouriate(waveform)
-
-        heartA = spectrum.power(options.base - chandiff)
-        heartB = spectrum.power(options.base - chandiff + channelGap)
-        snr = abs(dbPower(heartA, heartB))
-
-        if snr > minPreambleSnr:
-          if heartA > heartB:
-            markerChipsReceived += 1
-            if options.verbose: print "+",
-          else:
-            markerChipsReceived = 0
-            if options.verbose: print "-",
-        else:
-          pass
-
-    # Preamble finished!
+    syncer.align(receiver, syncChipSamples)
     if options.verbose: print
-
-
 
   if options.send:
     doSend()

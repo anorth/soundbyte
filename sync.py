@@ -7,7 +7,51 @@ from util import flatten
 
 from plotter import Plot
 
+from audio import *
+
 PI2 = m.pi * 2
+
+def genSync(base, numSyncChans, syncChannelGap, syncChipSamples):
+  syncPairs = numSyncChans / 2
+  pattern = [1,0] * syncPairs
+  opposite = [1-b for b in pattern]
+
+  # combine a decent chunk or we get a buffer underrun.
+  def createSyncSignal(chipsPerPulse, repeats):
+    p = pattern
+
+    def createPulse(pattern):
+      return list(buildWaveform(pattern, base, syncChannelGap, chipsPerPulse * syncChipSamples))
+      return list(window(buildWaveform(pattern, base, syncChannelGap, chipsPerPulse * syncChipSamples)))
+
+    p1 = createPulse(pattern)
+    p2 = createPulse(opposite)
+
+    return (p1 + p2) * repeats + p1
+
+  chipsPerLongPulse = 2
+  metaSignalBucket = 2
+  syncLong = createSyncSignal(chipsPerLongPulse, metaSignalBucket + 1)
+  syncReady = createSyncSignal(1, chipsPerLongPulse * 2) # * chipsPerLongPulse * metaSignalBucket
+
+  #fadein(syncLong, chipSamples / 20)
+  #fadeout(syncReady, chipSamples / 20)
+
+  # silence is not actually necessary, it's just to prevent
+  # buffer underruns with the audio output since we're not
+  # sending any data here
+  # FIXME this shouldn't be necessary
+  #silenc = list(silence(chipSamples * 3))
+
+  silenc = []
+  silenc = list(silence(10000))
+
+  #ttt =  time.time()
+  #time.sleep(2)
+ # for i in xrange(10)
+  return np.array(silenc + syncLong + syncReady )
+  #print time.time() - ttt
+
 
 def vectorDetector(bucketVals, bitpattern):
   assert len(bucketVals) == len(bitpattern), '%s vs %s' % (bucketVals, bitpattern)

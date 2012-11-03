@@ -55,6 +55,12 @@ def combine(waveforms):
   agg = agg / max(agg)
   return agg
 
+# Compute a signal with energy at each frequency corresponding to a
+# non-zero number in chip
+def buildWaveform(chip, base, spacing, samples):
+  freqs = [ base + spacing * i for i in xrange(len(chip)) if chip[i] > 0 ]
+  return sinewaves(freqs, samples)
+
 # Envelopes a waveform by a window function
 def window(waveform):
     return np.hanning(len(waveform)) * waveform
