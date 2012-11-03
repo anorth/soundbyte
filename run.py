@@ -6,6 +6,7 @@ import numpy as np
 import random
 import sys
 import time
+import threading
 from optparse import OptionParser
 
 from util import *
@@ -196,9 +197,16 @@ def main():
     if options.verbose: print
 
   if options.send:
-    doSend()
+    t = threading.Thread(target = doSend, name = "sendThread")
+    t.daemon = True
+    t.start()
   elif options.listen:
-    doListen()
+    t = threading.Thread(target = doListen, name = "listenThread")
+    t.daemon = True
+    t.start()
+
+  # Wait for KeyboardInterrupt. Note that thread.join() is uninterruptable.
+  while True: time.sleep(1000)
 
 
 def genTestData(nbytes):
