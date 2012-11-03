@@ -94,10 +94,6 @@ def main():
     carrier = False
     eof = False
     while not eof:
-      # Uncomment to test sending sync signal
-      #sendSync(sender)
-      #break
-
       if options.test:
         chars = genTestData(PACKET_DATA_BYTES)
       else:
@@ -117,8 +113,6 @@ def main():
     else:
       receiver = PyAudioReceiver()
     while True:
-      #testSync(receiver)
-      #break
       s = receivePacket(receiver)
       if options.test:
         expected = genTestData(PACKET_DATA_BYTES)
@@ -131,17 +125,6 @@ def main():
       else:
         sys.stdout.write(s)
         sys.stdout.flush()
-
-
-  def testSync(receiver):
-    syncer.align(receiver, syncChipSamples)
-
-    # Alex: now aligned. Start reading data chips at the chip rate.
-    print "ALIGNED"
-    import time
-    time.sleep(30)
-    sys.exit()
-
 
   def sendPacket(data, sender):
     assert len(data) == PACKET_DATA_BYTES, "data length must match packet length"
