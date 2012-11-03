@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import itertools
+import logging
 import math
 import numpy as np
 import struct
@@ -198,7 +199,7 @@ class CombinadicAssigner(object):
     assert nchans % 2 == 0
     self.nchans = nchans
     self.width = int(math.log(comb(nchans, nchans / 2)) / math.log(2))
-    print self.width, "bits / chip"
+    logging.info("%d bits / chip" % self.width)
 
   def encodeChips(self, bitstring):
     chips = []

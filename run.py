@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import binascii
+import logging
 import math
 import numpy as np
 import random
@@ -46,6 +47,9 @@ PACKET_DATA_BYTES = 20
 def main():
   (options, args) = parseArgs()
 
+  lvl = options.verbose and logging.DEBUG or logging.INFO
+  logging.basicConfig(stream = sys.stderr, level = lvl, format = "%(message)s")
+
   assigner = CombinadicAssigner(options.numchans)
   encoder = MajorityEncoder(options.redundancy, assigner.bitsPerChip())
   packeter = Packeter(encoder, assigner)
@@ -67,25 +71,25 @@ def main():
   syncChipSamples = int(SAMPLE_RATE / options.syncrate)
   syncChannelGap = channelGap * syncRatio
   numSyncChans = options.numsyncchans
-  print "num sync chans: ", numSyncChans
   syncBaseBucket = options.base * syncChipSamples / SAMPLE_RATE
   assert numSyncChans >= 4 # want at least 4
   syncer = SyncUtil(syncBaseBucket, options.spacing, numSyncChans, verbose = options.verbose)
 
+  logging.info("num sync chans: %d" % numSyncChans)
+
   if options.base % subcarrierSpacing != 0:
-    print "Base", options.base, "Hz is not a subcarrier multiple, rounding down"
+    logging.info("Base %d Hz is not a subcarrier multiple, rounding down" % options.base)
     options.base -= (options.base % subcarrierSpacing)
 
-  print chipSamples / 2, "FFT buckets, subcarrier spacing", subcarrierSpacing, "Hz,", \
-      "channel spacing", options.spacing
-  print "Base frequency", options.base, "Hz,",  \
-    "Top frequency", options.base +  options.numchans * channelGap, \
-    options.numchans, "channels, total bandwidth", \
-    options.numchans * channelGap, "Hz"
-  print "Chip rate", options.rate, "Hz,", "duration", int(chipDuration * 1000), "ms,", \
-      chipSamples, "samples/chip"
-  print options.redundancy, "encoder redundancy,", assigner.bitsPerChip(), "raw bits/chip,", \
-      bitsPerChip, "corrected bits/chip,", bitsPerSecond, "bits/sec"
+  logging.info("%d FFT buckets, subcarrier spacing %d Hz, channel spacing %d" %
+      (chipSamples / 2, subcarrierSpacing, options.spacing))
+  logging.info("Base frequency %d Hz, top frequency %d, %d channels, total bandwidth %d Hz" % 
+      (options.base, options.base + options.numchans * channelGap, options.numchans, 
+        options.numchans * channelGap))
+  logging.info("Chip rate %d Hz, duration %d ms, %d samples/chip" % 
+      (options.rate, int(chipDuration * 1000), chipSamples))
+  logging.info("%d encoder redundancy, %d raw bits/chip, %d, corrected bits/chip, %d bits/sec" % \
+      (options.redundancy, assigner.bitsPerChip(), bitsPerChip, bitsPerSecond))
 
   def doSend():
     if options.stdin:
@@ -120,9 +124,9 @@ def main():
         nbits = PACKET_DATA_BYTES * 8
         biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
         if biterrs:
-          print "Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits)
+          logging.info("Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
         else:
-          print PACKET_DATA_BYTES, "bytes ok"
+          logging.info("%d bytes ok" % len(s))
       else:
         sys.stdout.write(s)
         sys.stdout.flush()
@@ -132,12 +136,11 @@ def main():
 
     chips = packeter.encodePacket(data)
 
-    #print "chips:", chips
-    print "data: '%s'" % binascii.hexlify(data)
+    logging.info("data: '%s'" % binascii.hexlify(data))
     preamble = genPreamble()
     final = list(preamble)
     for chip in chips:
-      if options.verbose: print "chip: %s" % (chip)
+      logging.debug("chip: %s" % (chip))
       waveform = buildWaveform(chip, options.base, channelGap, chipSamples)
       if chip is chips[0]:
         fadein(waveform, int(chipSamples / 20))
@@ -174,14 +177,12 @@ def main():
       for f in xrange(options.base, options.base + (channelGap*options.numchans), channelGap):
         chip.append(spectrum.power(f))
 
-      #print "*** chip", chip
       packetChips.append(chip)
       
     data = packeter.decodePacket(packetChips)
 
     # Finished receiving packet
-    if options.verbose: 
-      print "\n== packet done, bit error rate %.3f ==" % (packeter.lastErrorRate())
+    logging.debug("== packet done, bit error rate %.3f ==" % (packeter.lastErrorRate()))
 
     return data
 
@@ -194,7 +195,6 @@ def main():
   # the first data chip.
   def receivePreamble(receiver):
     syncer.align(receiver, syncChipSamples)
-    if options.verbose: print
 
   if options.send:
     t = threading.Thread(target = doSend, name = "sendThread")

@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import time
 import math as m
@@ -119,13 +120,6 @@ class SyncUtil(object):
     self.doPlot = False# True # todo: flag
     self.plotter = None
 
-  def log(self, text='', newline=True):
-    if self.verbose:
-      sys.stdout.write(str(text))
-      if newline: sys.stdout.write('\n')
-      sys.stdout.flush()
-
-
   def align(self, receiver, chipSize, patternUnit = [1,0]):
     """Listens for a sync signal from the receiver and aligns to it.
 
@@ -237,39 +231,39 @@ class SyncUtil(object):
         bucketValue = spectrum[bucket]
         resultAmplitude = abs(bucketValue)
         largestRemaining = largestOther(spectrum, bucket)
-        #self.log('REMAINING: %s' % largestRemaining)
+        #logging.debug('REMAINING: %s' % largestRemaining)
         misalignment = 0
 
-        #self.log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
+        #logging.debug('%s:%s' % (phase(bucketValue), abs(bucketValue)))
         if (abs(bucketValue) > self.signalFactor * largestRemaining):
-          #self.log('%s, %s' % (abs(bucketValue), largestRemaining))
+          #logging.debug('%s, %s' % (abs(bucketValue), largestRemaining))
           misalignment = phase(bucketValue) / PI2
           assert misalignment >= -0.5 and misalignment <= 0.5
           misalignmentPerChip = misalignment * chips
           if state == -1:
-            self.log('[%s]' % label, False)
+            logging.debug('[%s]' % label)
             result = 0 # don't consider misalignment on first go
           elif abs(misalignmentPerChip) <= self.misalignmentTolerance:
             result = 1
             if dbg: 
-              self.log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
-            self.log('(%s %.3f)' % (label, abs(misalignmentPerChip)), False)
+              logging.debug('%s:%s' % (phase(bucketValue), abs(bucketValue)))
+            logging.debug('(%s %.3f)' % (label, abs(misalignmentPerChip)))
           else:
-            #self.log('<%s>' % label, False)
-            self.log('<%s:%s>' % (label, misalignmentPerChip), False)
-            #self.log('MISALIGNED %s %.2f' % (label, misalignmentPerChip))
+            #logging.debug('<%s>' % label, False)
+            logging.debug('<%s:%s>' % (label, misalignmentPerChip))
+            #logging.debug('MISALIGNED %s %.2f' % (label, misalignmentPerChip))
             result = 0 # couldn't have been a good signal
         else:
           result = -1
-          self.log('%s' % label, False)
+          logging.debug('%s' % label)
           if dbg: 
-            self.log('%s:%s' % (phase(bucketValue), abs(bucketValue)))
+            logging.debug('%s:%s' % (phase(bucketValue), abs(bucketValue)))
 
         return (result, misalignment)
 
 
       #if state == 2:
-      #  #self.log(metaSignal)
+      #  #logging.debug(metaSignal)
       #  #if newState == -1:
       #  #  tries += 1
       #  #  if tries < 3:
@@ -278,13 +272,13 @@ class SyncUtil(object):
       #  #    tries = 0
 
       #  # check for, and verify alignment to, the ready signal
-      #  #self.log('A')
+      #  #logging.debug('A')
       #  (result, dummy) = getAlignment(shortMetaSpectrum,
       #      readyMetaSignalBucket, 1, 2*chipSize, True)
       #  #print 'THIS: ', readyMetaSignalBucket
       #  if result == 1:
       #    # Got ready signal, aligned and ready!
-      #    self.log('ALIGNED')
+      #    logging.debug('ALIGNED')
       #    return
 
       #  # Fail. start again.
@@ -296,11 +290,11 @@ class SyncUtil(object):
         (resultShortB, dummy) = getAlignment(shortMetaSpectrumB,
             self.chipsPerSyncPulse, 1, 1, '#')
         if resultShortB == 1:
-          self.log('ALIGNED')
+          logging.debug('ALIGNED')
           #time.sleep(5)
           #receiver.receiveBlock(int(chipSize*2.0))
           #receiver.receiveBlock(int(chipSize*0.0))
-          print 'aligned'
+          logging.info("aligned")
           return
         else:
           #time.sleep(10)
@@ -313,18 +307,18 @@ class SyncUtil(object):
             1, 1, self.chipsPerSyncPulse, '.')
         (resultShortB, chipMisalignment) = getAlignment(shortMetaSpectrumB,
             self.chipsPerSyncPulse, 1, 1, '#')
-        self.log('\n|| %s %s %s' % (resultLongA, resultLongB, resultShortB))
+        logging.debug('\n|| %s %s %s' % (resultLongA, resultLongB, resultShortB))
         if resultLongA == 1 and resultLongB < 1 and resultShortB >= 0:
-          self.log('========= %s %s %s' % (resultLongA, resultLongB, resultShortB))
+          logging.debug('========= %s %s %s' % (resultLongA, resultLongB, resultShortB))
           state = 2
           misalignment = chipMisalignment / self.chipsPerSyncPulse
           #time.sleep(10)
-          #self.log('ALIGNED')
+          #logging.debug('ALIGNED')
           #return
 
       if state < 2:
         # Check for, and align to, the long signal
-        #self.log('L')
+        #logging.debug('L')
         (state, misalignment) = getAlignment(longMetaSpectrum,
             metaSignalBucket, state, self.chipsPerSyncPulse, '.')
 
@@ -335,7 +329,7 @@ class SyncUtil(object):
         alignedAmount = int(signalCycleSize * (1 - misalignment))
       else:
         alignedAmount = signalCycleSize * (metaSignalBucket - 1) + pulseSize
-        self.log('aligning +%d cycles' % (metaSignalBucket - 1))
+        logging.debug('aligning +%d cycles' % (metaSignalBucket - 1))
 
       data = data[alignedAmount:] + list(receiver.receiveBlock(alignedAmount))
 
