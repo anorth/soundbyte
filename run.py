@@ -39,7 +39,7 @@ def parseArgs():
   return parser.parse_args()
 
 # Bytes per packet, until a header advertises a length
-PACKET_DATA_BYTES = 256
+PACKET_DATA_BYTES = 20
 USE_SYNC = True
 
 
@@ -90,7 +90,10 @@ def main():
       bitsPerChip, "corrected bits/chip,", bitsPerSecond, "bits/sec"
 
   def doSend():
-    sender = PyAudioSender()
+    if options.stdin:
+      sender = StreamSender(sys.stdout)
+    else:
+      sender = PyAudioSender()
     carrier = False
     eof = False
     while not eof:
@@ -108,6 +111,8 @@ def main():
 
       if chars:
         sendPacket(chars, sender)
+        # Send a 1-chip silence buffer
+        sender.sendBlock(silence(chipSamples))
 
   def genSync():
     base = options.base
@@ -202,15 +207,15 @@ def main():
         fadeout(waveform, int(chipSamples / 20))
 #      if len(waveforms) == 0:
 #        waveform = list(genPreamble()) + list(waveform)
-      final += list(waveform)
+      final.extend(waveform)
 
-    sender.sendWaveForm(final)
+    sender.sendBlock(final)
     #time.sleep(2)
     #print '==== BEGIN ===='
     #for waveform in waveforms:
     #  print len(waveform),
     #  #print 'HELLO'
-    #  sender.sendWaveForm(waveform)
+    #  sender.sendBlock(waveform)
     #  print 'x',
     #print '\n==== END ===='
 
@@ -260,7 +265,7 @@ def main():
       header = buildWaveform(bitstring, headerBase, channelGap, headerSamples)
       fadein(header, chipSamples / 20)
       fadeout(header, chipSamples / 20)
-      sender.sendWaveForm(header)
+      sender.sendBlock(header)
 
 
   # Receives a packet preamble, leaving the audio stream aligned to receive

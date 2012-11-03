@@ -72,12 +72,12 @@ def fadeout(waveform, samples):
     waveform[i] *= (len(waveform) - i) / float(n)
 
 # Encodes waveform amplitudes as a little-endian PCM-16 stream
-def encode(waveform):
+def encodePcm(waveform):
   shorts = [math.floor(PCM_QUANT * f) for f in waveform]
   return struct.pack("<%dh" % len(shorts), *shorts)
 
 # Decodes a stream of little-endian PCM-16 into waveform amplitudes
-def decode(block):
+def decodePcm(block):
   shorts = struct.unpack("<%dh" % (len(block) / 2), block)
   return window((np.array(shorts) + 0.5) / PCM_QUANT)
 
@@ -136,7 +136,7 @@ def createAudioStream(pa, isInput):
 # }
 #
 # interface Sender {
-#   void sendWaveForm(double[] waveForm)
+#   void sendBlock(double[] waveForm)
 # }
 #
 
@@ -158,7 +158,7 @@ class PyAudioReceiver(object):
         print "Dropped audio frame attempting to read", numSamples, "samples! Input overflowed."
 
     assert len(block) / 2 == numSamples
-    return decode(block)
+    return decodePcm(block)
 
 # Receiver which reads from an input stream
 class StreamReceiver(object):
@@ -172,7 +172,7 @@ class StreamReceiver(object):
       block = block + self.stream.read(nBytes - len(block))
       if len(block) == 0:
         assert False
-    return decode(shorts)
+    return decodePcm(block)
 
 
 class PyAudioSender(object):
@@ -180,6 +180,13 @@ class PyAudioSender(object):
     self.stream = createAudioStream(
       pyaudio.PyAudio(), isInput=False)
 
-  def sendWaveForm(self, waveform):
-    #waveform = window(waveform)
-    self.stream.write(encode(waveform))
+  def sendBlock(self, waveform):
+    self.stream.write(encodePcm(waveform))
+
+# Sender which writes to an output stream
+class StreamSender(object):
+  def __init__(self, stream):
+    self.stream = stream
+
+  def sendBlock(self, waveform):
+    self.stream.write(encodePcm(waveform))
