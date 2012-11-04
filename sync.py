@@ -294,7 +294,7 @@ class SyncUtil(object):
           #time.sleep(5)
           #receiver.receiveBlock(int(chipSize*2.0))
           #receiver.receiveBlock(int(chipSize*0.0))
-          logging.info("aligned")
+          logging.debug("aligned")
           return
         else:
           #time.sleep(10)

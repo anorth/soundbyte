@@ -199,7 +199,7 @@ class CombinadicAssigner(object):
     assert nchans % 2 == 0
     self.nchans = nchans
     self.width = int(math.log(comb(nchans, nchans / 2)) / math.log(2))
-    logging.info("%d bits / chip" % self.width)
+    self.lastSnr = 0
 
   def encodeChips(self, bitstring):
     chips = []
@@ -221,18 +221,24 @@ class CombinadicAssigner(object):
   def decodeChips(self, chips):
     bits = [] # list of reals
     k = self.nchans / 2
+    # SNR for each chip. Each chip's SNR is ratio of lowest "on" channel
+    # to highest "off" channel
+    snrs = []
     for chip in chips:
       assert len(chip) == self.nchans
       # Partition signals into high half and low half
       signals = [ (signal, i) for (i, signal) in enumerate(chip) ]
       signals.sort(reverse=True)
-      indexes = [ i for (signal, i) in signals[0:len(signals)/2] ]
+      (high, low) = partition(signals, len(signals)/2)
+      indexes = [ i for (signal, i) in high ]
+      snrs.append(dbPower(high[-1][0], low[0][0]))
       indexes.sort(reverse=True)
       #print indexes
       assert len(indexes) == k
       n = inverseCombinadic(k, indexes)
       bits.extend(toBits(n, self.width))
     #print bits
+    self.lastSnr = sum(snrs) / len(snrs) # Average of chip SNRs
     return bits
 
   def symbolsForBits(self, nbits):
@@ -240,6 +246,9 @@ class CombinadicAssigner(object):
 
   def bitsPerChip(self):
     return self.width
+
+  def lastSignalRatio(self):
+    return self.lastSnr
 
 
 # Partitions a sequence into subsequences of length n

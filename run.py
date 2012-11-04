@@ -124,9 +124,9 @@ def main():
         nbits = PACKET_DATA_BYTES * 8
         biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
         if biterrs:
-          logging.info("Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
+          logging.info("=> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
         else:
-          logging.info("%d bytes ok" % len(s))
+          logging.info("=> %d bytes ok" % len(s))
       else:
         sys.stdout.write(s)
         sys.stdout.flush()
@@ -182,7 +182,8 @@ def main():
     data = packeter.decodePacket(packetChips)
 
     # Finished receiving packet
-    logging.debug("== packet done, bit error rate %.3f ==" % (packeter.lastErrorRate()))
+    logging.info("Packet received, SNR %.2f dB, raw bit error rate %.3f" % 
+        (assigner.lastSignalRatio(), packeter.lastErrorRate()))
 
     return data
 

@@ -35,6 +35,15 @@ def signum(x):
   assert x != 0 # You're doing it wrong
   return math.copysign(1, x)
 
+# Computes the decibel ratio between two power quantities
+def dbPower(a, b):
+  return 10 * math.log10(a / b)
+
+# Computes the decibel ratio between two amplitude quantities
+def dbAmplitude(a, b):
+  return 2 * dbPower(a, b)
+  # == 10 * log10(a**2 / b**2)
+
 # Binomial coefficient, Cnk.
 def comb(n, k):
   return int(spm.comb(n, k, True))

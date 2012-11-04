@@ -97,15 +97,6 @@ def fouriate(samples):
   bucketWidth = SAMPLE_RATE / len(samples)
   return Spectrum(buckets, bucketWidth)
 
-# Computes the decibel ratio between two power quantities
-def dbPower(a, b):
-  return 10 * math.log10(a / b)
-
-# Computes the decibel ratio between two amplitude quantities
-def dbAmplitude(a, b):
-  return 2 * dbPower(a, b)
-  # == 10 * log10(a**2 / b**2)
-
 
 class Spectrum(object):
   def __init__(self, data, bucketWidth):
