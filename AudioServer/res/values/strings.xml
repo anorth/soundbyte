@@ -1,8 +1,10 @@
 <resources>
 
-    <string name="app_name">AudioServer</string>
-    <string name="hello_world">Listening on port 16000</string>
+    <string name="app_name">AudioSocket</string>
     <string name="menu_settings">Settings</string>
-    <string name="title_activity_main">Audio Server</string>
+    <string name="title_activity_main">Audio Socket</string>
+    <string name="listening">Listening on port 16000</string>
+    <string name="adb">adb forward tcp:16000 tcp:16000</string>
+    <string name="instruction">Forward local port with</string>
 
 </resources>

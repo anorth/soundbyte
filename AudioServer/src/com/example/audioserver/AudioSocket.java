@@ -3,6 +3,7 @@ package com.example.audioserver;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -10,35 +11,38 @@ import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
 
+import com.example.audioserver.Events.SocketConnected;
+import com.example.audioserver.Events.SocketDisconnected;
+import com.squareup.otto.Bus;
+
 class AudioSocket extends Thread {
 
   public static final int PORT = 16000;
   public static final int Q_SIZE = 100;
   private static final String TAG = "AudioSocket";
 
+  private final Bus bus;
   private final BlockingQueue<byte[]> inputQ = new ArrayBlockingQueue<byte[]>(100);
   private volatile Socket client = null;
   private volatile boolean running = true;
+
+  public AudioSocket(Bus bus) {
+    this.bus = bus;
+  }
 
   @Override
   public void run() {
     ServerSocket server;
     try {
       server = new ServerSocket(PORT);
+      server.setReuseAddress(true);
+      server.setSoTimeout(2000);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
     while (running) {
-      // Wait for connection
-      try {
-        Log.i(TAG, "Awaiting connection on port " + PORT);
-        client = server.accept();
-        Log.i(TAG, "Received connection " + client.getInetAddress());
-      } catch (IOException e) {
-        Log.e(TAG, "Error accepting socket", e);
-        throw new RuntimeException(e);
-      }
+      awaitConnection(server);
 
       try {
         while (client != null && running) {
@@ -64,6 +68,7 @@ class AudioSocket extends Thread {
         try {
           client.close();
           client = null;
+          bus.post(new SocketDisconnected());
         } catch (IOException e) {
           Log.e(TAG, "IO exception closing client", e);
         }
@@ -77,6 +82,22 @@ class AudioSocket extends Thread {
       Log.e(TAG, "Error closing server", e);
     }
     Log.w(TAG, "AudioServer thread exiting");
+  }
+
+  private void awaitConnection(ServerSocket server) {
+    while (running && client == null) {
+      try {
+        Log.i(TAG, "Awaiting connection on port " + PORT);
+        client = server.accept();
+        Log.i(TAG, "Received connection " + client.getInetAddress());
+        bus.post(new SocketConnected());
+      } catch (SocketTimeoutException e) {
+        // Try again.
+      } catch (IOException e) {
+        Log.e(TAG, "Error accepting socket", e);
+        throw new RuntimeException(e);
+      }      
+    }
   }
 
   public void send(byte[] buffer) {
