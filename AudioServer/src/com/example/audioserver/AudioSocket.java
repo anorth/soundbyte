@@ -3,19 +3,20 @@ package com.example.audioserver;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
 
-class AudioServer extends Thread {
+class AudioSocket extends Thread {
 
-  public static final int MIC_PORT = 16000;
+  public static final int PORT = 16000;
   public static final int Q_SIZE = 100;
-  private static final String TAG = "AudioServer";
+  private static final String TAG = "AudioSocket";
 
-  private final BlockingQueue<byte[]> q = new ArrayBlockingQueue<byte[]>(100);
+  private final BlockingQueue<byte[]> inputQ = new ArrayBlockingQueue<byte[]>(100);
   private volatile Socket client = null;
   private volatile boolean running = true;
 
@@ -23,7 +24,7 @@ class AudioServer extends Thread {
   public void run() {
     ServerSocket server;
     try {
-      server = new ServerSocket(MIC_PORT);
+      server = new ServerSocket(PORT);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -31,7 +32,7 @@ class AudioServer extends Thread {
     while (running) {
       // Wait for connection
       try {
-        Log.i(TAG, "Awaiting connection on port " + MIC_PORT);
+        Log.i(TAG, "Awaiting connection on port " + PORT);
         client = server.accept();
         Log.i(TAG, "Received connection " + client.getInetAddress());
       } catch (IOException e) {
@@ -41,21 +42,21 @@ class AudioServer extends Thread {
 
       try {
         while (client != null && running) {
-          Log.v(TAG, "Waiting for data, q has " + q.size());
-          byte[] buffer = q.poll(1, TimeUnit.SECONDS);
+          Log.v(TAG, "[I] Waiting for data, q has " + inputQ.size());
+          byte[] buffer = inputQ.poll(1, TimeUnit.SECONDS);
           if (buffer != null) {
-            Log.v(TAG, "Writing chunk of size " + buffer.length);
+            Log.v(TAG, "[I] Writing chunk of size " + buffer.length);
             client.getOutputStream().write(buffer);            
           } else {
-            Log.w(TAG, "Timed out waiting for audio");
+            Log.w(TAG, "[I] Timed out waiting for audio");
           }
         }
       } catch (InterruptedException e) {
-        Log.e(TAG, "Interrupted, quitting");
+        Log.e(TAG, "[I] Interrupted, quitting");
         Thread.currentThread().interrupt();
         return;
       } catch (IOException e) {
-        Log.e(TAG, "IO exception writing to client: " + e.getMessage());
+        Log.e(TAG, "[I] IO exception writing to client: " + e.getMessage());
       }
 
       if (client != null) {
@@ -80,16 +81,34 @@ class AudioServer extends Thread {
 
   public void send(byte[] buffer) {
     if (client != null) {
-      boolean ok = q.offer(buffer); // Might drop this buffer if queue is full
+      boolean ok = inputQ.offer(buffer); // Might drop this buffer if queue is full
       if (!ok) {
         // If the buffer was full, clear it entirely so that subsequent writes
-        // will be continuguous
+        // will be contiguous
         Log.i(TAG, "Queue was full when data offered, emptying");
-        q.clear();
+        inputQ.clear();
       }
       //Log.v(TAG, (ok ? "Received" : "Dropped") + " buffer");
-
     }
+  }
+  
+  /** Reads at most maxBytes from the socket. */
+  public byte[] receive(int maxBytes) {
+    if (client != null) {
+      Log.v(TAG, "[O] Receiving buffer of " + maxBytes);
+      byte[] buf = new byte[maxBytes];
+      try {
+        int bytesRead = client.getInputStream().read(buf);
+        Log.v(TAG, "[O] Received " + bytesRead + " bytes");
+        if (bytesRead > 0) {
+          return Arrays.copyOf(buf, bytesRead);          
+        }
+      } catch (IOException e) {
+        Log.e(TAG, "[O] Exception reading input socket", e);
+      }
+    }
+    Log.v(TAG, "[O] Returning empty buffer");
+    return new byte[0];
   }
 
   void close() {

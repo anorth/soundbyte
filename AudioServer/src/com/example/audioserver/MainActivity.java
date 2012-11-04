@@ -8,9 +8,10 @@ import android.view.Menu;
 public class MainActivity extends Activity {
 
   private static final String TAG = "AudioServerMain";
-  private AudioServer server = null;
-  private AudioIn audio = null;
-  
+  private AudioSocket server = null;
+  private AudioIn audioIn = null;
+  private AudioOut audioOut = null;
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     Log.w(TAG, "Received onCreate");
@@ -29,10 +30,12 @@ public class MainActivity extends Activity {
     super.onStart();
     Log.w(TAG, "Received onStart");
     if (server == null) {
-      server = new AudioServer();
+      server = new AudioSocket();
       server.start();
-      audio = new AudioIn(server);
-      audio.start();      
+      audioIn = new AudioIn(server);
+      audioIn.start();      
+      audioOut = new AudioOut(server);
+      audioOut.start();
     }
     getWindow().getDecorView().getRootView().setKeepScreenOn(true);
   }
@@ -40,10 +43,10 @@ public class MainActivity extends Activity {
   @Override
   public void onStop() {
     Log.w(TAG, "Received onStop");
-    audio.close();
+    audioIn.close();
+    audioOut.close();
     server.close();
     super.onStop();
-    
   }
   
   @Override
