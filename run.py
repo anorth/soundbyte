@@ -51,7 +51,7 @@ def main():
   logging.basicConfig(stream = sys.stderr, level = lvl, format = "%(message)s")
 
   assigner = CombinadicAssigner(options.numchans)
-  encoder = MajorityEncoder(options.redundancy, assigner.bitsPerChip())
+  encoder = RepeatingEncoder(options.redundancy, assigner.bitsPerChip())
   packeter = Packeter(encoder, assigner)
 
   chipDuration = 1.0 / options.rate

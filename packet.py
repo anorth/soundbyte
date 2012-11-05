@@ -72,7 +72,7 @@ class IdentityEncoder(object):
 
 # Encoder which repeats width-length chunks of the data N times and 
 # takes a majority vote when decoding
-class MajorityEncoder(object):
+class RepeatingEncoder(object):
   def __init__(self, n, width):
     assert n % 2 != 0, "Majority encoder requires odd redundancy"
     self.n = int(n)
@@ -132,6 +132,35 @@ class MajorityEncoder(object):
 
   def lastErrorRate(self):
     return self.err
+
+
+# Like RepeatingEncoder but interleaves the repetitions
+class InterleavingRepeatingEncoder(RepeatingEncoder):
+
+  def encode(self, data):
+    # Encode with the raw repeating encoder
+    bits = RepeatingEncoder.encode(self, data)
+    # Interleave repeats
+    chips = partition(bits, self.width)
+    symbolsRepeated = partition(chips, self.n)
+    interleaved = []
+    for symbolsOnce in zip(*symbolsRepeated):
+      map(lambda s: interleaved.extend(s), symbolsOnce)
+    #logging.info(str(interleaved))
+    return interleaved
+
+  def decode(self, signals):
+    # De-interleave repeated signals
+    chips = partition(signals, self.width)
+    nSymbols = len(chips) / self.n
+    repeats = partition(chips, nSymbols)
+    deinterleaved = []
+    for message in zip(*repeats):
+      map(lambda s: deinterleaved.extend(s), message)
+    #logging.info(deinterleaved)
+
+    # Decode with raw repeating decoder
+    return RepeatingEncoder.decode(self, deinterleaved)
 
 
 # Interface CarrierAssigner
