@@ -1,0 +1,144 @@
+<html>
+<head>
+<title>Tab</title>
+<style type='text/css'>
+body, input, select {
+  font-family: sans-serif;
+  font-size: 14px;
+}
+
+input, select {
+  border: 1px solid #48c;
+  padding: 3px;
+  border-radius: 4px;
+}
+
+.hidden {
+  display: none;
+}
+
+.screen {
+  width: 500px;
+  padding: 20px;
+
+}
+
+.money {
+  font-family: monospace;
+}
+
+.remaining {
+  font-weight: bold;
+  padding: 5px 3px;
+}
+
+.error {
+  color: red;
+}
+
+.flat-button {
+  background: #bbb;
+  border-radius: 3px;
+  color: white;
+  font-weight: bold;
+  padding: 3px 5px;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  display: inline-block;
+}
+
+.blue-button {
+background: #68E;
+background: -webkit-gradient(linear, left top, left bottom, from(#8AE), to(#68E));
+background: -moz-linear-gradient(top, #8AE, #68E);
+}
+.green-button {
+background: #789E35;
+background: -webkit-gradient(linear, left top, left bottom, from(#9CB869), to(#789E35));
+background: -moz-linear-gradient(top, #9CB869, #789E35);
+}
+.blue-button, .green-button {
+display: inline-block;
+text-decoration: none;
+box-shadow: 0px 2px 8px #bbb;
+-moz-box-shadow: 0px 2px 8px #bbb;
+overflow: hidden;
+padding: 5px 10px;
+border-radius: 2px;
+-moz-border-radius: 2px;
+color: white;
+text-align: center;
+cursor: pointer;
+border: none;
+}
+
+.group-header label {
+  display: inline-block;
+}
+
+#group-people.explicit .implicit {
+  display: none;
+}
+#group-people.implicit .explicit {
+  display: none;
+}
+#group-people .name-width {
+  width: 160px;
+}
+
+#group-people .implicit, #group-people .explicit, #group-people .paid {
+  display: inline-block;
+  margin: 0px 3px;
+  width: 60px;
+  text-align: right;
+}
+#group-people .implicit, #group-people .explicit {
+  color: #a00;
+}
+#group-people .paid {
+  color: #070;
+}
+
+</style>
+<script type='text/javascript' src='prototype.js'></script>
+<script type='text/javascript' src='utils.js'></script>
+<script type='text/javascript' src='tab.js'></script>
+</head>
+<body>
+
+<div style='display:none'>
+
+<div id='main-menu'>
+<button id='take'>Take money</button>
+<button id='give'>Give money</button>
+<button id='group'>Pay for group</button>
+</div>
+
+<div id='simple-menu'>
+Amount $<input id='simple-amount'/>
+<select><option>AUD</option><option>USD</option></select>
+<br/>
+Who <input id='simple-amount'/><br/>
+<button>OK</button>
+</div>
+</div>
+
+<div class='screen' id='group-menu'>
+<select><option>AUD</option><option>USD</option></select>
+<input disabled='true' id='group-amount' size='5'/>
+<br/>
+<br/>
+<div class='group-header'>
+  <label style='width: 160px'>Who</label>
+  <label style='visibility:hidden'> $</label>
+  <label style='width: 60px'>Share</label>
+  <label style='visibility:hidden'> $</label>
+  <label style=''>Actually Paid</label>
+</div>
+<div id='group-people'></div>
+<br/>
+<div id='group-options'></div>
+
+</body>
+</html>
