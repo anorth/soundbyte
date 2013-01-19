@@ -58,6 +58,11 @@ def combine(waveforms):
 def normalise(waveform):
   return waveform / max(abs(waveform))
 
+def limit(waveform):
+  for i in xrange(len(waveform)):
+    waveform[i] = min(waveform[i], 1.0)
+    waveform[i] = max(waveform[i], -1.0)
+
 # Compute a signal with energy at each frequency corresponding to a
 # non-zero number in chip
 def buildWaveform(chip, base, spacing, samples):
