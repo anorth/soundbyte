@@ -35,8 +35,8 @@ def genSync(base, numSyncChans, syncChannelGap, syncChipSamples):
   syncLong = createSyncSignal(chipsPerLongPulse, metaSignalBucket + 1)
   syncReady = createSyncSignal(1, chipsPerLongPulse * 2) # * chipsPerLongPulse * metaSignalBucket
 
-  #fadein(syncLong, chipSamples / 20)
-  #fadeout(syncReady, chipSamples / 20)
+  fadein(syncLong, syncChipSamples / 20)
+  fadeout(syncReady, syncChipSamples / 20)
 
   # silence is not actually necessary, it's just to prevent
   # buffer underruns with the audio output since we're not
