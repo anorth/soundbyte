@@ -91,45 +91,56 @@ def main():
   logging.info("%d encoder redundancy, %d raw bits/chip, %d, corrected bits/chip, %d bits/sec" % \
       (options.redundancy, assigner.bitsPerChip(), bitsPerChip, bitsPerSecond))
 
+  class Stats:
+    packetsSent = 0
+    packetsReceived = 0
+
   def doSend():
     if options.stdin:
       sender = StreamSender(sys.stdout)
     else:
       sender = PyAudioSender()
-    carrier = False
     eof = False
-    while not eof:
-      if options.test:
-        chars = genTestData(PACKET_DATA_BYTES)
-      else:
-        # Terminal input will be line-buffered, but read PACKET bytes at a time.
-        chars = sys.stdin.read(PACKET_DATA_BYTES)
-        if not chars:
-          eof = True
+    try:
+      while not eof:
+        if options.test:
+          chars = genTestData(PACKET_DATA_BYTES)
+        else:
+          # Terminal input will be line-buffered, but read PACKET bytes at a time.
+          chars = sys.stdin.read(PACKET_DATA_BYTES)
+          if not chars:
+            eof = True
 
-      if chars:
-        sendPacket(chars, sender)
-        # Send a 1-chip silence buffer
-        sender.sendBlock(silence(chipSamples))
+        if chars:
+          sendPacket(chars, sender)
+          # Send a 1-chip silence buffer
+          sender.sendBlock(silence(chipSamples))
+          Stats.packetsSent += 1
+    except Exception, e:
+      logging.info("%s" % e)
 
   def doListen():
     if options.stdin:
       receiver = StreamReceiver(sys.stdin)
     else:
       receiver = PyAudioReceiver()
-    while True:
-      s = receivePacket(receiver)
-      if options.test:
-        expected = genTestData(PACKET_DATA_BYTES)
-        nbits = PACKET_DATA_BYTES * 8
-        biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
-        if biterrs:
-          logging.info("=> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
+    try:
+      while True:
+        s = receivePacket(receiver)
+        if options.test:
+          expected = genTestData(PACKET_DATA_BYTES)
+          nbits = PACKET_DATA_BYTES * 8
+          biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
+          if biterrs:
+            logging.info("=> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
+          else:
+            logging.info("=> %d bytes ok" % len(s))
+          Stats.packetsReceived += 1
         else:
-          logging.info("=> %d bytes ok" % len(s))
-      else:
-        sys.stdout.write(s)
-        sys.stdout.flush()
+          sys.stdout.write(s)
+          sys.stdout.flush()
+    except BaseException, e:
+      logging.info("%s" % e)
 
   def sendPacket(data, sender):
     assert len(data) == PACKET_DATA_BYTES, "data length must match packet length"
@@ -171,7 +182,7 @@ def main():
     #print "expecting", numPacketSymbols, "chips for", PACKET_DATA_BYTES, "bytes"
     for symbolIndex in xrange(numPacketSymbols):
       waveform = receiver.receiveBlock(chipSamples)
-      spectrum = fouriate(waveform)
+      spectrum = fouriate(window(waveform))
 
       chip = []
       for f in xrange(options.base, options.base + (channelGap*options.numchans), channelGap):
@@ -182,7 +193,7 @@ def main():
     data = packeter.decodePacket(packetChips)
 
     # Finished receiving packet
-    logging.info("Packet received, SNR %.2f dB, raw bit error rate %.3f" % 
+    logging.info("Packet received, SNR %.2f dB, detected raw bit error rate %.3f" % 
         (assigner.lastSignalRatio(), packeter.lastErrorRate()))
 
     return data
@@ -207,7 +218,15 @@ def main():
     t.start()
 
   # Wait for KeyboardInterrupt. Note that thread.join() is uninterruptable.
-  while True: time.sleep(1000)
+  try:
+    while True: time.sleep(1000)
+  except BaseException, e:
+    logging.info("%s" % e)
+  finally:
+    if options.send:
+      logging.info("> %d packets sent" % Stats.packetsSent)
+    elif options.listen:
+      logging.info("> %d packets received" % Stats.packetsReceived)
 
 
 def genTestData(nbytes):

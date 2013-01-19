@@ -44,6 +44,14 @@ def dbAmplitude(a, b):
   return 2 * dbPower(a, b)
   # == 10 * log10(a**2 / b**2)
 
+# Computes the power multiplier for a dB ratio
+def dbPowerGain(d):
+  return math.pow(10, float(d) / 10)
+
+# Computes the amplitude multiplier for a dB ratio
+def dbAmplitudeGain(d):
+  return math.sqrt(dbPowerGain(d))
+
 # Binomial coefficient, Cnk.
 def comb(n, k):
   return int(spm.comb(n, k, True))

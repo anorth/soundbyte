@@ -51,10 +51,12 @@ def sinewaves(freqs, nsamples):
 # Sums and normalizes a collection of waveforms to +/- 1.0
 def combine(waveforms):
   agg = sum(waveforms)
-  # Normalise
   # TODO: implement dynamic range compression instead
-  agg = agg / max(agg)
+  agg = normalise(agg)
   return agg
+
+def normalise(waveform):
+  return waveform / max(abs(waveform))
 
 # Compute a signal with energy at each frequency corresponding to a
 # non-zero number in chip
@@ -86,7 +88,7 @@ def encodePcm(waveform):
 # Decodes a stream of little-endian PCM-16 into waveform amplitudes
 def decodePcm(block):
   shorts = struct.unpack("<%dh" % (len(block) / 2), block)
-  return window((np.array(shorts) + 0.5) / PCM_QUANT)
+  return (np.array(shorts) + 0.5) / PCM_QUANT
 
 # Computes DFT over an array of time-domain samples
 # BucketWidth is the 
