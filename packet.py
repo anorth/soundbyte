@@ -8,6 +8,10 @@ import struct
 
 from util import *
 
+from reedsolomon import Codec, UncorrectableError
+
+class DecodeException(BaseException):
+  pass
 
 # Interface Packeter
 # - encodePacket(data):
@@ -69,6 +73,44 @@ class IdentityEncoder(object):
 
   def lastErrorRate(self):
     return 0.0
+
+class ReedSolomonEncoder(object):
+
+  def __init__(self, width, encodedSize, messageSymbols):
+    logging.info('ENCODER %s %s' % (encodedSize, messageSymbols))
+    assert encodedSize > messageSymbols
+    self.width = width
+    self.messageSymbols = int(messageSymbols)
+    self.encodedSize = int(encodedSize)
+    self.c = Codec(self.encodedSize, self.messageSymbols)
+
+  def encode(self, data):
+    #logging.info("VAG %s ", data)
+    #data = list(data)
+    #logging.info("DICK")
+    #data = ''.join(data)
+    #logging.info("COCK %s" % data)
+    assert len(data) == self.messageSymbols # todo: relax this & fix encodedBitsForBytes
+    #logging.info("ZING")
+    encoded = self.c.encode(data)
+    #logging.info("ASDF")
+    #return toBitSequence([encoded[i] for i in xrange(len(encoded))])
+    return list(toBitSequence(encoded))
+
+  def decode(self, signals):
+    cropped = ( ''.join(toByteSequence(signals + ([0] * (8 - len(signals) % 8)))) )[:self.encodedSize]
+    try:
+      return self.c.decode(cropped)[0]
+    except UncorrectableError, e:
+      raise DecodeException()
+      
+    
+  def encodedBitsForBytes(self, nbytes):
+    return self.encodedSize * nbytes * 8 / self.messageSymbols
+
+  def lastErrorRate(self):
+    return 0.0
+    
 
 # Encoder which repeats width-length chunks of the data N times and 
 # takes a majority vote when decoding

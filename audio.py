@@ -196,17 +196,3 @@ class StreamSender(object):
   def sendBlock(self, waveform):
     self.stream.write(encodePcm(waveform))
     self.stream.flush()
-
-# Receiver decorator which also plays back to a sender
-class PlaybackReceiver(object):
-  def __init__(self, receiver, sender = None):
-    self.receiver = receiver
-    self.sender = sender
-    if self.sender is None:
-      self.sender = PyAudioSender()
-
-  def receiveBlock(self, numSamples):
-    block = self.receiver.receiveBlock(numSamples)
-    self.sender.sendBlock(block)
-    return block
-  

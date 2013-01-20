@@ -45,8 +45,8 @@ def parseArgs():
       help='Mixer signal strength, dB below unity')
   parser.add_option('--noise', type='int', default="-6",
       help='Mixer noise strength, dB below unity')
-  parser.add_option('--play', action='store_true',
-      help='Play back received audio')
+  parser.add_option('--encoder', type='string', default="rs",
+      help='Encoder to use (rs, repeat)')
   parser.add_option('-v', '--verbose', action='store_true')
 
   (opts, args) = parser.parse_args()
@@ -69,7 +69,15 @@ def main():
   logging.basicConfig(stream = sys.stderr, level = lvl, format = "%(message)s")
 
   assigner = CombinadicAssigner(options.numchans)
-  encoder = RepeatingEncoder(options.redundancy, assigner.bitsPerChip())
+  if options.encoder == 'rs':
+    encoder = ReedSolomonEncoder(assigner.bitsPerChip(),
+      int(options.redundancy * PACKET_DATA_BYTES),
+      PACKET_DATA_BYTES)
+  elif options.encoder == 'repeat':
+    encoder = RepeatingEncoder(options.redundancy, assigner.bitsPerChip())
+  else:
+    assert False, 'invalid encoder %s' % options.encoder
+
   packeter = Packeter(encoder, assigner)
 
   chipDuration = 1.0 / options.rate
@@ -132,23 +140,23 @@ def main():
     else:
       sender = PyAudioSender()
     eof = False
-    try:
-      while Control.running and not eof:
-        if options.test:
-          chars = genTestData(PACKET_DATA_BYTES)
-        else:
-          # Terminal input will be line-buffered, but read PACKET bytes at a time.
-          chars = sys.stdin.read(PACKET_DATA_BYTES)
-          if not chars:
-            eof = True
+    #try:
+    while Control.running and not eof:
+      if options.test:
+        chars = genTestData(PACKET_DATA_BYTES)
+      else:
+        # Terminal input will be line-buffered, but read PACKET bytes at a time.
+        chars = sys.stdin.read(PACKET_DATA_BYTES)
+        if not chars:
+          eof = True
 
-        if chars:
-          sendPacket(chars, sender)
-          # Send a 1-chip silence buffer
-          sender.sendBlock(silence(chipSamples))
-          Control.packetsSent += 1
-    except Exception, e:
-      logging.info("%s" % e)
+      if chars:
+        sendPacket(chars, sender)
+        # Send a 1-chip silence buffer
+        sender.sendBlock(silence(chipSamples))
+        Control.packetsSent += 1
+    #except Exception, e:
+    #  logging.info("%s" % e)
     if f:
       f.close()
 
@@ -161,28 +169,36 @@ def main():
       receiver = PyAudioReceiver()
     if options.file:
       receiver = NoiseMixingReceiver(receiver, options.file, options.signal, options.noise)
-    if options.play:
-      receiver = PlaybackReceiver(receiver)
-    try:
-      totalBitErrs = 0
-      while True:
+    #try:
+    totalBitErrs = 0
+    while True:
+      try:
         s = receivePacket(receiver)
-        if options.test:
-          expected = genTestData(PACKET_DATA_BYTES)
-          nbits = PACKET_DATA_BYTES * 8
-          biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
-          if biterrs:
-            Control.bitErrors += biterrs
-            Control.packetsCorrupt += 1
-            logging.info("-> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
-          else:
-            logging.debug("-> %d bytes ok" % len(s))
-          Control.packetsReceived += 1
+      except DecodeException, e:
+        s = None
+
+      if options.test:
+        expected = genTestData(PACKET_DATA_BYTES)
+        nbits = PACKET_DATA_BYTES * 8
+        if s == None:
+          biterrs = nbits
         else:
+          biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
+        if biterrs:
+          Control.bitErrors += biterrs
+          Control.packetsCorrupt += 1
+          logging.info("-> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
+        else:
+          logging.debug("-> %d bytes ok" % len(s))
+        Control.packetsReceived += 1
+      else:
+        if s:
           sys.stdout.write(s)
-          sys.stdout.flush()
-    except BaseException, e:
-      logging.info("%s" % e)
+        else:
+          sys.stdout.write('!DATA CORRUPT!')
+        sys.stdout.flush()
+    #except BaseException, e:
+    #  logging.info("%s" % e)
 
   def sendPacket(data, sender):
     assert len(data) == PACKET_DATA_BYTES, "data length must match packet length"
@@ -270,7 +286,7 @@ def main():
   except KeyboardInterrupt:
     pass
   except BaseException, e:
-    logging.info("%s" % type(e))
+    logging.info("ERROR %s" % type(e))
 
   Control.running = False
   time.sleep(1)

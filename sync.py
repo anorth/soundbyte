@@ -293,7 +293,7 @@ class SyncUtil(object):
             self.chipsPerSyncPulse, 1, 1, '#')
         if resultShortB == 1:
           logging.debug('state 2 ALIGNED')
-          #time.sleep(5)
+          #time.sleep(1)
           #receiver.receiveBlock(int(chipSize*2.0))
           #receiver.receiveBlock(int(chipSize*0.0))
           return
