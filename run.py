@@ -45,8 +45,8 @@ def parseArgs():
       help='Mixer signal strength, dB below unity')
   parser.add_option('--noise', type='int', default="-6",
       help='Mixer noise strength, dB below unity')
-  parser.add_option('--encoder', type='string', default="rs",
-      help='Encoder to use (rs, repeat)')
+  parser.add_option('--encoder', type='string', default="lay",
+      help='Encoder to use (lay, rs, repeat)')
   parser.add_option('--play', action='store_true',
       help='Play back received audio')
   parser.add_option('-v', '--verbose', action='store_true')
@@ -70,8 +70,13 @@ def main():
   lvl = options.verbose and logging.DEBUG or logging.INFO
   logging.basicConfig(stream = sys.stderr, level = lvl, format = "%(message)s")
 
+  assigner = PairwiseAssigner(options.numchans)
   assigner = CombinadicAssigner(options.numchans)
-  if options.encoder == 'rs':
+  if options.encoder == 'lay':
+    encoder = LayeredEncoder(assigner.bitsPerChip(),
+      PACKET_DATA_BYTES,
+      max(1.1, float(options.redundancy) / 3))
+  elif options.encoder == 'rs':
     encoder = ReedSolomonEncoder(assigner.bitsPerChip(),
       int(options.redundancy * PACKET_DATA_BYTES),
       PACKET_DATA_BYTES)
@@ -84,10 +89,10 @@ def main():
 
   chipDuration = 1.0 / options.rate
   chipSamples = int(SAMPLE_RATE / options.rate)
-  bitsPerChip = packeter.bitsPerChip()
+  bitsPerChip = packeter.bitsPerChip(PACKET_DATA_BYTES)
   bitsPerSecond = bitsPerChip * options.rate
-  chipsPerByte = packeter.symbolsForBytes(100)/100.0
-  byteRate = options.rate / chipsPerByte
+  #chipsPerByte = packeter.symbolsForBytes(100)/100.0
+  #byteRate = options.rate / chipsPerByte
 
   subcarrierSpacing = int(SAMPLE_RATE / chipSamples)
   assert subcarrierSpacing == int(1.0 / chipDuration)
