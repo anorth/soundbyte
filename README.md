@@ -18,3 +18,9 @@ Run the app on your phone, then
 `adb forward tcp:16000 tcp:16000`
 ` nc localhost 16000 | ./run.py -l -s`
 
+
+Setup
+=====
+
+Install http://hathawaymix.org/Software/ReedSolomon/
+And other stuff
