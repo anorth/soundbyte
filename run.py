@@ -47,6 +47,8 @@ def parseArgs():
       help='Mixer noise strength, dB below unity')
   parser.add_option('--encoder', type='string', default="rs",
       help='Encoder to use (rs, repeat)')
+  parser.add_option('--play', action='store_true',
+      help='Play back received audio')
   parser.add_option('-v', '--verbose', action='store_true')
 
   (opts, args) = parser.parse_args()
@@ -169,6 +171,8 @@ def main():
       receiver = PyAudioReceiver()
     if options.file:
       receiver = NoiseMixingReceiver(receiver, options.file, options.signal, options.noise)
+    if options.play:
+      receiver = PlaybackReceiver(receiver)
     #try:
     totalBitErrs = 0
     while True:
