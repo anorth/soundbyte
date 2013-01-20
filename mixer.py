@@ -48,19 +48,16 @@ class NoiseMixingReceiver(object):
       limit(block)
     return block
   
-  
 def main():
   (options, args) = parseArgs()
-  instream = NoiseMixingReceiver(StreamReceiver(sys.stdin), options.file, options.signal, options.noise)
   outstream = StreamSender(sys.stdout)
+  instream = NoiseMixingReceiver(StreamReceiver(sys.stdin), options.file, options.signal, options.noise)
   if options.play:
-    playstream = PyAudioSender()
+    instream = PlaybackReceiver(instream)
   try:
     while True:
       block = instream.receiveBlock(SAMPLES_PER_BLOCK)
       outstream.sendBlock(block)
-      if options.play:
-        playstream.sendBlock(block)
   except KeyboardInterrupt, e:
     pass
 
