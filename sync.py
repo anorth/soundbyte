@@ -64,8 +64,8 @@ def vectorDetector(bucketVals, bitpattern):
 
 # hack, apparently sometimes '1.0 <= 1.0' is false,
 # haven't quite figured out why...
-  result *= 0.99
-  result += 0.005
+  result *= 0.999
+  result += 0.0005
 
   result = result * 2 - 1
 
@@ -162,7 +162,6 @@ class SyncUtil(object):
     #  1: got signal and aligned
     #  2: expecting 'ready for data' cycle
     state = -1
-    confidence2 = -1
 
     tries = 0
     oldMetaSignal = None
@@ -204,14 +203,17 @@ class SyncUtil(object):
           return abs(d)
         spectrumPlotHeight = 10# 40
         plotData = [
-          (-0.5, 0.5, data),
+          (-0.8, 0.8, data),
           (-1.0, 1.0, shortMetaSignal),
           (-1.0, 1.0, shortMetaSignal[-partBLength:]),
           (0, spectrumPlotHeight, fixSpectrum(shortMetaSpectrumB)),
+
           (-1.0, 1.0, longMetaSignal),
           (0, spectrumPlotHeight, fixSpectrum(longMetaSpectrum)),
+
           (-1.0, 1.0, longMetaSignal[:partALength]),
           (0, spectrumPlotHeight, fixSpectrum(longMetaSpectrumA)),
+
           (-1.0, 1.0, longMetaSignal[partALength:]),
           (0, spectrumPlotHeight, fixSpectrum(longMetaSpectrumB)),
           ##(0, spectrumPlotHeight, fixSpectrum(shortMetaSpectrumA)),
@@ -290,11 +292,10 @@ class SyncUtil(object):
         (resultShortB, dummy) = getAlignment(shortMetaSpectrumB,
             self.chipsPerSyncPulse, 1, 1, '#')
         if resultShortB == 1:
-          logging.debug('ALIGNED')
+          logging.debug('state 2 ALIGNED')
           #time.sleep(5)
           #receiver.receiveBlock(int(chipSize*2.0))
           #receiver.receiveBlock(int(chipSize*0.0))
-          logging.debug("aligned")
           return
         else:
           #time.sleep(10)
@@ -310,6 +311,7 @@ class SyncUtil(object):
         logging.debug('\n|| %s %s %s' % (resultLongA, resultLongB, resultShortB))
         if resultLongA == 1 and resultLongB < 1 and resultShortB >= 0:
           logging.debug('========= %s %s %s' % (resultLongA, resultLongB, resultShortB))
+          logging.debug('state 1 ALIGNED')
           state = 2
           misalignment = chipMisalignment / self.chipsPerSyncPulse
           #time.sleep(10)
@@ -331,5 +333,6 @@ class SyncUtil(object):
         alignedAmount = signalCycleSize * (metaSignalBucket - 1) + pulseSize
         logging.debug('aligning +%d cycles' % (metaSignalBucket - 1))
 
+      #time.sleep(1)
       data = data[alignedAmount:] + list(receiver.receiveBlock(alignedAmount))
 

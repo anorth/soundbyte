@@ -85,9 +85,10 @@ def main():
 
   baseBucket = options.base * chipSamples / SAMPLE_RATE
 
-  syncRatio = (options.syncrate / options.rate)
+  syncRatio = float(options.syncrate) / options.rate
   syncChipSamples = int(SAMPLE_RATE / options.syncrate)
   syncChannelGap = channelGap * syncRatio
+  assert syncChannelGap == math.floor(syncChannelGap)
   numSyncChans = options.numsyncchans
   syncBaseBucket = options.base * syncChipSamples / SAMPLE_RATE
   assert numSyncChans >= 4 # want at least 4
