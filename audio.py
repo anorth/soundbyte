@@ -195,3 +195,4 @@ class StreamSender(object):
 
   def sendBlock(self, waveform):
     self.stream.write(encodePcm(waveform))
+    self.stream.flush()

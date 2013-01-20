@@ -14,19 +14,19 @@ def parseArgs():
   parser.add_option('-p', '--play', action='store_true')
   parser.add_option('-f', '--file', type='str',
       help='WAV file path')
-  parser.add_option('-s', '--signal', type='int', default="-10",
+  parser.add_option('-s', '--signal', type='int', default="-6",
       help='Signal strength, dB below unity')
-  parser.add_option('-n', '--noise', type='int', default="-10",
+  parser.add_option('-n', '--noise', type='int', default="-6",
       help='Noise strength, dB below unity')
 
   return parser.parse_args()
 
 # Receiver decorator which mixes received signal with a noise file.
 class NoiseMixingReceiver(object):
-  def __init__(self, receiver, filename = None, signalGain = -10, noiseGain = -10):
+  def __init__(self, receiver, filename, signalGainDb, noiseGainDb):
     self.receiver = receiver
-    self.signalGain = signalGain
-    self.noiseGain = noiseGain
+    self.signalGain = dbAmplitudeGain(signalGainDb)
+    self.noiseGain = dbAmplitudeGain(noiseGainDb)
     self.noise = None
     self.noiseOffset = 0
     if filename:
@@ -34,7 +34,7 @@ class NoiseMixingReceiver(object):
       assert wf.getframerate() == SAMPLE_RATE, "Unnacceptable sample rate %d" % wf.getframerate()
       assert wf.getsampwidth() == 2, wf.getsampwidth()
       noise = decodePcm(wf.readframes(wf.getnframes()))
-      self.noise = noise * noiseGain
+      self.noise = noise * self.noiseGain
 
   def receiveBlock(self, numSamples):
     block = self.receiver.receiveBlock(numSamples)
@@ -51,10 +51,7 @@ class NoiseMixingReceiver(object):
   
 def main():
   (options, args) = parseArgs()
-  noiseGain = dbAmplitudeGain(options.noise)
-  signalGain = dbAmplitudeGain(options.signal)
-
-  instream = NoiseMixingReceiver(StreamReceiver(sys.stdin), options.file, signalGain, noiseGain)
+  instream = NoiseMixingReceiver(StreamReceiver(sys.stdin), options.file, options.signal, options.noise)
   outstream = StreamSender(sys.stdout)
   if options.play:
     playstream = PyAudioSender()

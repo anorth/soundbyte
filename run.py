@@ -13,6 +13,7 @@ from optparse import OptionParser
 from util import *
 from audio import *
 from packet import *
+from mixer import *
 from sync import genSync, SyncUtil
 
 def parseArgs():
@@ -36,9 +37,24 @@ def parseArgs():
       help='Number of sync frequency channels')
   parser.add_option('-t', '--test', action='store_true',
       help='Run in test mode with known data')
+  parser.add_option('--selftest', action='store_true',
+      help='Run in self-test mode with both sender and receiver')
+  parser.add_option('-f', '--file', type='str',
+      help='Noise WAV file path')
+  parser.add_option('--signal', type='int', default="-6",
+      help='Mixer signal strength, dB below unity')
+  parser.add_option('--noise', type='int', default="-6",
+      help='Mixer noise strength, dB below unity')
   parser.add_option('-v', '--verbose', action='store_true')
 
-  return parser.parse_args()
+  (opts, args) = parser.parse_args()
+  if opts.send and opts.listen:
+    assert False, "Use selftest to send and listen"
+  if opts.selftest:
+    opts.test = True
+    opts.send = True
+    opts.listen = True
+  return (opts, args)
 
 # Bytes per packet, until a header advertises a length
 PACKET_DATA_BYTES = 20
@@ -88,21 +104,33 @@ def main():
         options.numchans * channelGap))
   logging.info("Chip rate %d Hz, duration %d ms, %d samples/chip" % 
       (options.rate, int(chipDuration * 1000), chipSamples))
-  logging.info("%d encoder redundancy, %d raw bits/chip, %d, corrected bits/chip, %d bits/sec" % \
+  logging.info("%d encoder redundancy, %.1f raw bits/chip, %.1f corrected bits/chip, %d bits/sec" % \
       (options.redundancy, assigner.bitsPerChip(), bitsPerChip, bitsPerSecond))
 
-  class Stats:
+  class SelfTest:
+    infile = None
+    outfile = None
+
+  class Control:
+    running = True
     packetsSent = 0
     packetsReceived = 0
+    packetsCorrupt = 0
+    bitErrors = 0
 
   def doSend():
-    if options.stdin:
+    f = None
+    if options.selftest:
+      sender = StreamSender(SelfTest.outfile)
+      f = SelfTest.outfile
+    elif options.stdin:
       sender = StreamSender(sys.stdout)
+      f = sys.stdout
     else:
       sender = PyAudioSender()
     eof = False
     try:
-      while not eof:
+      while Control.running and not eof:
         if options.test:
           chars = genTestData(PACKET_DATA_BYTES)
         else:
@@ -115,16 +143,23 @@ def main():
           sendPacket(chars, sender)
           # Send a 1-chip silence buffer
           sender.sendBlock(silence(chipSamples))
-          Stats.packetsSent += 1
+          Control.packetsSent += 1
     except Exception, e:
       logging.info("%s" % e)
+    if f:
+      f.close()
 
   def doListen():
-    if options.stdin:
+    if options.selftest:
+        receiver = StreamReceiver(SelfTest.infile)
+    elif options.stdin:
       receiver = StreamReceiver(sys.stdin)
     else:
       receiver = PyAudioReceiver()
+    if options.file:
+      receiver = NoiseMixingReceiver(receiver, options.file, options.signal, options.noise)
     try:
+      totalBitErrs = 0
       while True:
         s = receivePacket(receiver)
         if options.test:
@@ -132,10 +167,12 @@ def main():
           nbits = PACKET_DATA_BYTES * 8
           biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
           if biterrs:
-            logging.info("=> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
+            Control.bitErrors += biterrs
+            Control.packetsCorrupt += 1
+            logging.info("-> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
           else:
-            logging.info("=> %d bytes ok" % len(s))
-          Stats.packetsReceived += 1
+            logging.debug("-> %d bytes ok" % len(s))
+          Control.packetsReceived += 1
         else:
           sys.stdout.write(s)
           sys.stdout.flush()
@@ -147,7 +184,7 @@ def main():
 
     chips = packeter.encodePacket(data)
 
-    logging.info("data: '%s'" % binascii.hexlify(data))
+    logging.debug("data: '%s'" % binascii.hexlify(data))
     preamble = genPreamble()
     final = list(preamble)
     for chip in chips:
@@ -208,11 +245,16 @@ def main():
   def receivePreamble(receiver):
     syncer.align(receiver, syncChipSamples)
 
+  if options.selftest:
+    (ii, oo) = socket.socketpair()
+    SelfTest.infile = ii.makefile('rb')
+    SelfTest.outfile = oo.makefile('wb')
+
   if options.send:
     t = threading.Thread(target = doSend, name = "sendThread")
     t.daemon = True
     t.start()
-  elif options.listen:
+  if options.listen:
     t = threading.Thread(target = doListen, name = "listenThread")
     t.daemon = True
     t.start()
@@ -220,13 +262,21 @@ def main():
   # Wait for KeyboardInterrupt. Note that thread.join() is uninterruptable.
   try:
     while True: time.sleep(1000)
+  except KeyboardInterrupt:
+    pass
   except BaseException, e:
-    logging.info("%s" % e)
-  finally:
-    if options.send:
-      logging.info("> %d packets sent" % Stats.packetsSent)
-    elif options.listen:
-      logging.info("> %d packets received" % Stats.packetsReceived)
+    logging.info("%s" % type(e))
+
+  Control.running = False
+  time.sleep(1)
+  if options.send:
+    logging.info("=> %d packets sent" % Control.packetsSent)
+  if options.listen:
+    logging.info("=> %d packets received" % Control.packetsReceived)
+    logging.info("=> %d uncorrected bit errors" % Control.bitErrors)
+    logging.info("=> %d packets corrupt" % Control.packetsCorrupt)
+  if options.selftest:
+    logging.info("=> %d packets dropped" % (Control.packetsSent - Control.packetsReceived))
 
 
 def genTestData(nbytes):
