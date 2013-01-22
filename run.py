@@ -51,6 +51,8 @@ def parseArgs():
       help='Play back received audio')
   parser.add_option('--testpackets', type='int', default=1000000,
       help='Test packets to send')
+  parser.add_option('--csv', action='store_true',
+      help='Generate CSV output')
   parser.add_option('-v', '--verbose', action='store_true')
 
   (opts, args) = parser.parse_args()
@@ -298,13 +300,18 @@ def main():
 
   Control.running = False
   time.sleep(1)
-  if options.send:
-    logging.info("=> %d packets sent" % Control.packetsSent)
-  if options.listen:
-    logging.info("=> %d packets received" % Control.packetsReceived)
-    logging.info("=> %d packets corrupt (%d bits)" % (Control.packetsCorrupt, Control.bitsCorrupt))
-  if options.selftest:
-    logging.info("=> %d packets dropped" % (Control.packetsSent - Control.packetsReceived))
+  if options.csv:
+    cols = map(str, (options.base, options.encoder, options.spacing, options.rate, options.numchans, options.redundancy, options.syncrate, options.numsyncchans))
+    cols.extend(map(str, [Control.packetsSent, Control.packetsReceived, Control.packetsCorrupt, Control.packetsSent - Control.packetsReceived]))
+    logging.info("=> " + ",".join(cols))
+  else:
+    if options.send:
+      logging.info("=> %d packets sent" % Control.packetsSent)
+    if options.listen:
+      logging.info("=> %d packets received" % Control.packetsReceived)
+      logging.info("=> %d packets corrupt (%d bits)" % (Control.packetsCorrupt, Control.bitsCorrupt))
+    if options.selftest:
+      logging.info("=> %d packets dropped" % (Control.packetsSent - Control.packetsReceived))
 
 
 def genTestData(nbytes):
