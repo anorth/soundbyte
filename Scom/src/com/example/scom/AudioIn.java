@@ -41,11 +41,11 @@ class AudioIn extends Thread {
         Log.i(TAG, "Recording started: " + recorder.getRecordingState());
         while (!stopped) {
           byte[] buffer = buffers[bufIndex++ % buffers.length];
-          Log.v(TAG, "Awaiting buffer, recording state " + recorder.getRecordingState());
+//          Log.v(TAG, "Awaiting buffer, recording state " + recorder.getRecordingState());
           // Note: bytes represent shorts, little-endian
           int bytesRead = recorder.read(buffer, 0, buffer.length);
           if (bytesRead > 0) {
-            Log.v(TAG, "Received audio buffer of " + (bytesRead / Constants.BYTES_PER_SAMPLE) + " samples");
+//            Log.v(TAG, "Received audio buffer of " + (bytesRead / Constants.BYTES_PER_SAMPLE) + " samples");
             sendBuffer(buffer, 0, bytesRead);
           } else {
             Log.e(TAG, "AudioRecord.read returned " + bytesRead);

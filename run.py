@@ -49,8 +49,8 @@ def parseArgs():
       help='Encoder to use (rs, repeat)')
   parser.add_option('--play', action='store_true',
       help='Play back received audio')
-  parser.add_option('--testpackets', type='int', default=1000000,
-      help='Test packets to send')
+  parser.add_option('--repeat', type='int', default=1000000,
+      help='Number times to send the data')
   parser.add_option('--csv', action='store_true',
       help='Generate CSV output')
   parser.add_option('-v', '--verbose', action='store_true')
@@ -136,38 +136,32 @@ def main():
     bitsCorrupt = 0
 
   def doSend():
-    f = None
-    nPackets = options.testpackets
+    if options.test:
+      data = genTestData(PACKET_DATA_BYTES)
+    else:
+      data = sys.stdin.read()
+    outstream = None
+    iterations = options.repeat
     if options.selftest:
       sender = StreamSender(SelfTest.outfile)
-      f = SelfTest.outfile
+      outstream = SelfTest.outfile
     elif options.stdin:
       sender = StreamSender(sys.stdout)
-      f = sys.stdout
+      outstream = sys.stdout
     else:
       sender = PyAudioSender()
-    eof = False
-    #try:
-    while Control.running and nPackets > 0 and not eof:
-      if options.test:
-        chars = genTestData(PACKET_DATA_BYTES)
-        nPackets -= 1
-      else:
-        # Terminal input will be line-buffered, but read PACKET bytes at a time.
-        chars = sys.stdin.read(PACKET_DATA_BYTES)
-        if not chars:
-          eof = True
 
-      if chars:
-        sendPacket(chars, sender)
-        # Send a 1-chip silence buffer
-        sender.sendBlock(silence(chipSamples))
+    while Control.running and iterations > 0:
+      iterations -= 1
+      for chars in map(list, partition(data, PACKET_DATA_BYTES)):
+        if len(chars) < PACKET_DATA_BYTES:
+          pad(chars, '\0', PACKET_DATA_BYTES)
+        payload = ''.join(chars)
+        sendPacket(payload, sender)
         Control.packetsSent += 1
-    #except Exception, e:
-    #  logging.info("%s" % e)
     Control.running = False
-    if f:
-      f.close()
+    if outstream:
+      outstream.close()
 
   def doListen():
     if options.selftest:
@@ -197,13 +191,13 @@ def main():
           logging.info("-> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
         else:
           logging.debug("-> %d bytes ok" % len(s))
-        Control.packetsReceived += 1
       else:
         if s:
           sys.stdout.write(s)
         else:
           sys.stdout.write('!DATA CORRUPT!')
         sys.stdout.flush()
+      Control.packetsReceived += 1
     #except BaseException, e:
     #  logging.info("%s" % e)
 
@@ -227,6 +221,9 @@ def main():
       final.extend(waveform)
 
     sender.sendBlock(final)
+    # Send a 1-chip silence buffer
+    sender.sendBlock(silence(chipSamples))
+
     #time.sleep(2)
     #print '==== BEGIN ===='
     #for waveform in waveforms:
@@ -309,7 +306,8 @@ def main():
       logging.info("=> %d packets sent" % Control.packetsSent)
     if options.listen:
       logging.info("=> %d packets received" % Control.packetsReceived)
-      logging.info("=> %d packets corrupt (%d bits)" % (Control.packetsCorrupt, Control.bitsCorrupt))
+      if options.test:
+        logging.info("=> %d packets corrupt (%d bits)" % (Control.packetsCorrupt, Control.bitsCorrupt))
     if options.selftest:
       logging.info("=> %d packets dropped" % (Control.packetsSent - Control.packetsReceived))
 

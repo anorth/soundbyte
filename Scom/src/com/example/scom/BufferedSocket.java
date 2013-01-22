@@ -50,10 +50,10 @@ class BufferedSocket extends Thread {
 
       try {
         while (client != null && running) {
-          Log.v(TAG, "[I] Waiting for data, q has " + inputQ.size());
+//          Log.v(TAG, "[I] Waiting for data, q has " + inputQ.size());
           byte[] buffer = inputQ.poll(1, TimeUnit.SECONDS);
           if (buffer != null) {
-            Log.v(TAG, "[I] Writing chunk of size " + buffer.length);
+//            Log.v(TAG, "[I] Writing chunk of size " + buffer.length);
             client.getOutputStream().write(buffer);            
           } else {
             Log.v(TAG, "[I] Timed out waiting for data");
@@ -67,16 +67,7 @@ class BufferedSocket extends Thread {
         Log.e(TAG, "[I] IO exception writing to client: " + e.getMessage());
       }
 
-      if (client != null) {
-        Log.i(TAG, "Closing client connection");
-        try {
-          client.close();
-          client = null;
-          bus.post(new SocketDisconnected(name));
-        } catch (IOException e) {
-          Log.e(TAG, "IO exception closing client", e);
-        }
-      }
+      closeSocket();
     }
 
     Log.i(TAG, "Shutting down server");
@@ -104,6 +95,20 @@ class BufferedSocket extends Thread {
     }
   }
 
+  private void closeSocket() {
+    if (client != null) {
+      Log.i(TAG, "Closing client connection");
+      try {
+        client.close();
+      } catch (IOException e) {
+        Log.e(TAG, "IO exception closing client", e);
+      } finally {
+        client = null;
+        bus.post(new SocketDisconnected(name));        
+      }
+    }
+  }
+
   public void send(byte[] buffer) {
     if (client != null) {
       boolean ok = inputQ.offer(buffer); // Might drop this buffer if queue is full
@@ -119,20 +124,19 @@ class BufferedSocket extends Thread {
   
   /** Reads at most maxBytes from the socket. */
   public byte[] receive(int maxBytes) {
-    if (client != null) {
-      Log.v(TAG, "[O] Receiving buffer of " + maxBytes);
-      byte[] buf = new byte[maxBytes];
+    byte[] buf = new byte[maxBytes];
+    while (client != null) {
+//      Log.v(TAG, "[O] Receiving buffer of " + maxBytes);
       try {
         int bytesRead = client.getInputStream().read(buf);
-        Log.v(TAG, "[O] Received " + bytesRead + " bytes");
         if (bytesRead > 0) {
+          Log.v(TAG, "[O] Received " + bytesRead + " bytes");
           return Arrays.copyOf(buf, bytesRead);          
         }
       } catch (IOException e) {
         Log.e(TAG, "[O] Exception reading input socket", e);
       }
     }
-    Log.v(TAG, "[O] Returning empty buffer");
     return new byte[0];
   }
 

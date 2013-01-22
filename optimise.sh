@@ -26,7 +26,7 @@ for base in $BASE; do
       for rate in $RATE; do
         for numchans in $NUMCHANS; do
           echo "base=$base encoder=$encoder spacing=$spacing rate=$rate numchans=$numchans"
-          ./run.py --selftest --csv -f $NOISE --signal $SIGNAL --testpackets 20 --base $base --encoder $encoder --spacing $spacing --rate $rate --numchans $numchans 2> >(grep '^=>')
+          ./run.py --selftest --csv -f $NOISE --signal $SIGNAL --repeat 20 --base $base --encoder $encoder --spacing $spacing --rate $rate --numchans $numchans 2> >(grep '^=>')
         done
       done
     done

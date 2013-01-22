@@ -3,8 +3,8 @@
     <string name="app_name">Scom</string>
     <string name="menu_settings">Settings</string>
     <string name="title_activity_main">Scom</string>
-    <string name="listening">Audio on port 16000</string>
-    <string name="adb">adb forward tcp:16000 tcp:16000</string>
+    <string name="listening">Audio/data on port 16000/1</string>
+    <string name="adb">adb forward tcp:NNN tcp:NNN</string>
     <string name="instruction">Forward local port with</string>
 
 </resources>

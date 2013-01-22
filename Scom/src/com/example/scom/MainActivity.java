@@ -19,7 +19,6 @@ public class MainActivity extends Activity {
   private static final String TAG = "AudioServerMain";
   public static final int AUDIO_PORT = 16000;
 
-
   private final Bus bus = new Bus(ThreadEnforcer.ANY);
   
   private BufferedSocket audioSocket = null;
@@ -27,7 +26,10 @@ public class MainActivity extends Activity {
   private AudioIn audioIn = null;
   private AudioOut audioOut = null;
   private DataProcessor dataProcessor = null;
+  
+  private boolean isForeground = false;
   private TextView statusTextView = null;
+  
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -62,25 +64,27 @@ public class MainActivity extends Activity {
     }
     statusTextView.setText("Waiting...");
     getWindow().getDecorView().getRootView().setKeepScreenOn(true);
+    isForeground = true;
   }
   
   @Override
   public void onStop() {
     Log.w(TAG, "Received onStop");
-    audioIn.close();
-    audioOut.close();
-    audioSocket.close();
-    dataProcessor.close();
-    dataSocket.close();
-    try {
-      audioIn.join(1000);
-      audioOut.join(1000);
-      audioSocket.join(1000);
-      dataProcessor.join(1000);
-      dataSocket.join(1000);
-    } catch (InterruptedException e) {
-      Log.w(TAG, "Interrupted waiting for threads to close");
-    }
+//    audioIn.close();
+//    audioOut.close();
+//    audioSocket.close();
+//    dataProcessor.close();
+//    dataSocket.close();
+//    try {
+//      audioIn.join(1000);
+//      audioOut.join(1000);
+//      audioSocket.join(1000);
+//      dataProcessor.join(1000);
+//      dataSocket.join(1000);
+//    } catch (InterruptedException e) {
+//      Log.w(TAG, "Interrupted waiting for threads to close");
+//    }
+    isForeground = false;
     super.onStop();
   }
   
@@ -112,8 +116,10 @@ public class MainActivity extends Activity {
   
   @Subscribe
   public void messageReceived(final MessageReceived e) {
-    Intent i = new Intent(Intent.ACTION_VIEW);
-    i.setData(Uri.parse(e.msg));
-    startActivity(i);
+    if (isForeground) {
+      Intent i = new Intent(Intent.ACTION_VIEW);
+      i.setData(Uri.parse(e.msg));
+      startActivity(i);      
+    }
   }
 }

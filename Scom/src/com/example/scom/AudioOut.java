@@ -11,12 +11,12 @@ class AudioOut extends Thread {
       AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
   private static final String TAG = "AudioOut";
   
-  private final BufferedSocket server;
+  private final BufferedSocket dataSocket;
   
   private volatile boolean stopped = false;
   
-  AudioOut(BufferedSocket server) {
-    this.server = server;
+  AudioOut(BufferedSocket dataSocket) {
+    this.dataSocket = dataSocket;
   }
   
   @Override
@@ -39,7 +39,7 @@ class AudioOut extends Thread {
             Log.v(TAG, "Received audio buffer of " + (buffer.length / Constants.BYTES_PER_SAMPLE) + " samples");
             tracker.write(buffer, 0, buffer.length);
           } else {
-            Log.v(TAG, "receiveBuffer returned empty buffer");
+//            Log.v(TAG, "receiveBuffer returned empty buffer");
             Thread.sleep(1000);
           }
         }
@@ -64,7 +64,7 @@ class AudioOut extends Thread {
   }
 
   private byte[] receiveBuffer() {
-    return server.receive(BUFFER_SIZE);
+    return dataSocket.receive(BUFFER_SIZE);
   }
 
   void close() {

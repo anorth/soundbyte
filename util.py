@@ -35,6 +35,14 @@ def signum(x):
   assert x != 0 # You're doing it wrong
   return math.copysign(1, x)
 
+# Pads a list with value to some total length
+def pad(lst, value, tolen):
+  lst.extend([value] * (tolen - len(lst)))
+
+# Partitions a sequence into subsequences of length n
+def partition(sequence, n):
+  return [sequence[i:i+n] for i in xrange(0, len(sequence), n)]
+
 # Computes the decibel ratio between two power quantities
 def dbPower(a, b):
   return 10 * math.log10(a / b)

@@ -322,14 +322,6 @@ class CombinadicAssigner(object):
     return self.lastSnr
 
 
-# Partitions a sequence into subsequences of length n
-def partition(sequence, n):
-  return [sequence[i:i+n] for i in xrange(0, len(sequence), n)]
-
-# Pads a list with value to some total length
-def pad(lst, value, tolen):
-  lst.extend([value] * (tolen - len(lst)))
- 
 # A generator that yields one bit at a time from a string of bytes,
 # each byte least significant first.
 def toBitSequence(bytesequence):
