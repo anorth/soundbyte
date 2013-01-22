@@ -1,5 +1,11 @@
 package com.example.audioserver;
 
+import android.util.Log;
+
+import com.example.audioserver.Events.SocketConnected;
+import com.example.audioserver.Events.SocketDisconnected;
+import com.squareup.otto.Bus;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -9,15 +15,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import android.util.Log;
-
-import com.example.audioserver.Events.SocketConnected;
-import com.example.audioserver.Events.SocketDisconnected;
-import com.squareup.otto.Bus;
-
 class AudioSocket extends Thread {
 
-  public static final int PORT = 16000;
+  public static final int PORT = 16002;
   public static final int Q_SIZE = 100;
   private static final String TAG = "AudioSocket";
 
@@ -50,7 +50,7 @@ class AudioSocket extends Thread {
           byte[] buffer = inputQ.poll(1, TimeUnit.SECONDS);
           if (buffer != null) {
             Log.v(TAG, "[I] Writing chunk of size " + buffer.length);
-            client.getOutputStream().write(buffer);            
+            client.getOutputStream().write(buffer);
           } else {
             Log.w(TAG, "[I] Timed out waiting for audio");
           }
@@ -96,7 +96,7 @@ class AudioSocket extends Thread {
       } catch (IOException e) {
         Log.e(TAG, "Error accepting socket", e);
         throw new RuntimeException(e);
-      }      
+      }
     }
   }
 
@@ -112,7 +112,7 @@ class AudioSocket extends Thread {
       //Log.v(TAG, (ok ? "Received" : "Dropped") + " buffer");
     }
   }
-  
+
   /** Reads at most maxBytes from the socket. */
   public byte[] receive(int maxBytes) {
     if (client != null) {
@@ -122,7 +122,7 @@ class AudioSocket extends Thread {
         int bytesRead = client.getInputStream().read(buf);
         Log.v(TAG, "[O] Received " + bytesRead + " bytes");
         if (bytesRead > 0) {
-          return Arrays.copyOf(buf, bytesRead);          
+          return Arrays.copyOf(buf, bytesRead);
         }
       } catch (IOException e) {
         Log.e(TAG, "[O] Exception reading input socket", e);

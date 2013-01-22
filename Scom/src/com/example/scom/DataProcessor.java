@@ -6,20 +6,20 @@ import com.example.scom.Events.MessageReceived;
 import com.squareup.otto.Bus;
 
 class DataProcessor extends Thread {
-  
+
   private static final String TAG = "DataProcessor";
-  
+
   private final BufferedSocket server;
   private final Bus bus;
 
   private volatile boolean stopped = false;
-  
+
   DataProcessor(BufferedSocket server, Bus bus) {
     super("DataProcessorThread");
     this.server = server;
     this.bus = bus;
   }
-    
+
   @Override
   public void run() {
     try {
@@ -44,7 +44,7 @@ class DataProcessor extends Thread {
           Log.i(TAG, "Received data buffer of " + buffer.length + " bytes");
           for (int i = 0; i < buffer.length; ++i) {
             Log.d(TAG, String.format("%d", buffer[i]));
-            if (buffer[i] == 0) {
+            if (buffer[i] == '\n') {
               handleMessage(new String(messageBuffer, 0, msgBufferCount));
               return;
             }
@@ -61,7 +61,7 @@ class DataProcessor extends Thread {
       throw new RuntimeException(e);
     }
   }
-  
+
   private void handleMessage(String msg) {
     Log.e(TAG, "MESSAGE: " + msg);
     bus.post(new MessageReceived(msg));
