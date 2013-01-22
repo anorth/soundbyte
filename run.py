@@ -193,10 +193,32 @@ def main():
           biterrs = nbits
         else:
           biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
+        byteErrors = []
+        nbytes = PACKET_DATA_BYTES
+        nByteErrors = 0
+
+        if s:
+          # XXX HACK
+          # use this instead! 
+          # assert len(s) == len(expected), '%s %s' % (len(s), len(expected))
+          if len(s) > len(expected):
+            s = s[:len(expected)]
+          # end XXX
+
+          for c in xrange(len(expected)):
+            if s[c] != expected[c]:
+              byteErrors.append(c)
+          nByteErrors = len(byteErrors)
+        else:
+          nByteErrors = PACKET_DATA_BYTES
+
         if biterrs:
           Control.bitErrors += biterrs
           Control.packetsCorrupt += 1
-          logging.info("-> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
+          bitRatio = 1.0*biterrs/nbits
+          byteRatio = 1.0*nByteErrors/nbytes
+          logging.info("-> Data corrupt! %d/%d bits, %d/%d bytes wrong (%.2f, %.2f, r:%.2f) bytes %s" % (
+            biterrs, nbits, nByteErrors, nbytes, bitRatio, byteRatio, byteRatio/bitRatio, byteErrors))
         else:
           logging.debug("-> %d bytes ok" % len(s))
         Control.packetsReceived += 1
@@ -220,13 +242,21 @@ def main():
     for chip in chips:
       logging.debug("chip: %s" % (chip))
       waveform = buildWaveform(chip, options.base, channelGap, chipSamples)
-      if chip is chips[0]:
-        fadein(waveform, int(chipSamples / 20))
-      if chip is chips[-1]:
-        fadeout(waveform, int(chipSamples / 20))
+
+      waveform = waveform#[:-len(waveform) / 8]
+      fadeout(waveform, int(chipSamples) / 10)
+      fadein(waveform, int(chipSamples / 10))
+
+      final.extend(waveform)
+      #final.extend(silence(len(waveform)/8))
+      #final.extend(silence(len(waveform)))
+
+      ##if chip is chips[0]:
+      #  fadein(waveform, int(chipSamples / 20))
+      #if chip is chips[-1]:
+      #  fadeout(waveform, int(chipSamples / 20))
 #      if len(waveforms) == 0:
 #        waveform = list(genPreamble()) + list(waveform)
-      final.extend(waveform)
 
     sender.sendBlock(final)
     #time.sleep(2)
