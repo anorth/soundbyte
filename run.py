@@ -3,6 +3,7 @@
 import binascii
 import logging
 import math
+import md5
 import numpy as np
 import random
 import sys
@@ -65,7 +66,8 @@ def parseArgs():
   return (opts, args)
 
 # Bytes per packet, until a header advertises a length
-PACKET_DATA_BYTES = 20
+CHUNK_DATA_BYTES = 20
+CHUNK_DATA_BYTES = 10
 
 
 def main():
@@ -78,12 +80,12 @@ def main():
   assigner = CombinadicAssigner(options.numchans)
   if options.encoder == 'lay':
     encoder = LayeredEncoder(assigner.bitsPerChip(),
-      PACKET_DATA_BYTES,
+      CHUNK_DATA_BYTES,
       max(1.1, float(options.redundancy) / 3))
   elif options.encoder == 'rs':
     encoder = ReedSolomonEncoder(assigner.bitsPerChip(),
-      int(options.redundancy * PACKET_DATA_BYTES),
-      PACKET_DATA_BYTES)
+      int(options.redundancy * CHUNK_DATA_BYTES),
+      CHUNK_DATA_BYTES)
   elif options.encoder == 'repeat':
     encoder = RepeatingEncoder(options.redundancy, assigner.bitsPerChip())
   else:
@@ -93,7 +95,7 @@ def main():
 
   chipDuration = 1.0 / options.rate
   chipSamples = int(SAMPLE_RATE / options.rate)
-  bitsPerChip = packeter.bitsPerChip(PACKET_DATA_BYTES)
+  bitsPerChip = packeter.bitsPerChip(CHUNK_DATA_BYTES)
   bitsPerSecond = bitsPerChip * options.rate
   #chipsPerByte = packeter.symbolsForBytes(100)/100.0
   #byteRate = options.rate / chipsPerByte
@@ -142,7 +144,7 @@ def main():
 
   def doSend():
     if options.test:
-      data = genTestData(PACKET_DATA_BYTES)
+      data = genTestData(CHUNK_DATA_BYTES)
     else:
       data = sys.stdin.read()
     outstream = None
@@ -158,12 +160,8 @@ def main():
 
     while Control.running and iterations > 0:
       iterations -= 1
-      for chars in map(list, partition(data, PACKET_DATA_BYTES)):
-        if len(chars) < PACKET_DATA_BYTES:
-          pad(chars, '\0', PACKET_DATA_BYTES)
-        payload = ''.join(chars)
-        sendPacket(payload, sender)
-        Control.packetsSent += 1
+      sendPacket(sender, data)
+      Control.packetsSent += 1
     Control.running = False
     if outstream:
       outstream.close()
@@ -185,7 +183,10 @@ def main():
       (s, chips) = receivePacket(receiver)
 
       if options.test:
-        expected = genTestData(PACKET_DATA_BYTES)
+        break
+        # XXX get this working again
+
+        expected = genTestData(CHUNK_DATA_BYTES)
         expectedChips = packeter.encodePacket(expected)
         assert len(chips) == len(expectedChips)
         assert len(chips[0]) == len(expectedChips[0])
@@ -209,11 +210,11 @@ def main():
         continue
 
       if options.test:
-        expected = genTestData(PACKET_DATA_BYTES)
-        nbits = PACKET_DATA_BYTES * 8
+        expected = genTestData(CHUNK_DATA_BYTES)
+        nbits = CHUNK_DATA_BYTES * 8
         biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
         byteErrors = []
-        nbytes = PACKET_DATA_BYTES
+        nbytes = CHUNK_DATA_BYTES
 
         # XXX HACK
         # use this instead! 
@@ -246,32 +247,39 @@ def main():
     #except BaseException, e:
     #  logging.info("%s" % e)
 
-  def sendPacket(data, sender):
-    assert len(data) == PACKET_DATA_BYTES, "data length must match packet length"
+  def sendPacket(sender, data):
+    assert len(data) <= 255, 'data length cannot exceed 255'
+    hasher = md5.new()
+    hasher.update(data)
+    packetHash = hasher.digest()[:3]
 
-    chips = packeter.encodePacket(data)
+    data = packetHash + chr(len(data)) + data
+    logging.info('Packet len %d, num chunks %d' % (len(data), len(partition(data, CHUNK_DATA_BYTES))))
+
+    chunks = []
+    for chars in map(list, partition(data, CHUNK_DATA_BYTES)):
+      if len(chars) < CHUNK_DATA_BYTES:
+        pad(chars, '\0', CHUNK_DATA_BYTES)
+      payload = ''.join(chars)
+      chunks.append(payload)
 
     logging.debug("data: '%s'" % binascii.hexlify(data))
     preamble = genPreamble()
     final = list(preamble)
-    for chip in chips:
-      logging.debug("chip: %s" % (chip))
-      waveform = buildWaveform(chip, options.base, channelGap, chipSamples)
 
-      waveform = waveform#[:-len(waveform) / 8]
-      fadeout(waveform, int(chipSamples) / 10)
-      fadein(waveform, int(chipSamples / 10))
+    logging.info('...packet')
+    for chunk in chunks:
+      chips = packeter.encodePacket(chunk)
+      logging.info('...chunk')
+      for chip in chips:
+        logging.debug("chip: %s" % (chip))
+        waveform = buildWaveform(chip, options.base, channelGap, chipSamples)
 
-      final.extend(waveform)
-      #final.extend(silence(len(waveform)/8))
-      #final.extend(silence(len(waveform)))
+        waveform = waveform#[:-len(waveform) / 8]
+        fadeout(waveform, int(chipSamples) / 10)
+        fadein(waveform, int(chipSamples / 10))
 
-      ##if chip is chips[0]:
-      #  fadein(waveform, int(chipSamples / 20))
-      #if chip is chips[-1]:
-      #  fadeout(waveform, int(chipSamples / 20))
-#      if len(waveforms) == 0:
-#        waveform = list(genPreamble()) + list(waveform)
+        final.extend(waveform)
 
     sender.sendBlock(final)
     # Send a 1-chip silence buffer
@@ -293,27 +301,49 @@ def main():
     receivePreamble(receiver)
 
     packetChips = []
-    numPacketSymbols = packeter.symbolsForBytes(PACKET_DATA_BYTES)
-    #print "expecting", numPacketSymbols, "chips for", PACKET_DATA_BYTES, "bytes"
-    for symbolIndex in xrange(numPacketSymbols):
-      waveform = receiver.receiveBlock(chipSamples)
-      spectrum = fouriate(window(waveform))
+    packetData = ''
 
-      chip = []
-      for f in xrange(options.base, options.base + (channelGap*options.numchans), channelGap):
-        chip.append(spectrum.power(f))
+    numChunkSymbols = packeter.symbolsForBytes(CHUNK_DATA_BYTES)
+    remaining = -1
+    logging.info('...receiving packet')
+    while remaining != 0:
+      chunkChips = []
+      for symbolIndex in xrange(numChunkSymbols):
+        waveform = receiver.receiveBlock(chipSamples)
+        spectrum = fouriate(window(waveform))
 
-      packetChips.append(chip)
-      
-    (data, chips) = packeter.decodePacket(packetChips)
-    logging.debug('')
-    if data:
-      logging.info("+++ Packet received, SNR %.2f dB, corrected error rate %.3f" % 
-          (assigner.lastSignalRatio(), packeter.lastErrorRate()))
-    else:
-      logging.info("--- Packed DROPPED")
+        chip = []
+        for f in xrange(options.base, options.base + (channelGap*options.numchans), channelGap):
+          chip.append(spectrum.power(f))
 
-    return (data, chips)
+        chunkChips.append(chip)
+        
+      (data, chips) = packeter.decodePacket(chunkChips)
+      packetChips.extend(chips)
+      logging.debug('')
+      if data:
+        logging.info("+++ Chunk received, SNR %.2f dB, corrected error rate %.3f" % 
+            (assigner.lastSignalRatio(), packeter.lastErrorRate()))
+        if remaining == -1:
+          packetHash = data[:3]
+          dataLength = ord(data[3])
+          chunkData = data[4:]
+          remaining = math.ceil(float(dataLength + 4) / CHUNK_DATA_BYTES)
+          logging.info('Length %d' % dataLength)
+        else:
+          chunkData = data
+
+      else:
+        logging.info("--- Chunk DROPPED")
+        return (None, packetChips)
+
+      packetData += chunkData
+      remaining -= 1
+      logging.info('Chunks remaining: %d, Chunk data %s' % (remaining, chunkData))
+      assert remaining >= 0
+
+    packetData = packetData[:dataLength]
+    return (packetData, packetChips)
 
   # Sends a packet preamble, signals to allow the receiver to align
   def genPreamble():
