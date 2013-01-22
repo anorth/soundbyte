@@ -8,7 +8,7 @@ import struct
 
 from util import *
 
-from reedsolomon import Codec, UncorrectableError
+from reedsolomon import Codec, IntegerCodec, UncorrectableError
 
 class DecodeException(BaseException):
   pass
@@ -36,14 +36,18 @@ class Packeter(object):
     return self.assigner.encodeChips(encoded)
 
   def decodePacket(self, chips):
-    encoded = self.assigner.decodeChips(chips)
-    return ''.join(self.encoder.decode(encoded))
+    (encoded, chips) = self.assigner.decodeChips(chips)
+    try:
+      decoded = ''.join(self.encoder.decode(encoded))
+    except DecodeException, e:
+      decoded = None
+    return (decoded, chips)
 
   def symbolsForBytes(self, nbytes):
     return self.assigner.symbolsForBits(self.encoder.encodedBitsForBytes(nbytes))
 
-  def bitsPerChip(self):
-    return float(self.assigner.bitsPerChip()) / (self.encoder.encodedBitsForBytes(100) / 800)
+  def bitsPerChip(self, nbytes):
+    return float(self.assigner.bitsPerChip()) / (self.encoder.encodedBitsForBytes(nbytes) / (nbytes*8))
 
   def lastErrorRate(self):
     return self.encoder.lastErrorRate()
@@ -83,24 +87,20 @@ class ReedSolomonEncoder(object):
     self.messageSymbols = int(messageSymbols)
     self.encodedSize = int(encodedSize)
     self.c = Codec(self.encodedSize, self.messageSymbols)
+    self.lastErrors = []
 
   def encode(self, data):
-    #logging.info("VAG %s ", data)
-    #data = list(data)
-    #logging.info("DICK")
-    #data = ''.join(data)
-    #logging.info("COCK %s" % data)
     assert len(data) == self.messageSymbols # todo: relax this & fix encodedBitsForBytes
-    #logging.info("ZING")
     encoded = self.c.encode(data)
-    #logging.info("ASDF")
-    #return toBitSequence([encoded[i] for i in xrange(len(encoded))])
     return list(toBitSequence(encoded))
 
   def decode(self, signals):
     cropped = ( ''.join(toByteSequence(signals + ([0] * (8 - len(signals) % 8)))) )[:self.encodedSize]
     try:
-      return self.c.decode(cropped)[0]
+      result = self.c.decode(cropped)
+      logging.debug('\n' + str(result[1]))
+      self.lastErrors = 1.0 * len(result[1]) / self.encodedSize
+      return result[0]
     except UncorrectableError, e:
       raise DecodeException()
       
@@ -109,8 +109,110 @@ class ReedSolomonEncoder(object):
     return self.encodedSize * nbytes * 8 / self.messageSymbols
 
   def lastErrorRate(self):
-    return 0.0
+    return self.lastErrors
     
+class LayeredEncoder(object):
+  def __init__(self, symbolSize, messageBytes, rsExpansionFactor):
+    logging.info('RS EXPANSION FACTOR %s' % rsExpansionFactor)
+    assert rsExpansionFactor > 1
+    self.width = symbolSize
+    self.messageSymbols = int(math.ceil(float(messageBytes) * 8 / symbolSize))
+    self.encodedSize = int(math.ceil(float(self.messageSymbols) * rsExpansionFactor))
+
+    self.c = IntegerCodec(self.encodedSize, self.messageSymbols, symsize = symbolSize)
+
+    self.extraSymbols = self.encodedSize - self.messageSymbols
+
+    self.n = 3
+
+    self.messageBytes = int(messageBytes)
+    self.encodedBits = math.ceil(float(self.encodedSize) * self.width * self.n)
+    logging.info('ENCODED BITS %s' % self.encodedBits)
+
+  def encode(self, data):
+    bits = list(toBitSequence(data))
+    ints = map(toInt, partition(bits, self.width))
+
+    encoded = []
+    encodedInts = self.c.encode(ints)
+    for encodedInt in encodedInts:
+      encoded.extend(toBits(encodedInt, self.width) * self.n)
+
+    #logging.info('Encoded %s' % encodedInts)
+    #logging.info('Encoded %s %s' % (len(encoded), encoded))
+    return encoded
+
+
+  def decode(self, signals):
+    signals = map(signum, signals)
+    #logging.info('SIGNALS %s', signals)
+
+    droppedSymbols = []
+    encodedInts = []
+
+    decoded = []
+    errors = 0
+    chunks = partition(signals, self.width)
+    for chunkList in partition(chunks, self.n):
+      #def prettyInt(x):
+      #  if x == -1: return 'X'
+      #  else: return '-'
+
+      #
+      #crap = [''.join(map(prettyInt, c)) for c in chunkList]
+      #logging.info("%s.." % ('\n'.join(crap)) )
+      counts = [ sum(b) for b in zip(*chunkList) ]
+      #print counts
+      #errors += sum([ self.n - abs(c) for c in counts ]) / 2
+      bits = map(signum, counts)
+      encodedInts.append(toInt(bits))
+
+#    index = 0
+#    chunks = partition(signals, self.width)
+#    assert self.n == 3
+#    for chunkList in partition(chunks, self.n):
+#      votes = {}
+#      ints = map(toInt, chunkList)
+#      winner = None
+#      for vote in ints:
+#        if votes.has_key(vote):
+#          winner = vote
+#          break
+#        votes[vote] = True
+#
+#      if winner == None:
+#        if len(droppedSymbols) < self.extraSymbols:
+#          droppedSymbols.append(index)
+#        else:
+#          logging.info('!!!!!!!!Too many botched symbols %s' % droppedSymbols)
+#
+#          raise DecodeException()
+#        encodedInts.append(0)
+#      else:
+#        encodedInts.append(winner)
+#
+#      index += 1
+#
+    try:
+      #logging.info('----> Decoding %s' % [len(encodedInts), encodedInts, droppedSymbols])
+      decodedInts = self.c.decode(encodedInts, droppedSymbols)[0]
+    except UncorrectableError, e:
+      raise DecodeException()
+
+    decodedBits = []
+    for decodedInt in decodedInts:
+      decodedBits.extend(toBits(decodedInt, self.width))
+
+    return toByteSequence(decodedBits[:self.messageBytes*8])
+      
+    
+  def encodedBitsForBytes(self, nbytes):
+    assert nbytes == self.messageBytes, '===== Got %s' % nbytes
+    return self.encodedBits
+
+  def lastErrorRate(self):
+    return 0.0
+
 
 # Encoder which repeats width-length chunks of the data N times and 
 # takes a majority vote when decoding
@@ -141,6 +243,13 @@ class RepeatingEncoder(object):
     errors = 0
     chunks = partition(signals, self.width)
     for chunkList in partition(chunks, self.n):
+      #def prettyInt(x):
+      #  if x == -1: return 'X'
+      #  else: return '-'
+
+      #
+      #crap = [''.join(map(prettyInt, c)) for c in chunkList]
+      #logging.info("%s.." % ('\n'.join(crap)) )
       counts = [ sum(b) for b in zip(*chunkList) ]
       #print counts
       errors += sum([ self.n - abs(c) for c in counts ]) / 2
@@ -214,6 +323,7 @@ class InterleavingRepeatingEncoder(RepeatingEncoder):
 # - decode(chips):
 # Transforms a sequence of chips (lists of power values for channels)
 # into a bit sequence, with probabilities [-1.0..1.0]
+# returns a pair of (bitsequence, list of lists (bits for each chip))
 #
 # - symbolsForBits(nbits):
 # The number of symbols required to transmit n bits
@@ -253,7 +363,7 @@ class PairwiseAssigner(object):
       for pair in partition(c, 2):
         if len(pair) == 2:
           bits.append(pair[0] > pair[1] and 1.0 or -1.0)
-    return bits
+    return (bits, []) # todo: second val
 
   def symbolsForBits(self, nbits):
     return nbits / (self.nchans / 2)
@@ -290,6 +400,8 @@ class CombinadicAssigner(object):
     return chips
 
   def decodeChips(self, chips):
+    inferredChips = []
+
     bits = [] # list of reals
     k = self.nchans / 2
     # SNR for each chip. Each chip's SNR is ratio of lowest "on" channel
@@ -308,9 +420,13 @@ class CombinadicAssigner(object):
       assert len(indexes) == k
       n = inverseCombinadic(k, indexes)
       bits.extend(toBits(n, self.width))
+
+      inferredChips.append(
+        [{True:1,False:0}[i in indexes] for i in xrange(len(chip))])
+
     #print bits
     self.lastSnr = sum(snrs) / len(snrs) # Average of chip SNRs
-    return bits
+    return (bits, inferredChips)
 
   def symbolsForBits(self, nbits):
     return int(math.ceil(1.0 * nbits / self.width))

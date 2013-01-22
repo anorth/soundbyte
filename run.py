@@ -46,7 +46,7 @@ def parseArgs():
   parser.add_option('--noise', type='int', default="-6",
       help='Mixer noise strength, dB below unity')
   parser.add_option('--encoder', type='string', default="rs",
-      help='Encoder to use (rs, repeat)')
+      help='Encoder to use (lay, rs, repeat)')
   parser.add_option('--play', action='store_true',
       help='Play back received audio')
   parser.add_option('--repeat', type='int', default=1000000,
@@ -74,8 +74,13 @@ def main():
   lvl = options.verbose and logging.DEBUG or logging.INFO
   logging.basicConfig(stream = sys.stderr, level = lvl, format = "%(message)s")
 
+  assigner = PairwiseAssigner(options.numchans)
   assigner = CombinadicAssigner(options.numchans)
-  if options.encoder == 'rs':
+  if options.encoder == 'lay':
+    encoder = LayeredEncoder(assigner.bitsPerChip(),
+      PACKET_DATA_BYTES,
+      max(1.1, float(options.redundancy) / 3))
+  elif options.encoder == 'rs':
     encoder = ReedSolomonEncoder(assigner.bitsPerChip(),
       int(options.redundancy * PACKET_DATA_BYTES),
       PACKET_DATA_BYTES)
@@ -88,10 +93,10 @@ def main():
 
   chipDuration = 1.0 / options.rate
   chipSamples = int(SAMPLE_RATE / options.rate)
-  bitsPerChip = packeter.bitsPerChip()
+  bitsPerChip = packeter.bitsPerChip(PACKET_DATA_BYTES)
   bitsPerSecond = bitsPerChip * options.rate
-  chipsPerByte = packeter.symbolsForBytes(100)/100.0
-  byteRate = options.rate / chipsPerByte
+  #chipsPerByte = packeter.symbolsForBytes(100)/100.0
+  #byteRate = options.rate / chipsPerByte
 
   subcarrierSpacing = int(SAMPLE_RATE / chipSamples)
   assert subcarrierSpacing == int(1.0 / chipDuration)
@@ -177,7 +182,29 @@ def main():
     #try:
     totalBitErrs = 0
     while True:
-      s = receivePacket(receiver)
+      (s, chips) = receivePacket(receiver)
+
+      if options.test:
+        expected = genTestData(PACKET_DATA_BYTES)
+        expectedChips = packeter.encodePacket(expected)
+        assert len(chips) == len(expectedChips)
+        assert len(chips[0]) == len(expectedChips[0])
+
+        byChannel = {}
+        byChip = {}
+          
+        for chip in xrange(len(chips)):
+          for chan in xrange(len(chips[0])):
+            if chips[chip][chan] != expectedChips[chip][chan]:
+              byChip[chip] = byChip.get(chip, []) + [chan]
+              byChannel[chan] = byChannel.get(chan, 0) + 1
+
+        if byChannel or byChip:
+          logging.debug('Raw errors by Chip: ' + str(
+            [(c, byChip.get(c)) for c in xrange(len(chips)) if byChip.get(c)]))
+          logging.debug('Raw errors by Chan: ' + str(
+            [byChannel.get(c, 0) for c in xrange(len(chips[0]))]))
+
       if s is None:
         continue
 
@@ -185,10 +212,28 @@ def main():
         expected = genTestData(PACKET_DATA_BYTES)
         nbits = PACKET_DATA_BYTES * 8
         biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
+        byteErrors = []
+        nbytes = PACKET_DATA_BYTES
+
+        # XXX HACK
+        # use this instead! 
+        # assert len(s) == len(expected), '%s %s' % (len(s), len(expected))
+        if len(s) > len(expected):
+          s = s[:len(expected)]
+        # end XXX
+
+        for c in xrange(len(expected)):
+          if s[c] != expected[c]:
+            byteErrors.append(c)
+        nByteErrors = len(byteErrors)
+
         if biterrs:
           Control.bitsCorrupt += biterrs
           Control.packetsCorrupt += 1
-          logging.info("-> Data corrupt! %d of %d bits wrong (%.2f)" % (biterrs, nbits, 1.0*biterrs/nbits))
+          bitRatio = 1.0*biterrs/nbits
+          byteRatio = 1.0*nByteErrors/nbytes
+          logging.info("\n!!!! === DATA CORRUPT === !!!! %d/%d bits, %d/%d bytes wrong (%.2f, %.2f, r:%.2f) bytes %s\n" % (
+            biterrs, nbits, nByteErrors, nbytes, bitRatio, byteRatio, byteRatio/bitRatio, byteErrors))
         else:
           logging.debug("-> %d bytes ok" % len(s))
       else:
@@ -212,13 +257,21 @@ def main():
     for chip in chips:
       logging.debug("chip: %s" % (chip))
       waveform = buildWaveform(chip, options.base, channelGap, chipSamples)
-      if chip is chips[0]:
-        fadein(waveform, int(chipSamples / 20))
-      if chip is chips[-1]:
-        fadeout(waveform, int(chipSamples / 20))
+
+      waveform = waveform#[:-len(waveform) / 8]
+      fadeout(waveform, int(chipSamples) / 10)
+      fadein(waveform, int(chipSamples / 10))
+
+      final.extend(waveform)
+      #final.extend(silence(len(waveform)/8))
+      #final.extend(silence(len(waveform)))
+
+      ##if chip is chips[0]:
+      #  fadein(waveform, int(chipSamples / 20))
+      #if chip is chips[-1]:
+      #  fadeout(waveform, int(chipSamples / 20))
 #      if len(waveforms) == 0:
 #        waveform = list(genPreamble()) + list(waveform)
-      final.extend(waveform)
 
     sender.sendBlock(final)
     # Send a 1-chip silence buffer
@@ -252,15 +305,15 @@ def main():
 
       packetChips.append(chip)
       
-    try:
-      data = packeter.decodePacket(packetChips)
-      logging.info("Packet received, SNR %.2f dB, corrected raw bit error rate %.3f" % 
+    (data, chips) = packeter.decodePacket(packetChips)
+    logging.debug('')
+    if data:
+      logging.info("+++ Packet received, SNR %.2f dB, corrected error rate %.3f" % 
           (assigner.lastSignalRatio(), packeter.lastErrorRate()))
-    except DecodeException, e:
-      data = None
-      logging.info("Packet decode failed")
+    else:
+      logging.info("--- Packed DROPPED")
 
-    return data
+    return (data, chips)
 
   # Sends a packet preamble, signals to allow the receiver to align
   def genPreamble():
