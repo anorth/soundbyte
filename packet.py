@@ -36,8 +36,12 @@ class Packeter(object):
     return self.assigner.encodeChips(encoded)
 
   def decodePacket(self, chips):
-    encoded = self.assigner.decodeChips(chips)
-    return ''.join(self.encoder.decode(encoded))
+    (encoded, chips) = self.assigner.decodeChips(chips)
+    try:
+      decoded = ''.join(self.encoder.decode(encoded))
+    except DecodeException, e:
+      decoded = None
+    return (decoded, chips)
 
   def symbolsForBytes(self, nbytes):
     return self.assigner.symbolsForBits(self.encoder.encodedBitsForBytes(nbytes))
@@ -83,6 +87,7 @@ class ReedSolomonEncoder(object):
     self.messageSymbols = int(messageSymbols)
     self.encodedSize = int(encodedSize)
     self.c = Codec(self.encodedSize, self.messageSymbols)
+    self.lastErrors = []
 
   def encode(self, data):
     assert len(data) == self.messageSymbols # todo: relax this & fix encodedBitsForBytes
@@ -93,7 +98,8 @@ class ReedSolomonEncoder(object):
     cropped = ( ''.join(toByteSequence(signals + ([0] * (8 - len(signals) % 8)))) )[:self.encodedSize]
     try:
       result = self.c.decode(cropped)
-      logging.info(result[1])
+      logging.debug('\n' + str(result[1]))
+      self.lastErrors = 1.0 * len(result[1]) / self.encodedSize
       return result[0]
     except UncorrectableError, e:
       raise DecodeException()
@@ -103,7 +109,7 @@ class ReedSolomonEncoder(object):
     return self.encodedSize * nbytes * 8 / self.messageSymbols
 
   def lastErrorRate(self):
-    return 0.0
+    return self.lastErrors
     
 class LayeredEncoder(object):
   def __init__(self, symbolSize, messageBytes, rsExpansionFactor):
@@ -317,6 +323,7 @@ class InterleavingRepeatingEncoder(RepeatingEncoder):
 # - decode(chips):
 # Transforms a sequence of chips (lists of power values for channels)
 # into a bit sequence, with probabilities [-1.0..1.0]
+# returns a pair of (bitsequence, list of lists (bits for each chip))
 #
 # - symbolsForBits(nbits):
 # The number of symbols required to transmit n bits
@@ -356,7 +363,7 @@ class PairwiseAssigner(object):
       for pair in partition(c, 2):
         if len(pair) == 2:
           bits.append(pair[0] > pair[1] and 1.0 or -1.0)
-    return bits
+    return (bits, []) # todo: second val
 
   def symbolsForBits(self, nbits):
     return nbits / (self.nchans / 2)
@@ -393,6 +400,8 @@ class CombinadicAssigner(object):
     return chips
 
   def decodeChips(self, chips):
+    inferredChips = []
+
     bits = [] # list of reals
     k = self.nchans / 2
     # SNR for each chip. Each chip's SNR is ratio of lowest "on" channel
@@ -411,9 +420,13 @@ class CombinadicAssigner(object):
       assert len(indexes) == k
       n = inverseCombinadic(k, indexes)
       bits.extend(toBits(n, self.width))
+
+      inferredChips.append(
+        [{True:1,False:0}[i in indexes] for i in xrange(len(chip))])
+
     #print bits
     self.lastSnr = sum(snrs) / len(snrs) # Average of chip SNRs
-    return bits
+    return (bits, inferredChips)
 
   def symbolsForBits(self, nbits):
     return int(math.ceil(1.0 * nbits / self.width))

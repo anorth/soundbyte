@@ -45,7 +45,7 @@ def parseArgs():
       help='Mixer signal strength, dB below unity')
   parser.add_option('--noise', type='int', default="-6",
       help='Mixer noise strength, dB below unity')
-  parser.add_option('--encoder', type='string', default="lay",
+  parser.add_option('--encoder', type='string', default="rs",
       help='Encoder to use (lay, rs, repeat)')
   parser.add_option('--play', action='store_true',
       help='Play back received audio')
@@ -161,6 +161,7 @@ def main():
         # Terminal input will be line-buffered, but read PACKET bytes at a time.
         chars = sys.stdin.read(PACKET_DATA_BYTES)
         if not chars:
+
           eof = True
 
       if chars:
@@ -188,7 +189,29 @@ def main():
     #try:
     totalBitErrs = 0
     while True:
-      s = receivePacket(receiver)
+      (s, chips) = receivePacket(receiver)
+
+      if options.test:
+        expected = genTestData(PACKET_DATA_BYTES)
+        expectedChips = packeter.encodePacket(expected)
+        assert len(chips) == len(expectedChips)
+        assert len(chips[0]) == len(expectedChips[0])
+
+        byChannel = {}
+        byChip = {}
+          
+        for chip in xrange(len(chips)):
+          for chan in xrange(len(chips[0])):
+            if chips[chip][chan] != expectedChips[chip][chan]:
+              byChip[chip] = byChip.get(chip, []) + [chan]
+              byChannel[chan] = byChannel.get(chan, 0) + 1
+
+        if byChannel or byChip:
+          logging.debug('Raw errors by Chip: ' + str(
+            [(c, byChip.get(c)) for c in xrange(len(chips)) if byChip.get(c)]))
+          logging.debug('Raw errors by Chan: ' + str(
+            [byChannel.get(c, 0) for c in xrange(len(chips[0]))]))
+
       if s is None:
         continue
 
@@ -216,7 +239,7 @@ def main():
           Control.packetsCorrupt += 1
           bitRatio = 1.0*biterrs/nbits
           byteRatio = 1.0*nByteErrors/nbytes
-          logging.info("-> Data corrupt! %d/%d bits, %d/%d bytes wrong (%.2f, %.2f, r:%.2f) bytes %s" % (
+          logging.info("\n!!!! === DATA CORRUPT === !!!! %d/%d bits, %d/%d bytes wrong (%.2f, %.2f, r:%.2f) bytes %s\n" % (
             biterrs, nbits, nByteErrors, nbytes, bitRatio, byteRatio, byteRatio/bitRatio, byteErrors))
         else:
           logging.debug("-> %d bytes ok" % len(s))
@@ -286,15 +309,15 @@ def main():
 
       packetChips.append(chip)
       
-    try:
-      data = packeter.decodePacket(packetChips)
-      logging.info("Packet received, SNR %.2f dB, corrected raw bit error rate %.3f" % 
+    (data, chips) = packeter.decodePacket(packetChips)
+    logging.debug('')
+    if data:
+      logging.info("+++ Packet received, SNR %.2f dB, corrected error rate %.3f" % 
           (assigner.lastSignalRatio(), packeter.lastErrorRate()))
-    except DecodeException, e:
-      data = None
-      logging.info("Packet decode failed")
+    else:
+      logging.info("--- Packed DROPPED")
 
-    return data
+    return (data, chips)
 
   # Sends a packet preamble, signals to allow the receiver to align
   def genPreamble():
