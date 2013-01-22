@@ -51,7 +51,7 @@ class DataProcessor extends Thread {
             messageBuffer[msgBufferCount++] = buffer[i];
           }
         } else {
-          Log.w(TAG, "receiveBuffer returned empty buffer");
+          Log.d(TAG, "receiveBuffer returned empty buffer");
           Thread.sleep(1000);
         }
       }
