@@ -49,6 +49,10 @@ def parseArgs():
       help='Encoder to use (lay, rs, repeat)')
   parser.add_option('--play', action='store_true',
       help='Play back received audio')
+  parser.add_option('--testpackets', type='int', default=1000000,
+      help='Test packets to send')
+  parser.add_option('--csv', action='store_true',
+      help='Generate CSV output')
   parser.add_option('-v', '--verbose', action='store_true')
 
   (opts, args) = parser.parse_args()
@@ -134,10 +138,11 @@ def main():
     packetsSent = 0
     packetsReceived = 0
     packetsCorrupt = 0
-    bitErrors = 0
+    bitsCorrupt = 0
 
   def doSend():
     f = None
+    nPackets = options.testpackets
     if options.selftest:
       sender = StreamSender(SelfTest.outfile)
       f = SelfTest.outfile
@@ -148,9 +153,10 @@ def main():
       sender = PyAudioSender()
     eof = False
     #try:
-    while Control.running and not eof:
+    while Control.running and nPackets > 0 and not eof:
       if options.test:
         chars = genTestData(PACKET_DATA_BYTES)
+        nPackets -= 1
       else:
         # Terminal input will be line-buffered, but read PACKET bytes at a time.
         chars = sys.stdin.read(PACKET_DATA_BYTES)
@@ -164,6 +170,7 @@ def main():
         Control.packetsSent += 1
     #except Exception, e:
     #  logging.info("%s" % e)
+    Control.running = False
     if f:
       f.close()
 
@@ -181,39 +188,31 @@ def main():
     #try:
     totalBitErrs = 0
     while True:
-      try:
-        s = receivePacket(receiver)
-      except DecodeException, e:
-        s = None
+      s = receivePacket(receiver)
+      if s is None:
+        continue
 
       if options.test:
         expected = genTestData(PACKET_DATA_BYTES)
         nbits = PACKET_DATA_BYTES * 8
-        if s == None:
-          biterrs = nbits
-        else:
-          biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
+        biterrs = sum(map(lambda t: countbits(ord(t[0]) ^ ord(t[1])), zip(s, expected)))
         byteErrors = []
         nbytes = PACKET_DATA_BYTES
-        nByteErrors = 0
 
-        if s:
-          # XXX HACK
-          # use this instead! 
-          # assert len(s) == len(expected), '%s %s' % (len(s), len(expected))
-          if len(s) > len(expected):
-            s = s[:len(expected)]
-          # end XXX
+        # XXX HACK
+        # use this instead! 
+        # assert len(s) == len(expected), '%s %s' % (len(s), len(expected))
+        if len(s) > len(expected):
+          s = s[:len(expected)]
+        # end XXX
 
-          for c in xrange(len(expected)):
-            if s[c] != expected[c]:
-              byteErrors.append(c)
-          nByteErrors = len(byteErrors)
-        else:
-          nByteErrors = PACKET_DATA_BYTES
+        for c in xrange(len(expected)):
+          if s[c] != expected[c]:
+            byteErrors.append(c)
+        nByteErrors = len(byteErrors)
 
         if biterrs:
-          Control.bitErrors += biterrs
+          Control.bitsCorrupt += biterrs
           Control.packetsCorrupt += 1
           bitRatio = 1.0*biterrs/nbits
           byteRatio = 1.0*nByteErrors/nbytes
@@ -287,11 +286,13 @@ def main():
 
       packetChips.append(chip)
       
-    data = packeter.decodePacket(packetChips)
-
-    # Finished receiving packet
-    logging.info("Packet received, SNR %.2f dB, detected raw bit error rate %.3f" % 
-        (assigner.lastSignalRatio(), packeter.lastErrorRate()))
+    try:
+      data = packeter.decodePacket(packetChips)
+      logging.info("Packet received, SNR %.2f dB, corrected raw bit error rate %.3f" % 
+          (assigner.lastSignalRatio(), packeter.lastErrorRate()))
+    except DecodeException, e:
+      data = None
+      logging.info("Packet decode failed")
 
     return data
 
@@ -321,7 +322,8 @@ def main():
 
   # Wait for KeyboardInterrupt. Note that thread.join() is uninterruptable.
   try:
-    while True: time.sleep(1000)
+    while Control.running: 
+      time.sleep(0.3)
   except KeyboardInterrupt:
     pass
   except BaseException, e:
@@ -329,14 +331,18 @@ def main():
 
   Control.running = False
   time.sleep(1)
-  if options.send:
-    logging.info("=> %d packets sent" % Control.packetsSent)
-  if options.listen:
-    logging.info("=> %d packets received" % Control.packetsReceived)
-    logging.info("=> %d uncorrected bit errors" % Control.bitErrors)
-    logging.info("=> %d packets corrupt" % Control.packetsCorrupt)
-  if options.selftest:
-    logging.info("=> %d packets dropped" % (Control.packetsSent - Control.packetsReceived))
+  if options.csv:
+    cols = map(str, (options.base, options.encoder, options.spacing, options.rate, options.numchans, options.redundancy, options.syncrate, options.numsyncchans))
+    cols.extend(map(str, [Control.packetsSent, Control.packetsReceived, Control.packetsCorrupt, Control.packetsSent - Control.packetsReceived]))
+    logging.info("=> " + ",".join(cols))
+  else:
+    if options.send:
+      logging.info("=> %d packets sent" % Control.packetsSent)
+    if options.listen:
+      logging.info("=> %d packets received" % Control.packetsReceived)
+      logging.info("=> %d packets corrupt (%d bits)" % (Control.packetsCorrupt, Control.bitsCorrupt))
+    if options.selftest:
+      logging.info("=> %d packets dropped" % (Control.packetsSent - Control.packetsReceived))
 
 
 def genTestData(nbytes):
