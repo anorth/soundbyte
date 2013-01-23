@@ -26,13 +26,13 @@ def parseArgs():
       help='Base frequency (hz)')
   parser.add_option('-p', '--spacing', default=2, type='int',
       help='Channel spacing (# subcarriers)')
-  parser.add_option('-r', '--rate', default=100, type='int',
+  parser.add_option('-r', '--rate', default=50, type='int',
       help='Chip rate (hz)')
   parser.add_option('-R', '--syncrate', default=200, type='int',
       help='Sync chip rate (hz)')
-  parser.add_option('-e', '--redundancy', default=5.0, type='float',
+  parser.add_option('-e', '--redundancy', default=2.0, type='float',
       help='Encoder redundancy ratio (encoder-dependent)')
-  parser.add_option('-n', '--numchans', default=16, type='int',
+  parser.add_option('-n', '--numchans', default=8, type='int',
       help='Number of frequency channels')
   parser.add_option('-N', '--numsyncchans', default=8, type='int',
       help='Number of sync frequency channels')
