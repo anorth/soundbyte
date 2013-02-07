@@ -34,6 +34,7 @@ public class MainActivity extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     Log.w(TAG, "Received onCreate");
+    Log.w(TAG, "JNI: " + new Jni().stringFromJNI());
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     statusTextView = (TextView) findViewById(R.id.textView4);
