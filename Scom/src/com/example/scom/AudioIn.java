@@ -1,6 +1,6 @@
 package com.example.scom;
 
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -13,18 +13,22 @@ class AudioIn extends Thread {
   private static final int N_BUFS = 100;
   private static final String TAG = "AudioIn";
   
-  private final BufferedSocket server;
+  private final Engine engine;
   
   private volatile boolean stopped = false;
   
-  AudioIn(BufferedSocket server) {
-    this.server = server;
+  AudioIn(Engine engine) {
+    this.engine = engine;
   }
-  
+ 
   @Override
   public void run() {
     android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-    byte[][] buffers = new byte[N_BUFS][BUF_SAMPLES * Constants.BYTES_PER_SAMPLE];
+    ByteBuffer[] buffers = new ByteBuffer[N_BUFS];
+    for (int i = 0; i < buffers.length; ++i) {
+      buffers[i] = ByteBuffer.allocateDirect(BUF_SAMPLES * Constants.BYTES_PER_SAMPLE);
+    }
+
     int bufIndex = 0;
 
     int minArInternalBufferSize = AudioRecord.getMinBufferSize(Constants.SAMPLE_RATE,
@@ -40,13 +44,15 @@ class AudioIn extends Thread {
         recorder.startRecording();
         Log.i(TAG, "Recording started: " + recorder.getRecordingState());
         while (!stopped) {
-          byte[] buffer = buffers[bufIndex++ % buffers.length];
+          ByteBuffer buffer = buffers[bufIndex++ % buffers.length];
 //          Log.v(TAG, "Awaiting buffer, recording state " + recorder.getRecordingState());
           // Note: bytes represent shorts, little-endian
-          int bytesRead = recorder.read(buffer, 0, buffer.length);
+          int bytesRead = recorder.read(buffer, buffer.capacity());
           if (bytesRead > 0) {
 //            Log.v(TAG, "Received audio buffer of " + (bytesRead / Constants.BYTES_PER_SAMPLE) + " samples");
-            sendBuffer(buffer, 0, bytesRead);
+            buffer.rewind();
+            buffer.limit(bytesRead);
+            sendBuffer(buffer);
           } else {
             Log.e(TAG, "AudioRecord.read returned " + bytesRead);
             Thread.sleep(1000);
@@ -72,12 +78,8 @@ class AudioIn extends Thread {
     }
   }
 
-  private void sendBuffer(byte[] buffer, int offset, int length) {
-    byte[] trimmed = buffer;
-    if (buffer.length != length) {
-      trimmed = Arrays.copyOfRange(buffer, offset, offset + length);
-    }
-    server.send(trimmed);
+  private void sendBuffer(ByteBuffer buffer) {
+    engine.receiveAudio(buffer);
   }
 
   void close() {

@@ -21,7 +21,8 @@ public class MainActivity extends Activity {
 
   private final Bus bus = new Bus(ThreadEnforcer.ANY);
 
-  private BufferedSocket audioSocket = null;
+  private Engine engine = null;
+//  private BufferedSocket audioSocket = null;
 //  private BufferedSocket dataSocket = null;
   private AudioIn audioIn = null;
 //  private AudioOut audioOut = null;
@@ -51,15 +52,17 @@ public class MainActivity extends Activity {
   public void onStart() {
     super.onStart();
     Log.w(TAG, "Received onStart");
-    audioSocket = new BufferedSocket("audio", AUDIO_PORT, bus);
-    audioSocket.start();
+    engine = new TetheredEngine(AUDIO_PORT, bus);
+    engine.start();
+//    audioSocket = new BufferedSocket("audio", AUDIO_PORT, bus);
+//    audioSocket.start();
 //    dataSocket = new BufferedSocket("data", AUDIO_PORT + 1, bus);
 //    dataSocket.start();
-    audioIn = new AudioIn(audioSocket);
+    audioIn = new AudioIn(engine);
     audioIn.start();
 //      audioOut = new AudioOut(audioSocket);
 //      audioOut.start();
-    dataProcessor = new DataProcessor(audioSocket, bus);
+    dataProcessor = new DataProcessor(engine, bus);
     dataProcessor.start();
     statusTextView.setText("Waiting...");
     getWindow().getDecorView().getRootView().setKeepScreenOn(true);
@@ -71,13 +74,14 @@ public class MainActivity extends Activity {
     Log.w(TAG, "Received onStop");
     audioIn.close();
 //    audioOut.close();
-    audioSocket.close();
+//    audioSocket.close();
+    engine.stop();
     dataProcessor.close();
 //    dataSocket.close();
     try {
       audioIn.join(1000);
 //      audioOut.join(1000);
-      audioSocket.join(1000);
+//      audioSocket.join(1000);
       dataProcessor.join(1000);
 //      dataSocket.join(1000);
     } catch (InterruptedException e) {

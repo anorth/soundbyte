@@ -9,14 +9,14 @@ class DataProcessor extends Thread {
 
   private static final String TAG = "DataProcessor";
 
-  private final BufferedSocket server;
+  private final Engine engine;
   private final Bus bus;
 
   private volatile boolean stopped = false;
 
-  DataProcessor(BufferedSocket server, Bus bus) {
+  DataProcessor(Engine engine, Bus bus) {
     super("DataProcessorThread");
-    this.server = server;
+    this.engine = engine;
     this.bus = bus;
   }
 
@@ -39,20 +39,22 @@ class DataProcessor extends Thread {
       byte[] messageBuffer = new byte[1000];
       int msgBufferCount = 0;
       while (!stopped) {
-        byte[] buffer = server.receive(100);
-        if (buffer.length > 0) {
-          Log.i(TAG, "Received data buffer of " + buffer.length + " bytes");
-          for (int i = 0; i < buffer.length; ++i) {
-            Log.d(TAG, String.format("%d", buffer[i]));
-            if (buffer[i] == '\n') {
-              handleMessage(new String(messageBuffer, 0, msgBufferCount));
-              return;
+        if (engine.messageAvailable()) {
+          byte[] buffer = engine.takeMessage();
+          if (buffer.length > 0) {
+            Log.i(TAG, "Received data buffer of " + buffer.length + " bytes");
+            for (int i = 0; i < buffer.length; ++i) {
+              Log.d(TAG, String.format("%d", buffer[i]));
+              if (buffer[i] == '\n') {
+                handleMessage(new String(messageBuffer, 0, msgBufferCount));
+                return;
+              }
+              messageBuffer[msgBufferCount++] = buffer[i];
             }
-            messageBuffer[msgBufferCount++] = buffer[i];
+          } else {
+            Log.d(TAG, "receiveBuffer returned empty buffer");
+            Thread.sleep(1000);
           }
-        } else {
-          Log.d(TAG, "receiveBuffer returned empty buffer");
-          Thread.sleep(1000);
         }
       }
     } catch (InterruptedException e) {
