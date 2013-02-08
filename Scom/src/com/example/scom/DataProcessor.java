@@ -1,5 +1,7 @@
 package com.example.scom;
 
+import java.util.Arrays;
+
 import android.util.Log;
 
 import com.example.scom.Events.MessageReceived;
@@ -36,21 +38,12 @@ class DataProcessor extends Thread {
 
   private void receiveMessage() {
     try {
-      byte[] messageBuffer = new byte[1000];
-      int msgBufferCount = 0;
       while (!stopped) {
         if (engine.messageAvailable()) {
           byte[] buffer = engine.takeMessage();
           if (buffer.length > 0) {
-            Log.i(TAG, "Received data buffer of " + buffer.length + " bytes");
-            for (int i = 0; i < buffer.length; ++i) {
-              Log.d(TAG, String.format("%d", buffer[i]));
-              if (buffer[i] == '\n') {
-                handleMessage(new String(messageBuffer, 0, msgBufferCount));
-                return;
-              }
-              messageBuffer[msgBufferCount++] = buffer[i];
-            }
+            Log.i(TAG, "Received data buffer of " + buffer.length + " bytes: " + Arrays.toString(buffer));
+            handleMessage(new String(buffer));
           } else {
             Log.d(TAG, "receiveBuffer returned empty buffer");
             Thread.sleep(1000);
