@@ -11,6 +11,9 @@ import android.widget.TextView;
 import com.example.scom.Events.MessageReceived;
 import com.example.scom.Events.SocketConnected;
 import com.example.scom.Events.SocketDisconnected;
+import com.example.scom.nativ.Jni;
+import com.example.scom.nativ.NativeEngine;
+import com.example.scom.tethered.TetheredEngine;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 import com.squareup.otto.ThreadEnforcer;
@@ -22,8 +25,8 @@ public class MainActivity extends Activity {
   private final Bus bus = new Bus(ThreadEnforcer.ANY);
 
   private Engine engine = null;
-  private AudioIn audioIn = null;
-  private AudioOut audioOut = null;
+  private AudioListener audioIn = null;
+  private AudioPlayer audioOut = null;
   private DataProcessor dataProcessor = null;
 
   private boolean isForeground = false;
@@ -33,7 +36,6 @@ public class MainActivity extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     Log.w(TAG, "Received onCreate");
-    Log.w(TAG, "JNI: " + new Jni().stringFromJNI());
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     statusTextView = (TextView) findViewById(R.id.textView4);
@@ -50,11 +52,12 @@ public class MainActivity extends Activity {
   public void onStart() {
     super.onStart();
     Log.w(TAG, "Received onStart");
+    engine = new NativeEngine();
     engine = new TetheredEngine(DECODER_PORT, bus);
     engine.start();
-    audioIn = new AudioIn(engine);
+    audioIn = new AudioListener(engine);
     audioIn.start();
-    audioOut = new AudioOut(engine);
+    audioOut = new AudioPlayer(engine);
     audioOut.start();
     dataProcessor = new DataProcessor(engine, bus);
     dataProcessor.start();

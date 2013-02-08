@@ -1,4 +1,4 @@
-package com.example.scom;
+package com.example.scom.nativ;
 
 public class Jni {
 

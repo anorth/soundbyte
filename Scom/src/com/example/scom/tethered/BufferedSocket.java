@@ -1,10 +1,4 @@
-package com.example.scom;
-
-import android.util.Log;
-
-import com.example.scom.Events.SocketConnected;
-import com.example.scom.Events.SocketDisconnected;
-import com.squareup.otto.Bus;
+package com.example.scom.tethered;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -16,6 +10,12 @@ import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import android.util.Log;
+
+import com.example.scom.Events.SocketConnected;
+import com.example.scom.Events.SocketDisconnected;
+import com.squareup.otto.Bus;
 
 class BufferedSocket extends Thread {
 

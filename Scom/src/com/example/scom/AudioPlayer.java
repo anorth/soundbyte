@@ -5,7 +5,7 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.util.Log;
 
-class AudioOut extends Thread {
+class AudioPlayer extends Thread {
   
   private static final int BUFFER_SIZE = AudioTrack.getMinBufferSize(Constants.SAMPLE_RATE,
       AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
@@ -15,7 +15,7 @@ class AudioOut extends Thread {
   
   private volatile boolean stopped = false;
   
-  AudioOut(Engine engine) {
+  AudioPlayer(Engine engine) {
     this.engine = engine;
   }
   

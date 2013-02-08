@@ -7,7 +7,7 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
 
-class AudioIn extends Thread {
+class AudioListener extends Thread {
 
   private static final int BUF_SAMPLES = 441;
   private static final int N_BUFS = 100;
@@ -17,7 +17,7 @@ class AudioIn extends Thread {
   
   private volatile boolean stopped = false;
   
-  AudioIn(Engine engine) {
+  AudioListener(Engine engine) {
     this.engine = engine;
   }
  

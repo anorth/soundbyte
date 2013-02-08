@@ -1,12 +1,15 @@
-package com.example.scom;
+package com.example.scom.tethered;
 
 import java.nio.ByteBuffer;
 
+import android.util.Log;
+
+import com.example.scom.Engine;
 import com.squareup.otto.Bus;
 
 public class TetheredEngine implements Engine {
 
-//  private static final String TAG = "TetheredEngine";
+  private static final String TAG = "TetheredEngine";
   
   // Sends audio, receives messages.
   private final BufferedSocket decodingSocket;
@@ -20,6 +23,7 @@ public class TetheredEngine implements Engine {
   
   @Override
   public void start() {
+    Log.i(TAG, "Tethered engine starting");
     decodingSocket.start();
     encodingSocket.start();
   }
