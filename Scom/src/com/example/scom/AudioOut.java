@@ -11,12 +11,12 @@ class AudioOut extends Thread {
       AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
   private static final String TAG = "AudioOut";
   
-  private final BufferedSocket dataSocket;
+  private final Engine engine;
   
   private volatile boolean stopped = false;
   
-  AudioOut(BufferedSocket dataSocket) {
-    this.dataSocket = dataSocket;
+  AudioOut(Engine engine) {
+    this.engine = engine;
   }
   
   @Override
@@ -64,7 +64,7 @@ class AudioOut extends Thread {
   }
 
   private byte[] receiveBuffer() {
-    return dataSocket.receive(BUFFER_SIZE);
+    return engine.takeAudio().array();
   }
 
   void close() {

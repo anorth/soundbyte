@@ -17,15 +17,13 @@ import com.squareup.otto.ThreadEnforcer;
 
 public class MainActivity extends Activity {
   private static final String TAG = "AudioServerMain";
-  public static final int AUDIO_PORT = 16000;
+  public static final int DECODER_PORT = 16000;
 
   private final Bus bus = new Bus(ThreadEnforcer.ANY);
 
   private Engine engine = null;
-//  private BufferedSocket audioSocket = null;
-//  private BufferedSocket dataSocket = null;
   private AudioIn audioIn = null;
-//  private AudioOut audioOut = null;
+  private AudioOut audioOut = null;
   private DataProcessor dataProcessor = null;
 
   private boolean isForeground = false;
@@ -52,16 +50,12 @@ public class MainActivity extends Activity {
   public void onStart() {
     super.onStart();
     Log.w(TAG, "Received onStart");
-    engine = new TetheredEngine(AUDIO_PORT, bus);
+    engine = new TetheredEngine(DECODER_PORT, bus);
     engine.start();
-//    audioSocket = new BufferedSocket("audio", AUDIO_PORT, bus);
-//    audioSocket.start();
-//    dataSocket = new BufferedSocket("data", AUDIO_PORT + 1, bus);
-//    dataSocket.start();
     audioIn = new AudioIn(engine);
     audioIn.start();
-//      audioOut = new AudioOut(audioSocket);
-//      audioOut.start();
+    audioOut = new AudioOut(engine);
+    audioOut.start();
     dataProcessor = new DataProcessor(engine, bus);
     dataProcessor.start();
     statusTextView.setText("Waiting...");
@@ -73,17 +67,11 @@ public class MainActivity extends Activity {
   public void onStop() {
     Log.w(TAG, "Received onStop");
     audioIn.close();
-//    audioOut.close();
-//    audioSocket.close();
     engine.stop();
     dataProcessor.close();
-//    dataSocket.close();
     try {
       audioIn.join(1000);
-//      audioOut.join(1000);
-//      audioSocket.join(1000);
       dataProcessor.join(1000);
-//      dataSocket.join(1000);
     } catch (InterruptedException e) {
       Log.e(TAG, "Interrupted waiting for threads to close");
     }

@@ -13,26 +13,21 @@ public interface Engine {
   /** Shuts down internals. */
   void stop();
   
-  /**
-   * Encodes a message payload into a chunk of audio encapsulating the complete message.
-   */
-  ByteBuffer encode(byte[] payload);
-
-  /**
-   * Receives and synchronously processes segment of audio data.
-   * 
-   * After this method returns, {@link #messageAvailable()} indicates whether one or more 
-   * complete messages have been decoded.
-   */
+  /** Receives and (possibly synchronously) processes a message payload. */
+  public void receiveMessage(byte[] payload);
+  
+  /** Whether audio data is available for playing. */
+  public boolean audioAvailable();
+  
+  /** Dequeues encoded audio. */
+  public ByteBuffer takeAudio();
+  
+  /** Receives and (possibly synchronously) processes a segment of audio data. */
   void receiveAudio(ByteBuffer audio);
   
-  /**
-   * Whether a message has been decoded.
-   */
+  /** Whether a message has been decoded. */
   boolean messageAvailable();
   
-  /**
-   * Dequeues a decoded message.
-   */
+  /** Dequeues a decoded message. */
   byte[] takeMessage();	
 }

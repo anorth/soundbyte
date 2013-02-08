@@ -7,9 +7,11 @@ import com.example.scom.Events.SocketDisconnected;
 import com.squareup.otto.Bus;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -48,20 +50,7 @@ class BufferedSocket extends Thread {
 
       while (running) {
         awaitConnection(server);
-
-//        while (true) {
-//          try {
-//            client = new Socket(InetAddress.getByAddress(null, new byte[]{
-//                    /*192*/-64,/*168*/-88,1,108}), port);
-//            break;
-//          } catch (UnknownHostException e) {
-//            throw new RuntimeException(e);
-//          } catch (IOException e) {
-//            Log.w(TAG, "[I] IO exception creating socket. Ensure other end is running! - "
-//                + e.getMessage());
-//            Thread.sleep(1000);
-//          }
-//        }
+        //makeConnect();
 
         try {
           while (client != null && running) {
@@ -71,7 +60,7 @@ class BufferedSocket extends Thread {
   //            Log.v(TAG, "[I] Writing chunk of size " + buffer.length);
               client.getOutputStream().write(buffer);
             } else {
-              Log.v(TAG, "[I] Timed out waiting for data");
+              Log.v(TAG, "[I] Timed out waiting for data to send");
             }
           }
         } catch (IOException e) {
@@ -108,6 +97,22 @@ class BufferedSocket extends Thread {
       } catch (IOException e) {
         Log.e(TAG, "Error accepting socket", e);
         throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private void makeConnection() throws InterruptedException {
+    while (true) {
+      try {
+        client = new Socket(InetAddress.getByAddress(null, new byte[] {
+                /* 192 */-64,/* 168 */-88, 1, 108 }), port);
+        break;
+      } catch (UnknownHostException e) {
+        throw new RuntimeException(e);
+      } catch (IOException e) {
+        Log.w(TAG, "[I] IO exception creating socket. Ensure other end is running! - "
+                + e.getMessage());
+        Thread.sleep(1000);
       }
     }
   }
@@ -149,6 +154,8 @@ class BufferedSocket extends Thread {
         if (bytesRead > 0) {
           Log.v(TAG, "[O] Received " + bytesRead + " bytes");
           return Arrays.copyOf(buf, bytesRead);
+        } else if (bytesRead == -1) {
+          closeSocket();
         }
       } catch (IOException e) {
         if (running) {
