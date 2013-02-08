@@ -1,0 +1,6 @@
+eclipse.preferences.version=1
+environment/project/com.android.toolchain.gcc.860220985/NDK_MODULE_PATH/delimiter=\:
+environment/project/com.android.toolchain.gcc.860220985/NDK_MODULE_PATH/operation=append
+environment/project/com.android.toolchain.gcc.860220985/NDK_MODULE_PATH/value=..
+environment/project/com.android.toolchain.gcc.860220985/append=true
+environment/project/com.android.toolchain.gcc.860220985/appendContributed=true
