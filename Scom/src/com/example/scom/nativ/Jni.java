@@ -16,5 +16,5 @@ public class Jni {
 
   public native boolean messageAvailable();
 
-  public native byte[] takeMessage();
+  public native int takeMessage(byte[] target);
 }

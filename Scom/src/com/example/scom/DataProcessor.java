@@ -39,7 +39,7 @@ class DataProcessor extends Thread {
   private void receiveMessage() {
     try {
       while (!stopped) {
-        if (engine.messageAvailable()) {
+        if (engine.messageAvailable()) { // FIXME this is a busy loop.
           byte[] buffer = engine.takeMessage();
           if (buffer.length > 0) {
             Log.i(TAG, "Received data buffer of " + buffer.length + " bytes: " + Arrays.toString(buffer));

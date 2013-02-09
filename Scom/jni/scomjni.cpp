@@ -1,10 +1,8 @@
 #include <jni.h>
 #include <string.h>
+#include <assert.h>
 
 #include "scom.h"
-
-// Why do I need this for Eclipse?
-int encodeMessage(char *payload, int payloadLength, char *waveform, int waveformCapacity);
 
 // Export definitions for JNI
 extern "C" {
@@ -19,7 +17,7 @@ extern "C" {
 // Implementation
 
 jstring Java_com_example_scom_nativ_Jni_stringFromJNI(JNIEnv* env, jobject thiz) {
-  return env->NewStringUTF(STRING);
+  return env->NewStringUTF(HELLO);
 }
 
 void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
@@ -42,24 +40,25 @@ void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jb
   env->CallObjectMethod(forWaveform, limitMethod, bytesWritten);
 }
 
-//  public native void decodeAudio(ByteBuffer audio);
+void Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject waveform) {
+  char *waveformBuffer = (char *)env->GetDirectBufferAddress(waveform);
+  jclass cls = env->GetObjectClass(waveform);
+  jmethodID limitMethod = env->GetMethodID(cls, "limit", "()I");
+  int waveformBytes = env->CallIntMethod(waveform, limitMethod);
 
-void Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject buffer) {
-  return;
+  decodeAudio(waveformBuffer, waveformBytes);
 }
 
-//  public native boolean messageAvailable();
 jboolean Java_com_example_scom_nativ_Jni_messageAvailable(JNIEnv *env, jobject thiz) {
-  return false;
+  return messageAvailable();
 }
 
-//  public native byte[] takeMessage();
-jbyteArray Java_com_example_scom_nativ_Jni_takeMessage(JNIEnv *env, jobject thiz) {
-  env->ThrowNew(env->FindClass("java.lang.RuntimeException"), "No message available");
-  return 0;
+jint Java_com_example_scom_nativ_Jni_takeMessage(JNIEnv *env, jobject thiz, jbyteArray target) {
+  jbyte *targetBytes = env->GetByteArrayElements(target, 0);
+  int targetLen = env->GetArrayLength(target);
+
+  int bytesWritten = takeMessage((char *)targetBytes, targetLen);
+
+  env->ReleaseByteArrayElements(target, targetBytes, 0);
+  return bytesWritten;
 }
-
-
-
-
-

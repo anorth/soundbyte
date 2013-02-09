@@ -1,6 +1,7 @@
 package com.example.scom.nativ;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -12,6 +13,7 @@ import com.example.scom.Engine;
 public class NativeEngine implements Engine {
 
   private static final String TAG = "NativeEngine";
+  private static final int MAX_MESSAGE_LENGTH = 200;
   
   private final Jni jni;
   private final BlockingQueue<ByteBuffer> waveforms = new ArrayBlockingQueue<ByteBuffer>(100);
@@ -64,7 +66,15 @@ public class NativeEngine implements Engine {
 
   @Override
   public byte[] takeMessage() {
-    return jni.takeMessage();
+    byte[] target = new byte[MAX_MESSAGE_LENGTH];
+    int bytes = jni.takeMessage(target);
+    if (bytes > 0) {
+      return Arrays.copyOf(target, bytes);
+    } else if (bytes == 0) {
+      throw new RuntimeException("Message too long");
+    } else {
+      throw new IllegalStateException("No message available");
+    }
   }
 
   private static ByteBuffer allocateWaveformBuffer() {
