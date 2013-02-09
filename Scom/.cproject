@@ -31,7 +31,7 @@
 							<tool id="com.android.gcc.compiler.335230182" name="Android GCC Compiler" superClass="com.android.gcc.compiler">
 								<option id="com.android.gcc.option.includePath.704787030" superClass="com.android.gcc.option.includePath" valueType="includePath">
 									<listOptionValue builtIn="false" value="../../native"/>
-									<listOptionValue builtIn="false" value="/Library/android-ndk-r8d/platforms/android-14/arch-arm/usr/include/"/>
+									<listOptionValue builtIn="false" value="&quot;${NDKROOT}/platforms/android-14/arch-arm/usr/include/&quot;"/>
 								</option>
 								<inputType id="com.android.gcc.inputType.1222283050" superClass="com.android.gcc.inputType"/>
 							</tool>
