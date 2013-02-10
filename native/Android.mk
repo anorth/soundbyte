@@ -3,7 +3,12 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE  	      := scom
-LOCAL_SRC_FILES       := audio.cpp decoder.cpp scom.cpp util.cpp
+LOCAL_SRC_FILES       := audio.cpp decoder.cpp scom.cpp util.cpp \
+                         third_party/kiss_fft130/kiss_fft.c \
+                         third_party/kiss_fft130/tools/kiss_fftr.c
+
+LOCAL_C_INCLUDES      := $(LOCAL_PATH)/third_party/kiss_fft130 \
+                         $(LOCAL_PATH)/third_party/kiss_fft130/tools
 
 # for native audio
 LOCAL_LDLIBS    += -lOpenSLES

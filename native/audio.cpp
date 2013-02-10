@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 
+#include "kiss_fftr.h"
+
 using namespace std;
 
 /** Decodes a buffer of little-endian PCM-16 into waveform amplitudes. */
