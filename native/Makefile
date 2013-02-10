@@ -1,4 +1,4 @@
-CC=g++
+CC=g++ -g
 ODIR=obj
 LIB=third_party
 FFT=$(LIB)/kiss_fft130
@@ -9,10 +9,12 @@ BIN=bin
 #_OBJ = hellomake.o hellofunc.o 
 #OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
+SRCS=audio.cpp decoder.cpp scom.cpp test.cpp util.cpp
+
 LIBS=-lm
 
-stuff: test.cpp fft fftr dirs
-	$(CC) -o $(BIN)/stuff test.cpp $(ODIR)/kiss_fft.o $(ODIR)/kiss_fftr.o ${LIBS} $(INC)
+stuff: $(SRCS) fft fftr dirs
+	$(CC) -o $(BIN)/stuff $(SRCS) $(ODIR)/kiss_fft.o $(ODIR)/kiss_fftr.o ${LIBS} $(INC)
 
 fft: $(FFT)/kiss_fft.c $(FFT)/kiss_fft.h dirs
 	$(CC) -c -o $(ODIR)/kiss_fft.o $(FFT)/kiss_fft.c -I $(INC)

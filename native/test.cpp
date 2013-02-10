@@ -1,45 +1,51 @@
+
+#include <cmath>
 #include <iostream>
-#include "kiss_fftr.h"
-#include "math.h"
 #include <vector>
+#include "kiss_fftr.h"
+
+#include "audio.h"
+#include "constants.h"
+#include "scom.h"
+
 using namespace std;
 
-static const int SAMPLE_RATE = 44100;
-static const float PCM_QUANT = 32767.5;
+static const int CHUNK_SAMPLES = SAMPLE_RATE / 10;
+static const int CHUNK_BYTES = CHUNK_SAMPLES * 2;
 
-float* decodePcm16(char *buffer, int buflen, float* out) {
-  for (int i = 0; i < buflen; i += 2) {
-    out[i/2] = ((float)(*(short*)(buffer + i)) + 0.5f) / PCM_QUANT;
-  }
-  return out;
-
-}
+kiss_fftr_cfg fftConfig;
+kiss_fft_cpx fftResult[CHUNK_SAMPLES];
 
 float abs(kiss_fft_cpx c) {
   return sqrt(c.r * c.r + c.i * c.i);
 }
 
+void doFft(char chunkBytes[]) {
+  vector<float> samples(CHUNK_SAMPLES);
+  decodePcm16(chunkBytes, CHUNK_BYTES, samples);
+  kiss_fftr(fftConfig, samples.data(), fftResult);
+  cerr << abs(fftResult[44]) << '\n';
+}
+
 int main(void) {
-  int size = SAMPLE_RATE / 10;
-  int size_bytes = size * 2;
+  fftConfig = kiss_fftr_alloc(CHUNK_SAMPLES, false, 0, 0);
 
-  char sample_bytes[size_bytes];
-  float sample_floats[size];
-  kiss_fft_cpx out_cpx[size]; //,out[size],*cpx_buf;
+  char chunkBytes[CHUNK_BYTES];
+  char messageBuffer[100];
+  while (cin.good()) {
+    cin.read(chunkBytes, CHUNK_BYTES);
+    if (cin.good()) {
+      doFft(chunkBytes);
 
-  cout << size;
-  kiss_fftr_cfg fft = kiss_fftr_alloc(size, false, 0, 0);
-
-  while (true) {
-    cin.read(sample_bytes, size_bytes);
-    decodePcm16(sample_bytes, size_bytes, sample_floats);
-    kiss_fftr(fft, sample_floats, out_cpx);
-    cout << abs(out_cpx[44]) << '\n';
+      decodeAudio(chunkBytes, sizeof(chunkBytes));
+      while (messageAvailable()) {
+        takeMessage(messageBuffer, sizeof(messageBuffer));
+        cout << messageBuffer << endl;
+      }
+    }
   }
 
-
   return 0;
-
 }
 
 
