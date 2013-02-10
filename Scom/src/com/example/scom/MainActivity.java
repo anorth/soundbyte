@@ -51,8 +51,8 @@ public class MainActivity extends Activity {
   public void onStart() {
     super.onStart();
     Log.w(TAG, "Received onStart");
-//    engine = new NativeEngine();
-    engine = new TetheredEngine(DECODER_PORT, bus);
+    engine = new NativeEngine();
+//    engine = new TetheredEngine(DECODER_PORT, bus);
     engine.start();
     audioIn = new AudioListener(engine);
     audioIn.start();

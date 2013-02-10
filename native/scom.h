@@ -1,3 +1,5 @@
+#ifndef _SCOM_H_
+#define _SCOM_H_
 
 // For testing
 extern const char *HELLO;
@@ -27,3 +29,5 @@ bool messageAvailable();
  * @return number of bytes written, 0 if the buffer is too small, -1 on error.
  */
 int takeMessage(char *buffer, int bufferCapacity);
+
+#endif
