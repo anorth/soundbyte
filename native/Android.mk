@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE  	      := scom
-LOCAL_SRC_FILES       := audio.cpp decoder.cpp scom.cpp
+LOCAL_SRC_FILES       := audio.cpp decoder.cpp scom.cpp util.cpp
 
 # for native audio
 LOCAL_LDLIBS    += -lOpenSLES
