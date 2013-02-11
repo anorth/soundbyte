@@ -16,10 +16,10 @@ public:
   float bucketWidth();
 
   /** Value at bucket. */
-  complex at(int bucket);
+  std::complex<float> at(int bucket);
 
   /** Value at bucket centred on frequency. */
-  complex at(float frequency);
+  std::complex<float> at(float frequency);
 
   /** Amplitude of bucket. */
   float amplitude(int bucket);
@@ -38,7 +38,7 @@ private:
   int bucket(float f);
 
   int rate;
-  std::vector<complex> buckets;
+  std::vector<std::complex<float> > buckets;
 
 };
 
