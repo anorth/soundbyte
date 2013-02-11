@@ -7,7 +7,8 @@
 class Spectrum {
 public:
   /** Performs FFT */
-  Spectrum(std::vector<float> &samples, int rate);
+  //Spectrum(std::vector<float> &samples, int rate);
+  Spectrum(float *samples, int rate, int size);
 
   /** Number of buckets. */
   int size();
@@ -19,13 +20,13 @@ public:
   std::complex<float> at(int bucket);
 
   /** Value at bucket centred on frequency. */
-  std::complex<float> at(float frequency);
+//  std::complex<float> at(float frequency);
 
   /** Amplitude of bucket. */
   float amplitude(int bucket);
 
   /** Amplitude of bucket centred on frequency. */
-  float amplitude(float frequency);
+ // float amplitude(float frequency);
 
   /** Power of bucket. */
   float power(int bucket); 

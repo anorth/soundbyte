@@ -7,8 +7,9 @@ using namespace std;
 static const int WAITING_SYNC = 0;
 static const int RECEIVING_MESSAGE = 1;
 
-Decoder::Decoder() :
-    state(WAITING_SYNC) {
+Decoder::Decoder(Sync* sync) :
+    state(WAITING_SYNC),
+    sync(sync) {
 }
 
 void Decoder::receiveAudio(vector<float> &samples) {
@@ -16,7 +17,7 @@ void Decoder::receiveAudio(vector<float> &samples) {
 
   // If not yet synced, try
   if (state == WAITING_SYNC) {
-    sampleItr = sync.receiveAudioAndSync(samples);
+    sampleItr = sync->receiveAudioAndSync(samples);
     if (sampleItr != samples.end()) {
       state = RECEIVING_MESSAGE;
     }

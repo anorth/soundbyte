@@ -21,7 +21,7 @@ private:
   int state;
   std::queue<std::vector<char> > messages;
 
-  Sync sync;
+  Sync *sync;
 };
 
 #endif /* DECODER_H_ */

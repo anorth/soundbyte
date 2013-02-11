@@ -3,10 +3,23 @@
 
 #include <vector>
 #include <deque>
+#include "spectrum.h"
+
+typedef struct SyncConfig {
+  int baseBucket;
+  int spacing;
+  int numchans;
+  int chipsPerSyncPulse;
+  int numCyclesAsReadyPulses;
+  float signalFactor;
+  int detectionSamplesPerChip;
+  int chipSize;
+} SyncConfig;
 
 class Sync {
 public:
-  Sync();
+  Sync(SyncConfig* cfg);
+  ~Sync();
 
   /**
    * Generates a sync signal into target.
@@ -29,7 +42,26 @@ public:
   void resetSync();
 
 private:
-  std::deque<float> buffer;
+  SyncConfig* cfg;
+
+  float samplesPerMetaSample;
+  int fftSampleIndex;
+
+  //std::deque<float> buffer;
+
+  std::vector<float> buffer;
+
+  int bufferStart();
+
+  void copyBucketVals(Spectrum &spectrum, std::complex<float> *out);
+
+  std::complex<float> *pattern;
+  float detectMatch(std::complex<float> *bucketVals);
+
+  float bitPatternAbs;
+
+
+  std::deque<float> metaBuffer;
 };
 
 #endif

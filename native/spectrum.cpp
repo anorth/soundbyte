@@ -5,13 +5,16 @@
 
 using namespace std;
 
-Spectrum::Spectrum(vector<float> &samples, int rate) :
+//Spectrum::Spectrum(vector<float> &samples, int rate) : 
+//  this(samples.data(), rate, 0, samples.size())
+
+Spectrum::Spectrum(float *samples, int rate, int size) :
     rate(rate),
-    buckets(samples.size() / 2 + 1) {
-  kiss_fftr_cfg fft = kiss_fftr_alloc(samples.size(), 0, 0, 0);
+    buckets(size / 2 + 1) {
+  kiss_fftr_cfg fft = kiss_fftr_alloc(size, 0, 0, 0);
   kiss_fft_cpx kissBuckets[buckets.size()];
 
-  kiss_fftr(fft, samples.data(), kissBuckets);
+  kiss_fftr(fft, samples, kissBuckets);
   for (int i = 0; i < buckets.size(); ++i) {
     buckets[i] = complex<float>(kissBuckets[i].r, kissBuckets[i].i);
   }
@@ -32,17 +35,17 @@ complex<float> Spectrum::at(int bucket) {
   return buckets.at(bucket);
 }
 
-complex<float> Spectrum::at(float f) {
-  return at(bucket(f));
-}
+//complex<float> Spectrum::at(float f) {
+//  return at(bucket(f));
+//}
 
 float Spectrum::amplitude(int bucket) {
   return abs(buckets[bucket]);
 }
 
-float Spectrum::amplitude(float frequency) {
-  return amplitude(bucket(frequency));
-}
+//float Spectrum::amplitude(float frequency) {
+//  return amplitude(bucket(frequency));
+//}
 
 float Spectrum::power(int bucket) {
   float a = amplitude(bucket);
