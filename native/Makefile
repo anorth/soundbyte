@@ -9,7 +9,7 @@ BIN=bin
 #_OBJ = hellomake.o hellofunc.o 
 #OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
-SRCS=audio.cpp decoder.cpp packeter.cpp scom.cpp spectrum.cpp sync.cpp test.cpp util.cpp
+SRCS=audio.cpp decoder.cpp encoders.cpp packeter.cpp scom.cpp spectrum.cpp sync.cpp test.cpp util.cpp
 
 LIBS=-lm
 
