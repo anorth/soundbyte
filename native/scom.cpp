@@ -24,11 +24,11 @@ void decodeAudio(char *buffer, int buflen) {
 }
 
 bool messageAvailable() {
-  return false;
+  return decoder.messageAvailable();
 }
 
 int takeMessage(char *buffer, int bufferCapacity) {
-  return -1; // No message available.
+  return decoder.takeMessage(buffer, bufferCapacity);
 }
 
 ///// Private /////

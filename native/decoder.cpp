@@ -2,21 +2,31 @@
 
 #include "constants.h"
 
-static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 10;
+using namespace std;
 
-Decoder::Decoder() {
+static const int WAITING_SYNC = 0;
+static const int RECEIVING_MESSAGE = 1;
+
+Decoder::Decoder() :
+    state(WAITING_SYNC) {
 }
 
-void Decoder::receiveAudio(std::vector<float> &samples) {
-  // Append samples to buffer
-  buffer.resize(buffer.size() + samples.size());
-  std::copy(samples.begin(), samples.end(), buffer.end());
+void Decoder::receiveAudio(vector<float> &samples) {
+  vector<float>::iterator sampleItr;
 
-  // Scan buffer for sync
+  // If not yet synced, try
+  if (state == WAITING_SYNC) {
+    sampleItr = sync.receiveAudioAndSync(samples);
+    if (sampleItr != samples.end()) {
+      state = RECEIVING_MESSAGE;
+    }
+  }
 
-  // Discard head of buffer if appropriate
-  while (buffer.size() > MAX_BUFFER_SAMPLES) {
-    buffer.pop_front(); // slow?
+  // If synced, start/continue decoding message
+  if (state == RECEIVING_MESSAGE) {
+    // Receive some message from sampleItr
+    // If finished decoding message, enqueue it
+    state = WAITING_SYNC;
   }
 }
 
@@ -25,7 +35,18 @@ bool Decoder::messageAvailable() {
 }
 
 int Decoder::takeMessage(char *buffer, int bufferCapacity) {
-  return -1; // No message available.
+  int ret = -1; // No message available
+  if (messageAvailable()) {
+    vector<char> &message = messages.front();
+    if (bufferCapacity >= message.size()) {
+      std::copy(message.begin(), message.end(), buffer);
+      ret = message.size();
+      messages.pop();
+    } else {
+      ret = 0;
+    }
+  } 
+  return ret;
 }
 
 

@@ -5,6 +5,8 @@
 #include <queue>
 #include <vector>
 
+#include "sync.h"
+
 class Decoder {
 public:
   Decoder();
@@ -16,8 +18,10 @@ public:
   int takeMessage(char *buffer, int bufferCapacity);
 
 private:
-  std::deque<float> buffer;
-  std::queue<float> messages;
+  int state;
+  std::queue<std::vector<char> > messages;
+
+  Sync sync;
 };
 
 #endif /* DECODER_H_ */
