@@ -99,8 +99,7 @@ int maxCombElement(int k, int m, int *cnk) {
 }
 
 void toBitSequence(vector<char> &message, vector<bool> &target) {
-  target.clear();
-  target.reserve(message.size() * 8);
+  target.reserve(target.size() + message.size() * 8);
   for (vector<char>::iterator it = message.begin(); it != message.end(); ++it) {
     char b = *it;
     for (int i = 0; i < 8; ++i) {

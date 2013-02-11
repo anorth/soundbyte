@@ -14,7 +14,6 @@ using namespace std;
 CombinadicAssigner::CombinadicAssigner(int nchans) : 
     nchans(nchans),
     width(log(comb(nchans, nchans / 2)) / log(2)) {
-
 }
 
 void CombinadicAssigner::chipify(vector<bool> &bits, vector<vector<bool> > &chips) {
