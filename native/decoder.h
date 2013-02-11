@@ -9,7 +9,7 @@
 
 class Decoder {
 public:
-  Decoder();
+  Decoder(Sync *sync);
 
   void receiveAudio(std::vector<float> &samples);
 

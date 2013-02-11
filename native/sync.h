@@ -13,6 +13,7 @@ typedef struct SyncConfig {
   int numCyclesAsReadyPulses;
   float signalFactor;
   int detectionSamplesPerChip;
+  float misalignmentTolerance;
   int chipSize;
 } SyncConfig;
 

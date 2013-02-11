@@ -35,7 +35,7 @@ int main(void) {
   while (cin.good()) {
     cin.read(chunkBytes, CHUNK_BYTES);
     if (cin.good()) {
-      doFft(chunkBytes);
+      //doFft(chunkBytes);
 
       decodeAudio(chunkBytes, sizeof(chunkBytes));
       while (messageAvailable()) {

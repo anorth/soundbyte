@@ -103,7 +103,7 @@ void decodePcm16(char *buffer, int buflen, vector<float> &target) {
   target.reserve(buflen / 2);
   for (int i = 0; i < buflen; i += 2) {
     short *ps = (short *)(buffer + i);
-    target[i/2] = (float)*ps + 0.5f / PCM_QUANT;
+    target.push_back((float)*ps + 0.5f / PCM_QUANT);
   }
 }
 

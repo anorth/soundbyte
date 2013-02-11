@@ -1,6 +1,7 @@
 #include "sync.h"
 #include "constants.h"
 
+#include <iostream>
 #include <cmath>
 #include <cassert>
 
@@ -56,6 +57,7 @@ float Sync::detectMatch(complex<float> *bucketVals) {
 
   result = result * 2 - 1;
 
+  cerr << result << ' ';
   assert(result > -1.0 && result < 1.0);
 
   return result;
@@ -67,6 +69,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
   buffer.insert(buffer.end(), samples.begin(), samples.end());
 
   while (buffer.size() >= bufferStart() + cfg->chipSize) {
+
     Spectrum spectrum(samples.data() + bufferStart(), SAMPLE_RATE, cfg->chipSize);
     complex<float> bucketVals[cfg->numchans];
 
