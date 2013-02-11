@@ -1,9 +1,9 @@
-#ifndef _ENCODER_H_
-#define _ENCODER_H_
+#ifndef _CODEC_H_
+#define _CODEC_H_
 
 #include <vector>
 
-class Encoder {
+class Codec {
 public:
   /** Encodes raw data into encoded bits. */
   virtual void encode(std::vector<char> &message, std::vector<bool> &target) = 0;
@@ -12,7 +12,7 @@ public:
   virtual int decode(std::vector<float> &bits, std::vector<char> &target) = 0;
 
 protected:
-  Encoder() {};
+  Codec() {};
 };
 
 #endif
