@@ -1,2 +1,5 @@
 *.swp
 *.pyc
+
+native/bin
+native/obj
