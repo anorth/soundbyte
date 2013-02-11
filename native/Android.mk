@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE  	      := scom
-LOCAL_SRC_FILES       := audio.cpp decoder.cpp scom.cpp spectrum.cpp sync.cpp util.cpp \
+LOCAL_SRC_FILES       := assigners.cpp audio.cpp decoder.cpp encoders.cpp packeter.cpp scom.cpp spectrum.cpp sync.cpp util.cpp \
                          third_party/kiss_fft130/kiss_fft.c \
                          third_party/kiss_fft130/tools/kiss_fftr.c
 
