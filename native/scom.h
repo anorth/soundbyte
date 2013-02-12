@@ -7,7 +7,7 @@ extern const char *HELLO;
 /**
  * Initialises system.
  */
-void init();
+void scomInit();
 
 /**
  * Encodes a message payload into a waveform.

@@ -19,7 +19,7 @@ void normalize(std::vector<float> &waveform);
 void limit(std::vector<float> &waveform);
 
 /** Builds a signal with energy at each frequency corresponding to a non-zero item in chip */
-void buildWaveform(std::vector<int> &chip, float base, float spacing, int nsamples,
+void buildWaveform(std::vector<bool> &chip, float base, float spacing, int nsamples,
     std::vector<float> &target);
 
 /** Applies a Hann window to a waveform. */

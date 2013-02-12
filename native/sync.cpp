@@ -38,7 +38,7 @@ void Sync::resetSync() {
 
 void Sync::copyBucketVals(Spectrum &spectrum, complex<float> *out) {
   for (int i = 0; i < cfg->sync.numSyncChannels; i++) {
-    out[i] = spectrum.at(cfg->baseBucket + i * cfg->channelSpacing);
+    out[i] = spectrum.at(cfg->sync.syncBaseBucket + i * cfg->channelSpacing);
   }
 }
 

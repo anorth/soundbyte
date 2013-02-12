@@ -1,5 +1,5 @@
-#ifndef DECODER_H_
-#define DECODER_H_
+#ifndef _RECEIVER_H_
+#define _RECEIVER_H_
 
 #include <deque>
 #include <queue>
@@ -8,9 +8,9 @@
 class Packeter;
 class Sync;
 
-class Decoder {
+class Receiver {
 public:
-  Decoder(Sync *sync, Packeter *packeter);
+  Receiver(Sync *sync, Packeter *packeter);
 
   void receiveAudio(std::vector<float> &samples);
 
@@ -26,4 +26,4 @@ private:
   Packeter *packeter;
 };
 
-#endif /* DECODER_H_ */
+#endif /* _RECEIVER_H_ */
