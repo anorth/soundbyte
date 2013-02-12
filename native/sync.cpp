@@ -56,25 +56,27 @@ float Sync::detectMatch(complex<float> *bucketVals) {
       result += a;
     }
   }
+//  cerr << result << ' ' << bitPatternAbs << ' ' << bucketSum << ' ';
   // Normalize
   result /= sqrt(bucketSum);
   result /= bitPatternAbs;
-  result *= result;
 
   // Just in case
-  result *= 0.999;
-  result += 0.0005;
+  //result *= 0.999;
+  //result += 0.0005;
 
-  result = acos(result) / (3.14159/2);
+  result = 1.57079632679f - 2*acos(result);
+  //cerr << result << '\n';
+  //// Map to range -1,1
+  //result = sin(result * 2 - 1.57079632679f);
+  result = sin(result);
 
-  // Map to range -1,1
-  //result = result * 2 - 1;
 
  // if (abs(result) > 0.5) {
  //   cerr << "             ";
  // }
   //cerr << result << '\n';
-  //assert(result > -1.0 && result < 1.0);
+  assert(result >= -1.0 && result <= 1.0);
 
   return result;
 }
