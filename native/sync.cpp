@@ -59,27 +59,35 @@ float Sync::detectMatch(complex<float> *bucketVals) {
       result += a;
     }
   }
-//  cerr << result << ' ' << bitPatternAbs << ' ' << bucketSum << ' ';
   // Normalize
   result /= sqrt(bucketSum);
   result /= bitPatternAbs;
 
-  // Just in case
-  //result *= 0.999;
-  //result += 0.0005;
+  // can rarely get NaNs, guard against
+  result *= 0.99999;
+  result += 0.000005;
 
+  // Convert to linear correlation
   result = 1.57079632679f - 2*acos(result);
-  //cerr << result << '\n';
-  //// Map to range -1,1
-  //result = sin(result * 2 - 1.57079632679f);
+
+  // Map to range -1,1, with sinewave correlation
   result = sin(result);
 
+  // TODO: If fed random data, this actually yields
+  // an average of about -0.15, figure out why
+  // (expected, zero. if fed predictable data, then
+  // average can be made easily to be 0, 1, -1, as expected).
 
- // if (abs(result) > 0.5) {
- //   cerr << "             ";
- // }
-//  cerr << "HI THERE " << result << '\n';
-//  assert(result >= -1.0 && result <= 1.0);
+
+//  if (abs(result) > 0.7) {
+//    cerr << "              ";
+//  }
+//    cerr << result << '\n';
+//  cerr << result << '\n';
+  if (!(result >= -1.0 && result <= 1.0)) {
+    cerr << "Got result " << result << '\n';
+  }
+  assert(result >= -1.0 && result <= 1.0);
 
   return result;
 }
@@ -99,14 +107,14 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
     fftSampleIndex++;
   }
 
-  float tot = 0;
-  // WTF compiler errors
-  //for (vector<float>::iterator it = metaBuffer.begin(); it != metaBuffer.end(); ++it) {
-  for (int i = 0; i < metaBuffer.size(); i++) {
-    tot += metaBuffer[i];
-  }
+  if (false) {
+    float tot = 0;
+    for (int i = 0; i < metaBuffer.size(); i++) {
+      tot += metaBuffer[i];
+    }
 
-  cerr << (tot / metaBuffer.size()) << '\n';
+    cerr << (tot / metaBuffer.size()) << '\n';
+  }
 
   // Look for sync...
 
