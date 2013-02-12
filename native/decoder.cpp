@@ -1,15 +1,18 @@
 #include "decoder.h"
 
 #include "constants.h"
+#include "packeter.h"
+#include "sync.h"
 
 using namespace std;
 
 static const int WAITING_SYNC = 0;
 static const int RECEIVING_MESSAGE = 1;
 
-Decoder::Decoder(Sync* sync) :
+Decoder::Decoder(Sync *sync, Packeter *packeter) :
     state(WAITING_SYNC),
-    sync(sync) {
+    sync(sync),
+    packeter(packeter) {
 }
 
 void Decoder::receiveAudio(vector<float> &samples) {

@@ -1,5 +1,8 @@
 #include "sync.h"
+
+#include "config.h"
 #include "constants.h"
+#include "spectrum.h"
 
 #include <iostream>
 #include <cmath>
@@ -9,16 +12,16 @@ using namespace std;
 
 static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 2; // 2s
 
-Sync::Sync(SyncConfig* cfg) {
+Sync::Sync(Config* cfg) {
   this->cfg = cfg;
 
-  samplesPerMetaSample = (float) cfg->chipSize / cfg->detectionSamplesPerChip;
-  pattern = new complex<float>[cfg->numchans];
+  samplesPerMetaSample = (float) cfg->sync.syncChipSize / cfg->sync.detectionSamplesPerChip;
+  pattern = new complex<float>[cfg->sync.numSyncChannels];
 
   resetSync();
 
-  assert(cfg->numchans % 2 == 0);
-  bitPatternAbs = sqrt((float)cfg->numchans/2);
+  assert(cfg->sync.numSyncChannels % 2 == 0);
+  bitPatternAbs = sqrt((float)cfg->sync.numSyncChannels/2);
 }
 
 Sync::~Sync() {
@@ -34,8 +37,8 @@ void Sync::resetSync() {
 }
 
 void Sync::copyBucketVals(Spectrum &spectrum, complex<float> *out) {
-  for (int i = 0; i < cfg->numchans; i++) {
-    out[i] = spectrum.at(cfg->baseBucket + i * cfg->spacing);
+  for (int i = 0; i < cfg->sync.numSyncChannels; i++) {
+    out[i] = spectrum.at(cfg->baseBucket + i * cfg->channelSpacing);
   }
 }
 
@@ -45,7 +48,7 @@ float Sync::detectMatch(complex<float> *bucketVals) {
   float bucketSum = 0.0;
   float result = 0;
 
-  for (int i = 0; i < cfg->numchans; i++) {
+  for (int i = 0; i < cfg->sync.numSyncChannels; i++) {
     float a = abs(bucketVals[i]);
     // Keep track of sum of squares, to normalise at end
     bucketSum += a*a;
@@ -84,9 +87,9 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
   // TODO: just use a rotating buffer of a fixed float array
   buffer.insert(buffer.end(), samples.begin(), samples.end());
 
-  while (buffer.size() >= bufferStart() + cfg->chipSize) {
-    Spectrum spectrum(buffer.data() + bufferStart(), SAMPLE_RATE, cfg->chipSize);
-    complex<float> bucketVals[cfg->numchans];
+  while (buffer.size() >= bufferStart() + cfg->sync.syncChipSize) {
+    Spectrum spectrum(buffer.data() + bufferStart(), SAMPLE_RATE, cfg->sync.syncChipSize);
+    complex<float> bucketVals[cfg->sync.numSyncChannels];
 
     copyBucketVals(spectrum, bucketVals);
     metaBuffer.push_back(detectMatch(bucketVals));

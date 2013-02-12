@@ -1,25 +1,17 @@
 #ifndef _SYNC_H_
 #define _SYNC_H_
 
-#include <vector>
+#include <complex>
 #include <deque>
-#include "spectrum.h"
+#include <vector>
 
-typedef struct SyncConfig {
-  int baseBucket;
-  int spacing;
-  int numchans;
-  int chipsPerSyncPulse;
-  int numCyclesAsReadyPulses;
-  float signalFactor;
-  int detectionSamplesPerChip;
-  float misalignmentTolerance;
-  int chipSize;
-} SyncConfig;
+#include "config.h"
+
+class Spectrum;
 
 class Sync {
 public:
-  Sync(SyncConfig* cfg);
+  Sync(Config* cfg);
   ~Sync();
 
   /**
@@ -43,7 +35,7 @@ public:
   void resetSync();
 
 private:
-  SyncConfig* cfg;
+  Config* cfg;
 
   float samplesPerMetaSample;
   int fftSampleIndex;

@@ -3,7 +3,7 @@
 
 #include "codec.h"
 
-class IdentityCodec : Codec {
+class IdentityCodec : public Codec {
 public:
   IdentityCodec() {};
   void encode(std::vector<char> &message, std::vector<bool> &target);

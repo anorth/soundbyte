@@ -3,7 +3,7 @@
 
 #include "assigner.h"
 
-class CombinadicAssigner : Assigner {
+class CombinadicAssigner : public Assigner {
 public:
   CombinadicAssigner(int nchans);
   void chipify(std::vector<bool> &bits, std::vector<std::vector<bool> > &chips);
