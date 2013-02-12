@@ -9,17 +9,23 @@ BIN=bin
 #_OBJ = hellomake.o hellofunc.o 
 #OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
-SRCS=assigners.cpp audio.cpp decoder.cpp codecs.cpp packeter.cpp scom.cpp spectrum.cpp sync.cpp test.cpp util.cpp
+#SRCS=assigners.cpp audio.cpp decoder.cpp codecs.cpp packeter.cpp scom.cpp spectrum.cpp sync.cpp test.cpp util.cpp
+OBJS=assigners.o audio.o decoder.o codecs.o packeter.o scom.o spectrum.o sync.o test.o util.o
+
+OBJS2=$(patsubst %,$(ODIR)/%,$(OBJS))
 
 LIBS=-lm
 
-stuff: $(SRCS) fft fftr dirs
-	$(CC) -o $(BIN)/stuff $(SRCS) $(ODIR)/kiss_fft.o $(ODIR)/kiss_fftr.o ${LIBS} $(INC)
+stuff: $(OBJS2) $(ODIR)/kiss_fftr.o $(ODIR)/kiss_fft.o
+	$(CC) -o $(BIN)/stuff $(OBJS2) $(ODIR)/kiss_fft.o $(ODIR)/kiss_fftr.o $(LIBS) $(INC)
 
-fft: $(FFT)/kiss_fft.c $(FFT)/kiss_fft.h dirs
-	$(CC) -c -o $(ODIR)/kiss_fft.o $(FFT)/kiss_fft.c -I $(INC)
+$(ODIR)/%.o: %.cpp
+	$(CC) -c $< -o $@ $(INC) 
 
-fftr: $(FFT)/tools/kiss_fftr.c $(FFT)/tools/kiss_fftr.h dirs
+$(ODIR)/kiss_fft.o: $(FFT)/kiss_fft.c $(FFT)/kiss_fft.h
+	$(CC) -c -o $(ODIR)/kiss_fft.o $(FFT)/kiss_fft.c $(INC)
+
+$(ODIR)/kiss_fftr.o: $(FFT)/tools/kiss_fftr.c $(FFT)/tools/kiss_fftr.h
 	$(CC) -c -o $(ODIR)/kiss_fftr.o $(FFT)/tools/kiss_fftr.c $(INC)
 
 dirs:
@@ -27,6 +33,6 @@ dirs:
 	mkdir -p $(BIN)
 
 clean:
-	rm -rf $(ODIR)
-	rm -rf $(BIN)
+	rm -rf $(ODIR)/*
+	rm -rf $(BIN)/*
 	
