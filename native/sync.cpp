@@ -78,8 +78,8 @@ float Sync::detectMatch(complex<float> *bucketVals) {
  // if (abs(result) > 0.5) {
  //   cerr << "             ";
  // }
-  //cerr << result << '\n';
-  assert(result >= -1.0 && result <= 1.0);
+//  cerr << "HI THERE " << result << '\n';
+//  assert(result >= -1.0 && result <= 1.0);
 
   return result;
 }
