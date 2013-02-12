@@ -1,4 +1,4 @@
-#include "decoder.h"
+#include "receiver.h"
 
 #include "constants.h"
 #include "packeter.h"
@@ -9,13 +9,13 @@ using namespace std;
 static const int WAITING_SYNC = 0;
 static const int RECEIVING_MESSAGE = 1;
 
-Decoder::Decoder(Sync *sync, Packeter *packeter) :
+Receiver::Receiver(Sync *sync, Packeter *packeter) :
     state(WAITING_SYNC),
     sync(sync),
     packeter(packeter) {
 }
 
-void Decoder::receiveAudio(vector<float> &samples) {
+void Receiver::receiveAudio(vector<float> &samples) {
   vector<float>::iterator sampleItr;
 
   // If not yet synced, try
@@ -34,11 +34,11 @@ void Decoder::receiveAudio(vector<float> &samples) {
   }
 }
 
-bool Decoder::messageAvailable() {
+bool Receiver::messageAvailable() {
   return !messages.empty();
 }
 
-int Decoder::takeMessage(char *buffer, int bufferCapacity) {
+int Receiver::takeMessage(char *buffer, int bufferCapacity) {
   int ret = -1; // No message available
   if (messageAvailable()) {
     vector<char> &message = messages.front();

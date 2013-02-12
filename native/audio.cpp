@@ -67,7 +67,7 @@ void limit(vector<float> &waveform) {
   }
 }
 
-void buildWaveform(vector<int> &chip, float base, float spacing, int nsamples, 
+void buildWaveform(vector<bool> &chip, float base, float spacing, int nsamples, 
     vector<float> &target) {
   vector<float> freqs;
   for (int i = 0; i < chip.size(); ++i) {
@@ -100,7 +100,7 @@ void fadeout(vector<float> &waveform, int nsamples) {
 }
 
 void decodePcm16(char *buffer, int buflen, vector<float> &target) {
-  target.reserve(buflen / 2);
+  target.reserve(target.size() + buflen / 2);
   for (int i = 0; i < buflen; i += 2) {
     short *ps = (short *)(buffer + i);
     target.push_back((float)*ps + 0.5f / PCM_QUANT);
