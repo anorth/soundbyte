@@ -9,14 +9,16 @@ BIN=bin
 #_OBJ = hellomake.o hellofunc.o 
 #OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
-#SRCS=assigners.cpp audio.cpp decoder.cpp codecs.cpp packeter.cpp scom.cpp spectrum.cpp sync.cpp test.cpp util.cpp
-OBJS=assigners.o audio.o decoder.o codecs.o packeter.o scom.o spectrum.o sync.o test.o util.o
+OBJS=assigners.o audio.o codecs.o packeter.o receiver.o scom.o \
+     sender.o spectrum.o sync.o test.o util.o
 
 OBJS2=$(patsubst %,$(ODIR)/%,$(OBJS))
 
 LIBS=-lm
 
-stuff: $(OBJS2) $(ODIR)/kiss_fftr.o $(ODIR)/kiss_fft.o
+stuff: bin/stuff
+
+bin/stuff: $(OBJS2) $(ODIR)/kiss_fftr.o $(ODIR)/kiss_fft.o
 	$(CC) -o $(BIN)/stuff $(OBJS2) $(ODIR)/kiss_fft.o $(ODIR)/kiss_fftr.o $(LIBS) $(INC)
 
 $(ODIR)/%.o: %.cpp

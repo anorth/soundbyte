@@ -3,6 +3,7 @@
 
 typedef struct {
   int numSyncChannels;
+  int syncBaseBucket;
   int chipsPerSyncPulse;
   int numCyclesAsReadyPulses;
   float signalFactor;
@@ -16,6 +17,7 @@ typedef struct {
   int baseBucket;
   int channelSpacing;
   int chipRate;
+  int chipSamples;
   int numChannels;
 
   SyncConfig sync;

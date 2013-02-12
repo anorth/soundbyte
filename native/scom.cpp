@@ -5,8 +5,9 @@
 #include "codecs.h"
 #include "config.h"
 #include "constants.h"
-#include "decoder.h"
 #include "packeter.h"
+#include "receiver.h"
+#include "sender.h"
 #include "sync.h"
 
 #include <cassert>
@@ -29,14 +30,18 @@ static Config initCfg() {
   cfg.channelSpacing = 2;
   cfg.numChannels = 8;
   cfg.chipRate = chipRate;
+  cfg.chipSamples = chipSamples;
 
   int syncrate = 200;
+  int syncChipSize = SAMPLE_RATE / syncrate;
+  cfg.sync.syncBaseBucket = base * syncChipSize / SAMPLE_RATE;
+  cfg.sync.numSyncChannels = cfg.numChannels;
   cfg.sync.chipsPerSyncPulse = 2;
   cfg.sync.numCyclesAsReadyPulses = 1;
   cfg.sync.signalFactor = 1.0;
   cfg.sync.detectionSamplesPerChip = 4;
   cfg.sync.misalignmentTolerance = 0.15;
-  cfg.sync.syncChipSize = SAMPLE_RATE / syncrate;
+  cfg.sync.syncChipSize = syncChipSize;
 
   return cfg;
 }
@@ -46,34 +51,46 @@ static Sync *syncer = 0;
 static Codec *codec = 0;
 static Assigner *assigner = 0;
 static Packeter *packeter = 0;
-static Decoder *decoder = 0;
+static Sender *sender = 0;
+static Receiver *receiver = 0;
 
-void init() {
+void scomInit() {
   cfg = initCfg();
   syncer = new Sync(&cfg);
   codec = new IdentityCodec();
   assigner = new CombinadicAssigner(cfg.numChannels);
   packeter = new Packeter(codec, assigner);
-  decoder = new Decoder(syncer, packeter);
+  sender = new Sender(&cfg, syncer, packeter);
+  receiver = new Receiver(syncer, packeter);
 }
 
 int encodeMessage(char* payload, int payloadLength, char *waveform, int waveformCapacity) {
-  return 0;
+  vector<char> message(payload, payload + payloadLength);
+  vector<float> encoded;
+  sender->encodeMessage(message, encoded);
+
+  int requiredCapacity = encoded.size() * sizeof(short) / sizeof(char);
+  if (waveformCapacity > requiredCapacity) {
+    encodePcm16(encoded, waveform);
+    return requiredCapacity;
+  } else {
+    return 0;
+  }
 }
 
 void decodeAudio(char *buffer, int buflen) {
   std::vector<float> samples;
   decodePcm16(buffer, buflen, samples);
 
-  decoder->receiveAudio(samples);
+  receiver->receiveAudio(samples);
 }
 
 bool messageAvailable() {
-  return decoder->messageAvailable();
+  return receiver->messageAvailable();
 }
 
 int takeMessage(char *buffer, int bufferCapacity) {
-  return decoder->takeMessage(buffer, bufferCapacity);
+  return receiver->takeMessage(buffer, bufferCapacity);
 }
 
 ///// Private /////

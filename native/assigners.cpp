@@ -5,7 +5,11 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <iostream>
 #include <numeric>
+#include <vector>
+
+#include "util.h"
 
 using namespace std;
 
@@ -14,17 +18,19 @@ using namespace std;
 CombinadicAssigner::CombinadicAssigner(int nchans) : 
     nchans(nchans),
     width(log(comb(nchans, nchans / 2)) / log(2)) {
+  //cerr << "Assigner has nchans " << nchans << " width " << width << endl;
 }
 
 void CombinadicAssigner::chipify(vector<bool> &bits, vector<vector<bool> > &chips) {
+  //cerr << "bits: " << bits << endl;
   int k = nchans / 2;
   vector<bool>::iterator it = bits.begin();
   while (it != bits.end()) {
     int i = nextInt(bits, it, width);
     vector<int> signalIndexes;
     combinadic(k, i, signalIndexes);
-    // print signal indexes
-    vector<bool> currentChip(width);
+    //cerr << "i: " << i << ", signal indexes: " << signalIndexes << endl;
+    vector<bool> currentChip(nchans);
     for (vector<int>::iterator si = signalIndexes.begin(); si != signalIndexes.end(); ++si) {
       assert(*si < currentChip.size());
       currentChip[*si] = 1.0;

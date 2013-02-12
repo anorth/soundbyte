@@ -32,6 +32,7 @@ float Spectrum::bucketWidth() {
 }
 
 complex<float> Spectrum::at(int bucket) {
+  assert(bucket < buckets.size());
   return buckets.at(bucket);
 }
 
