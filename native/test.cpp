@@ -57,7 +57,7 @@ void doSend() {
   char waveform[SAMPLE_RATE * 10];
   while (true) {
     int waveformBytes = encodeMessage(message, sizeof(message), waveform, sizeof(waveform));
-    cerr << "Generated " << waveformBytes << " bytes" << endl;
+    cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
     assert(waveformBytes > 0);
     cout.write(waveform, waveformBytes);
   }

@@ -54,5 +54,28 @@ int nextInt(std::vector<bool> &bits, std::vector<bool>::iterator &it, int nbits)
 // Writes nbits bit likelihoods from integer to target
 void toBits(int integer, int nbits, std::vector<float> &target);
 
+template <class CharT, class Traits>
+std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, 
+  const std::vector<bool>& x) {
+  os << "[";
+  for (std::vector<bool>::const_iterator it = x.begin(); it != x.end(); ++it) {
+    os << (*it ? "1" : "0") << ", ";
+  }
+  os << "]";
+  return os;
+}
+
+template <class T, class CharT, class Traits>
+std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, 
+  const std::vector<T>& x) {
+  os << "[";
+  typename std::vector<T>::const_iterator it;
+  for (it = x.begin(); it != x.end(); ++it) {
+    os << *it << ", ";
+  }
+  os << "]";
+  return os;
+}
+
 
 #endif
