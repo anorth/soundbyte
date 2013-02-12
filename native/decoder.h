@@ -5,11 +5,12 @@
 #include <queue>
 #include <vector>
 
-#include "sync.h"
+class Packeter;
+class Sync;
 
 class Decoder {
 public:
-  Decoder(Sync *sync);
+  Decoder(Sync *sync, Packeter *packeter);
 
   void receiveAudio(std::vector<float> &samples);
 
@@ -22,6 +23,7 @@ private:
   std::queue<std::vector<char> > messages;
 
   Sync *sync;
+  Packeter *packeter;
 };
 
 #endif /* DECODER_H_ */

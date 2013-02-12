@@ -1,11 +1,11 @@
 #ifndef _ENCODERS_H_
 #define _ENCODERS_H_
 
-#include "encoder.h"
+#include "codec.h"
 
-class IdentityEncoder : Encoder {
+class IdentityCodec : public Codec {
 public:
-  IdentityEncoder() {};
+  IdentityCodec() {};
   void encode(std::vector<char> &message, std::vector<bool> &target);
   int decode(std::vector<float> &bits, std::vector<char> &target);
 };

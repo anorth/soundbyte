@@ -28,6 +28,7 @@ void doFft(char chunkBytes[]) {
 }
 
 int main(void) {
+  init();
   fftConfig = kiss_fftr_alloc(CHUNK_SAMPLES, false, 0, 0);
 
   char chunkBytes[CHUNK_BYTES];

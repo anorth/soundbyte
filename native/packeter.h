@@ -2,13 +2,13 @@
 #define _PACKETER_H_
 
 #include "assigner.h"
-#include "encoder.h"
+#include "codec.h"
 
 #include <vector>
 
 class Packeter {
 public:
-  Packeter(Encoder &encoder, Assigner &assigner);
+  Packeter(Codec *codec, Assigner *assigner);
 
   /**
    * Encodes a message into a sequence of chips, each the same length.
@@ -24,7 +24,7 @@ public:
   int decodeMessage(std::vector<std::vector<float> > &chips, std::vector<char> &target);
 
 private:
-  Encoder *encoder;
+  Codec *codec;
   Assigner *assigner;
 };
 

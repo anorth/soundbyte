@@ -13,16 +13,16 @@ using namespace std;
 static const float PCM_QUANT = 32767.5;
 
 void silence(int nsamples, vector<float> &target) {
-  target.clear();
-  target.resize(nsamples); // inserts zeros
+  target.insert(target.end(), nsamples, 0);
 }
 
 void sinewave(float freq, int nsamples, vector<float> &target) {
-  target.clear();
-  target.reserve(nsamples);
+  target.reserve(target.size() + nsamples);
+  vector<float>::iterator tit = target.end();
   float twoPiOnRate = 2.0 * M_PI * freq / float(SAMPLE_RATE);
   for (int i = 0; i < nsamples; ++i) {
-    target[i] = sin(i * twoPiOnRate);
+    target.insert(tit, sin(i * twoPiOnRate));
+    ++tit;
   }
 }
 

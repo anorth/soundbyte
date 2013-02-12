@@ -5,6 +5,11 @@
 extern const char *HELLO;
 
 /**
+ * Initialises system.
+ */
+void init();
+
+/**
  * Encodes a message payload into a waveform.
  *
  * @return the number of waveform bytes written, or -1 on failure.
