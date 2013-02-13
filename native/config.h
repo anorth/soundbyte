@@ -2,14 +2,16 @@
 #define _CONFIG_H_
 
 typedef struct {
-  int numSyncChannels;
-  int syncBaseBucket;
+  int numChannels;
+  int baseBucket;
+  int channelSpacing;
   int chipsPerSyncPulse;
   int numCyclesAsReadyPulses;
   float signalFactor;
   int detectionSamplesPerChip;
   float misalignmentTolerance;
-  int syncChipSize;
+  int chipSize;
+  int longMetaBucket;
 } SyncConfig;
 
 typedef struct {

@@ -20,7 +20,7 @@ using namespace std;
 const char *HELLO = "Hello from C++";
 
 static Config initCfg() {
-  int base = 16000;
+  int base = 15000;
   int chipRate = 50;
   int chipSamples = SAMPLE_RATE / chipRate;
 
@@ -34,14 +34,16 @@ static Config initCfg() {
 
   int syncrate = 200;
   int syncChipSize = SAMPLE_RATE / syncrate;
-  cfg.sync.syncBaseBucket = base * syncChipSize / SAMPLE_RATE;
-  cfg.sync.numSyncChannels = cfg.numChannels;
+  cfg.sync.baseBucket = base * syncChipSize / SAMPLE_RATE;
+  cfg.sync.channelSpacing = 2;
+  cfg.sync.numChannels = cfg.numChannels;
   cfg.sync.chipsPerSyncPulse = 2;
   cfg.sync.numCyclesAsReadyPulses = 1;
   cfg.sync.signalFactor = 1.0;
-  cfg.sync.detectionSamplesPerChip = 4;
+  cfg.sync.detectionSamplesPerChip = 6;
   cfg.sync.misalignmentTolerance = 0.15;
-  cfg.sync.syncChipSize = syncChipSize;
+  cfg.sync.chipSize = syncChipSize;
+  cfg.sync.longMetaBucket = 2;
 
   return cfg;
 }
@@ -56,7 +58,7 @@ static Receiver *receiver = 0;
 
 void scomInit() {
   cfg = initCfg();
-  syncer = new Sync(&cfg);
+  syncer = new Sync(&cfg.sync);
   codec = new IdentityCodec();
   assigner = new CombinadicAssigner(cfg.numChannels);
   packeter = new Packeter(codec, assigner);

@@ -11,7 +11,7 @@ class Spectrum;
 
 class Sync {
 public:
-  Sync(Config* cfg);
+  Sync(SyncConfig* cfg);
   ~Sync();
 
   /**
@@ -35,26 +35,28 @@ public:
   void resetSync();
 
 private:
-  Config* cfg;
-
-  float samplesPerMetaSample;
-  int fftSampleIndex;
-
-  //std::deque<float> buffer;
-
-  std::vector<float> buffer;
-
   int bufferStart();
-
-  void copyBucketVals(Spectrum &spectrum, std::complex<float> *out);
-
-  std::complex<float> *pattern;
+  void copyBucketVals(Spectrum &spectrum, int numChipsInSample, std::complex<float> *out);
   float detectMatch(std::complex<float> *bucketVals);
+  int getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
+      float *misalignmentOut);
 
+  // Parameters
+  SyncConfig* cfg;
+  float samplesPerMetaSample;
   float bitPatternAbs;
+  int readyRepeats;
+  int pulseSamples;
+  int metaSamplesPerPulse;
+  int metaSamplesPerCycle;
 
-
-  std::deque<float> metaBuffer;
+  // State
+  int state;
+  int fftSampleIndex;
+  int syncOffset; // Sync offset in samples
+  std::vector<float> buffer;
+  std::vector<float> shortMetaBuffer;
+  std::vector<float> metaBuffer;
 };
 
 #endif
