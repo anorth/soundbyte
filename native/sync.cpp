@@ -4,7 +4,7 @@
 #include "constants.h"
 #include "spectrum.h"
 
-#include <iostream>
+//#include <iostream>
 #include <cmath>
 #include <cassert>
 
@@ -12,14 +12,14 @@ using namespace std;
 
 static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 2; // 2s
 
-void printArray(float* values, int length) {
-  cerr << "\n[";
-  for (int i = 0; i < length; i++) {
-    if (i > 0) cerr << ',';
-    cerr << values[i];
-  }
-  cerr << "]\n";
-}
+//void printArray(float* values, int length) {
+//  cerr << "\n[";
+//  for (int i = 0; i < length; i++) {
+//    if (i > 0) cerr << ',';
+//    cerr << values[i];
+//  }
+//  cerr << "]\n";
+//}
 
 Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
   samplesPerMetaSample = (float) cfg->chipSize / cfg->detectionSamplesPerChip;
@@ -28,15 +28,15 @@ Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
   bitPatternAbs = sqrt((float)cfg->numChannels/2);
 
   metaSamplesPerPulse = cfg->detectionSamplesPerChip * cfg->chipsPerSyncPulse;
-  cerr << metaSamplesPerPulse << "<------------\n";
+  //cerr << metaSamplesPerPulse << "<------------\n";
   metaSamplesPerCycle = 2 * metaSamplesPerPulse;
   readyRepeats = 2 * cfg->chipsPerSyncPulse;
   pulseSamples = cfg->chipsPerSyncPulse * cfg->chipSize;
 
   resetSync();
 
-  cerr << "VALS " << cfg->baseBucket << ' '
-      << cfg->numChannels << ' ' << cfg->channelSpacing << '\n';
+  //cerr << "VALS " << cfg->baseBucket << ' '
+      //<< cfg->numChannels << ' ' << cfg->channelSpacing << '\n';
 }
 
 Sync::~Sync() {
@@ -57,7 +57,7 @@ void Sync::resetSync() {
 }
 
 vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
-  cerr << "\n\n\n===========\nCALLED with " << samples.size() << " samples\n";
+  //cerr << "\n\n\n===========\nCALLED with " << samples.size() << " samples\n";
   // Append samples to buffer
   // TODO: just use a rotating buffer of a fixed float array
   buffer.insert(buffer.end(), samples.begin(), samples.end());
@@ -89,15 +89,15 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
     for (int i = 0; i < metaBuffer.size(); i++) {
       tot += metaBuffer[i];
     }
-    cerr << (tot / metaBuffer.size()) << '\n';
+    //cerr << (tot / metaBuffer.size()) << '\n';
   }
 
-  cerr << "\nsyncOffset " << syncOffset << ' ' << 2*pulseSamples << '\n';
+  //cerr << "\nsyncOffset " << syncOffset << ' ' << 2*pulseSamples << '\n';
   int longMetaSpectrumLength = metaSamplesPerCycle * cfg->longMetaBucket;
 
   while (true) {
     int metaBufferStart = (int) (syncOffset / samplesPerMetaSample);
-    cerr << "\n---------loop " << syncOffset << ", " << metaBufferStart << '\n';
+    //cerr << "\n---------loop " << syncOffset << ", " << metaBufferStart << '\n';
     assert(metaBufferStart < metaBuffer.size());
 
     if (metaBuffer.size() < metaBufferStart + longMetaSpectrumLength) {
@@ -126,7 +126,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
     if (state >= 1) {
       int readySignalStart = 
         syncOffset + ((cfg->longMetaBucket - 1) * 2 + 1) * pulseSamples;
-      cerr << "SYNC OFFSET " << syncOffset << ' ' << readySignalStart << '\n';
+      //cerr << "SYNC OFFSET " << syncOffset << ' ' << readySignalStart << '\n';
       int shortMetaSpectrumLength = metaSamplesPerCycle;
       float readyBuffer[shortMetaSpectrumLength];
       for (int i = 0; i < shortMetaSpectrumLength; i++) {
@@ -144,9 +144,6 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
       //printArray(shortMetaBuffer.data(), shortMetaBuffer.size());
       //printArray(metaBuffer.data(), metaBuffer.size());
 
-
-    // XXX TODO: change getAlignment to take into account inherent
-    // MIS alignment.
       if (state == 2) {
         int resultShortB = getAlignment(shortMetaSpectrumB, cfg->chipsPerSyncPulse,
             1, 1, NULL);
@@ -155,7 +152,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
           // XXX return actual alignment
           int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength) + cfg->chipSize;
           int inputOffset = samples.size() - (buffer.size() - offset);
-          cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
+          //cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
           assert(false);
           return samples.end();
         } else {
@@ -177,10 +174,10 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
           //logging.debug('state 1 ALIGNED')
           state = 2;
           misalignment = chipMisalignment / cfg->chipsPerSyncPulse;
-          cerr << "STATE 2 " << misalignment << '\n';
+          //cerr << "STATE 2 " << misalignment << '\n';
         }
-        cerr << "XXstate " << state << ',' << resultLongA << ' ' << resultLongB 
-            << ' ' << resultShortB << '\n';
+        //cerr << "XXstate " << state << ',' << resultLongA << ' ' << resultLongB 
+            //<< ' ' << resultShortB << '\n';
       }
     }
 
@@ -189,9 +186,9 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
       //#logging.debug('L')
       state = getAlignment(longMetaSpectrum,
           cfg->longMetaBucket, state, cfg->chipsPerSyncPulse, &misalignment);
-      cerr << "newstate " << state << ' ' << misalignment << '\n';
+      //cerr << "newstate " << state << ' ' << misalignment << '\n';
     }
-        cerr << "misalignmetn " << misalignment << '\n';
+        //cerr << "misalignmetn " << misalignment << '\n';
 
     if (state < 0) {
       misalignment = 0;
@@ -207,7 +204,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
 
     syncOffset += alignedAmount;
 
-    cerr << state << ' ';
+    //cerr << state << ' ';
 
   }
 }
@@ -324,7 +321,7 @@ float Sync::detectMatch(complex<float> *bucketVals) {
 //    cerr << result << '\n';
 //  cerr << result << '\n';
   if (!(result >= -1.0 && result <= 1.0)) {
-    cerr << "Got result " << result << '\n';
+    //cerr << "Got result " << result << '\n';
   }
   assert(result >= -1.0 && result <= 1.0);
 
