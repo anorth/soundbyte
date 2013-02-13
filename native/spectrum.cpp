@@ -1,6 +1,9 @@
 #include "spectrum.h"
 
+#include "util.h"
+
 #include <cassert>
+#include <iostream>
 #include "kiss_fftr.h"
 
 using namespace std;
@@ -18,8 +21,8 @@ Spectrum::Spectrum(float *samples, int rate, int size) :
   for (int i = 0; i < buckets.size(); ++i) {
     buckets[i] = complex<float>(kissBuckets[i].r, kissBuckets[i].i);
   }
+  //cerr << buckets << endl;
 
-  kiss_fft_cleanup();
   kiss_fftr_free(fft);
 }
 

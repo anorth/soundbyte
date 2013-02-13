@@ -57,7 +57,7 @@ void doSend() {
   char waveform[SAMPLE_RATE * 10];
   while (true) {
     int waveformBytes = encodeMessage(message, sizeof(message), waveform, sizeof(waveform));
-    cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
+    //cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
     assert(waveformBytes > 0);
     cout.write(waveform, waveformBytes);
   }
@@ -135,9 +135,9 @@ int main2(void) {
     printf("%f\t%f  %f,%f\n",array[i],buf[i],out_cpx[i].r, out_cpx[i].i);
   }
 
-  kiss_fft_cleanup();   
   free(fft);
   free(ifft);
+  kiss_fft_cleanup();   
   return 0;
 }
 

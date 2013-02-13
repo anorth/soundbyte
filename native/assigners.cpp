@@ -30,7 +30,7 @@ void CombinadicAssigner::chipify(vector<bool> &bits, vector<vector<bool> > &chip
     vector<int> signalIndexes;
     combinadic(k, i, signalIndexes);
     //cerr << "i: " << i << ", signal indexes: " << signalIndexes << endl;
-    vector<bool> currentChip(nchans);
+    vector<bool> currentChip(nchans); // Zeros
     for (vector<int>::iterator si = signalIndexes.begin(); si != signalIndexes.end(); ++si) {
       assert(*si < currentChip.size());
       currentChip[*si] = 1.0;
@@ -47,6 +47,7 @@ void CombinadicAssigner::unchipify(vector<vector<float> > &chips, vector<float> 
   for (chipItr = chips.begin(); chipItr != chips.end(); ++chipItr) {
     // Partition signals into high and low half
     vector<float> &chip = *chipItr;
+    assert(chip.size() == nchans);
     vector<pair<float, int> > indexedSignals;
     for (int i = 0; i < chip.size(); ++i) {
       indexedSignals.push_back(make_pair(chip[i], i));
@@ -67,7 +68,11 @@ void CombinadicAssigner::unchipify(vector<vector<float> > &chips, vector<float> 
     int n = inverseCombinadic(k, highIndexes);
     vector<float> chipBits;
     toBits(n, width, chipBits);
-    bits.insert(chipBits.begin(), chipBits.end(), bits.end());
+    bits.insert(bits.end(), chipBits.begin(), chipBits.end());
   }
+}
+
+int CombinadicAssigner::numSymbolsForBits(int nbits) {
+  return int(ceil(1.0 * nbits / width));
 }
 

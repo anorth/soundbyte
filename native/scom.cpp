@@ -27,6 +27,7 @@ static Config initCfg() {
   Config cfg;
   cfg.baseFrequency = base;
   cfg.baseBucket = base * chipSamples / SAMPLE_RATE;
+  cfg.channelWidth = SAMPLE_RATE / chipSamples;
   cfg.channelSpacing = 2;
   cfg.numChannels = 8;
   cfg.chipRate = chipRate;
@@ -61,9 +62,9 @@ void scomInit() {
   syncer = new Sync(&cfg.sync);
   codec = new IdentityCodec();
   assigner = new CombinadicAssigner(cfg.numChannels);
-  packeter = new Packeter(codec, assigner);
+  packeter = new Packeter(&cfg, codec, assigner);
   sender = new Sender(&cfg, syncer, packeter);
-  receiver = new Receiver(syncer, packeter);
+  receiver = new Receiver(&cfg, syncer, packeter);
 }
 
 int encodeMessage(char* payload, int payloadLength, char *waveform, int waveformCapacity) {
@@ -74,6 +75,7 @@ int encodeMessage(char* payload, int payloadLength, char *waveform, int waveform
   int requiredCapacity = encoded.size() * sizeof(short) / sizeof(char);
   if (waveformCapacity > requiredCapacity) {
     encodePcm16(encoded, waveform);
+    cerr << "Sent " << requiredCapacity << " bytes for " << encoded.size() << " samples" << endl;
     return requiredCapacity;
   } else {
     return 0;

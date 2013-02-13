@@ -42,9 +42,12 @@ int inverseCombinadic(int k, std::vector<int> elts);
 // Returns (n, Cnk)
 int maxCombElement(int k, int m, int *cnk);
 
-void toBitSequence(std::vector<char> &message, std::vector<bool> &target);
+// Converts message data to bits, optionally padding up to a multiple of symbolWidth.
+int toBitSequence(std::vector<char> &message, std::vector<bool> &target);
+int toBitSequence(std::vector<char> &message, std::vector<bool> &target, int symbolWidth);
 
-void toByteSequence(std::vector<float> &bits, std::vector<char> &target);
+// Converts bits to message data. Trailing non-byte bits are ignored.
+int toByteSequence(std::vector<float> &bits, std::vector<char> &target);
 
 // Reads 8 bit-likelihoods from it and returns a byte
 char nextByte(std::vector<float> &bits, std::vector<float>::iterator &it);
