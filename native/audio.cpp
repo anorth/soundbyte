@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "constants.h"
+#include "util.h"
 #include "kiss_fftr.h"
 
 using namespace std;
@@ -27,19 +28,27 @@ void sinewave(float freq, int nsamples, vector<float> &target) {
 }
 
 void sinewaves(vector<float> &frequencies, int nsamples, vector<float> &target) {
-  vector<kiss_fft_cpx> buckets(nsamples / 2 + 1);
+  cerr << "IFFT for " << frequencies << endl;
+  kiss_fft_cpx buckets[nsamples / 2 + 1];
   for (vector<float>::iterator it = frequencies.begin(); it != frequencies.end(); ++it) {
     int bucket = (int)((*it / SAMPLE_RATE) * nsamples);
     buckets[bucket].r = 1.0;
+    buckets[bucket].i = 0.0;
+    cerr << bucket << ", ";
   }
+  cerr << endl;
 
-  kiss_fftr_cfg ifft = kiss_fftr_alloc(nsamples, 1, 0, 0);
-  target.clear();
-  target.resize(nsamples);
-  kiss_fftri(ifft, buckets.data(), target.data());
+  target.resize(target.size() + nsamples);
 
-  kiss_fft_cleanup();
-  kiss_fftr_free(ifft);
+  // Allocate FFT memory on stack
+  size_t fftMemNeeded = 0;
+  kiss_fftr_alloc(nsamples, 1, 0, &fftMemNeeded);
+  assert(fftMemNeeded > 0);
+  char fftBuffer[fftMemNeeded];
+
+  kiss_fftr_cfg ifft = kiss_fftr_alloc(nsamples, 1, fftBuffer, &fftMemNeeded);
+  assert(ifft == (void*)fftBuffer);
+  kiss_fftri(ifft, buckets, target.data() + target.size() - nsamples);
 
   normalize(target);
 }
@@ -67,12 +76,12 @@ void limit(vector<float> &waveform) {
   }
 }
 
-void buildWaveform(vector<bool> &chip, float base, float spacing, int nsamples, 
+void buildWaveform(vector<bool> &chip, float base, float channelSpacing, int nsamples, 
     vector<float> &target) {
   vector<float> freqs;
   for (int i = 0; i < chip.size(); ++i) {
     if (chip[i]) {
-      freqs.push_back(base + spacing * i);
+      freqs.push_back(base + channelSpacing * i);
     }
   }
   sinewaves(freqs, nsamples, target);

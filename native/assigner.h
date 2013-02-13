@@ -9,6 +9,8 @@ public:
 
   virtual void unchipify(std::vector<std::vector<float> > &chips, std::vector<float> &bits) = 0;
 
+  virtual int numSymbolsForBits(int nbits) = 0;
+
 protected:
   Assigner() {}
 

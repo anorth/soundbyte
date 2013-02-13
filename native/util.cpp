@@ -98,7 +98,7 @@ int maxCombElement(int k, int m, int *cnk) {
   return n - 1;
 }
 
-void toBitSequence(vector<char> &message, vector<bool> &target) {
+int toBitSequence(vector<char> &message, vector<bool> &target) {
   target.reserve(target.size() + message.size() * 8);
   for (vector<char>::iterator it = message.begin(); it != message.end(); ++it) {
     char b = *it;
@@ -106,12 +106,24 @@ void toBitSequence(vector<char> &message, vector<bool> &target) {
       target.push_back((b & (1 << i)) >> i);
     }
   }
+  return message.size() * 8;
 }
 
-void toByteSequence(vector<float> &bits, vector<char> &target) {
-  assert(bits.size() % 8 == 0);
+int toBitSequence(vector<char> &message, vector<bool> &target, int symbolWidth) {
+  int bits = toBitSequence(message, target);
+  int overflow = bits % symbolWidth;
+  if (overflow) {
+    // Pad with zero
+    target.insert(target.end(), symbolWidth - overflow, false);
+  }
+  return bits + (symbolWidth - overflow);
+}
+
+int toByteSequence(vector<float> &bits, vector<char> &target) {
+  int overflow = bits.size() % 8;
+  vector<float>::iterator end = bits.end() - overflow;
   vector<float>::iterator it = bits.begin();
-  while (it != bits.end()) {
+  while (it != end) {
     target.push_back(nextByte(bits, it));
   }
 }

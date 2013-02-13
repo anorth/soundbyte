@@ -15,6 +15,7 @@ typedef struct {
 typedef struct {
   int baseFrequency;
   int baseBucket;
+  int channelWidth;
   int channelSpacing;
   int chipRate;
   int chipSamples;

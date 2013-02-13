@@ -16,5 +16,9 @@ int IdentityCodec::decode(vector<float> &bits, vector<char> &target) {
   return 0;
 }
 
+int IdentityCodec::numEncodedBitsForBytes(int nbytes) {
+  return nbytes * 8;
+}
+
 ///// Utils
 
