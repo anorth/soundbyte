@@ -76,6 +76,14 @@ int encodeMessage(char* payload, int payloadLength, char *waveform, int waveform
   if (waveformCapacity > requiredCapacity) {
     encodePcm16(encoded, waveform);
     cerr << "Sent " << requiredCapacity << " bytes for " << encoded.size() << " samples" << endl;
+    //for (int i = 0; i < 10; ++i) {
+    //  cerr << encoded[i] << ", ";
+    //}
+    //cerr << endl;
+    //for (int i = 0; i < 10; ++i) {
+    //  cerr << int(waveform[i]) << ", ";
+    //}
+    //cerr << endl;
     return requiredCapacity;
   } else {
     return 0;
@@ -85,6 +93,15 @@ int encodeMessage(char* payload, int payloadLength, char *waveform, int waveform
 void decodeAudio(char *buffer, int buflen) {
   std::vector<float> samples;
   decodePcm16(buffer, buflen, samples);
+  //cerr << "Decoded PCM" << endl;
+  //for (int i = 0; i < 10; ++i) {
+  //  cerr << int(buffer[i]) << ", ";
+  //}
+  //cerr << endl;
+  //for (int i = 0; i < 10; ++i) {
+  //  cerr << samples[i] << ", ";
+  //}
+  //cerr << endl;
 
   receiver->receiveAudio(samples);
 }

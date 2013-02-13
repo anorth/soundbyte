@@ -53,11 +53,14 @@ void sinewaves(vector<float> &frequencies, int nsamples, vector<float> &target) 
   kiss_fftri(ifft, buckets, intermediate.data());
 
   normalize(intermediate);
-  // TODO: fades
   //cerr << intermediate << endl;
 
   // For testing
-  //Spectrum(intermediate.data(), SAMPLE_RATE, nsamples);
+  //Spectrum s(intermediate.data(), SAMPLE_RATE, nsamples);
+  //for (int i = 300; i < 316; i += 2) {
+  //  cerr << s.at(i) << ", abs " << s.amplitude(i) << endl;
+  //}
+  //cerr << "---" << endl;
 
   target.insert(target.end(), intermediate.begin(), intermediate.end());
 }
@@ -121,7 +124,7 @@ void decodePcm16(char *buffer, int buflen, vector<float> &target) {
   target.reserve(target.size() + buflen / 2);
   for (int i = 0; i < buflen; i += 2) {
     short *ps = (short *)(buffer + i);
-    target.push_back((float)*ps + 0.5f / PCM_QUANT);
+    target.push_back(((float)*ps + 0.5f) / PCM_QUANT);
   }
 }
 

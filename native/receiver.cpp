@@ -18,7 +18,7 @@ static const int WAITING_SYNC = 0;
 static const int RECEIVING_MESSAGE = 1;
 
 Receiver::Receiver(Config *cfg, Sync *sync, Packeter *packeter) :
-    state(WAITING_SYNC /* BYPASSING_SYNC */),
+    state(WAITING_SYNC),
     cfg(cfg),
     sync(sync),
     packeter(packeter) {

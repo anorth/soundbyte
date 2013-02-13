@@ -38,7 +38,7 @@ void doListen() {
 }
 
 void doSend() {
-  char message[TEST_MESSAGE_SIZE] = {'A', '\0'};
+  char message[TEST_MESSAGE_SIZE] = "AbCde1234";
   char waveform[SAMPLE_RATE * 10];
   //while (true) {
     int waveformBytes = encodeMessage(message, sizeof(message), waveform, sizeof(waveform));

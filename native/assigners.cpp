@@ -29,7 +29,7 @@ void CombinadicAssigner::chipify(vector<bool> &bits, vector<vector<bool> > &chip
     int i = nextInt(bits, it, width);
     vector<int> signalIndexes;
     combinadic(k, i, signalIndexes);
-    //cerr << "i: " << i << ", signal indexes: " << signalIndexes << endl;
+    //cerr << "i: " << i << " -> signal indexes: " << signalIndexes << endl;
     vector<bool> currentChip(nchans); // Zeros
     for (vector<int>::iterator si = signalIndexes.begin(); si != signalIndexes.end(); ++si) {
       assert(*si < currentChip.size());
@@ -66,6 +66,7 @@ void CombinadicAssigner::unchipify(vector<vector<float> > &chips, vector<float> 
     // print indexes
     assert(highIndexes.size() == k);
     int n = inverseCombinadic(k, highIndexes);
+    //cerr << "high indexes " << highIndexes << " -> " << n << endl;
     vector<float> chipBits;
     toBits(n, width, chipBits);
     bits.insert(bits.end(), chipBits.begin(), chipBits.end());

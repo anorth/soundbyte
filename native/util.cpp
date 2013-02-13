@@ -43,8 +43,10 @@ float dbAmplitudeGain(float d) {
 
 int comb(int n, int k) {
   // http://rosettacode.org/wiki/Evaluate_binomial_coefficients#C
+  // Handling for k > n added by Alex
 	int r = 1, d = n - k;
  
+  if (k > n) { return 0; }
 	/* choose the smaller of k and n - k */
 	if (d > k) { k = d; d = n - k; }
  
@@ -77,7 +79,6 @@ void combinadic(int k, int i, std::vector<int> &target) {
 
 int inverseCombinadic(int k, std::vector<int> elts) {
   int i = 0;
-  int kk = k;
   for (vector<int>::iterator it = elts.begin(); it != elts.end(); ++it) {
     i += comb(*it, k);
     k -= 1;
