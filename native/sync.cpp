@@ -4,7 +4,7 @@
 #include "constants.h"
 #include "spectrum.h"
 
-//#include <iostream>
+#include <iostream>
 #include <cmath>
 #include <cassert>
 
@@ -33,7 +33,7 @@ Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
   readyRepeats = 2 * cfg->chipsPerSyncPulse;
   pulseSamples = cfg->chipsPerSyncPulse * cfg->chipSize;
 
-  resetSync();
+  reset();
 
   //cerr << "VALS " << cfg->baseBucket << ' '
       //<< cfg->numChannels << ' ' << cfg->channelSpacing << '\n';
@@ -46,7 +46,7 @@ void Sync::generateSync(vector<float> &target) {
   
 }
 
-void Sync::resetSync() {
+void Sync::reset() {
   fftSampleIndex = 0;
   syncOffset = 0;
   state = -1;
@@ -57,6 +57,7 @@ void Sync::resetSync() {
 }
 
 vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
+  cerr << "do ";
   //cerr << "\n\n\n===========\nCALLED with " << samples.size() << " samples\n";
   // Append samples to buffer
   // TODO: just use a rotating buffer of a fixed float array
@@ -124,6 +125,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
 
     // final ready pulse is 2 long cycles in size + 1 chip
     if (state >= 1) {
+      cerr << "X ";
       int readySignalStart = 
         syncOffset + ((cfg->longMetaBucket - 1) * 2 + 1) * pulseSamples;
       //cerr << "SYNC OFFSET " << syncOffset << ' ' << readySignalStart << '\n';
@@ -152,9 +154,9 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
           // XXX return actual alignment
           int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength) + cfg->chipSize;
           int inputOffset = samples.size() - (buffer.size() - offset);
-          //cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
-          assert(false);
-          return samples.end();
+          cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
+          reset();
+          return samples.begin() + inputOffset;
         } else {
           state = -1;
         }

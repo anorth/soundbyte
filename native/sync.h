@@ -32,7 +32,7 @@ public:
   /**
    * Resets internal sync state. 
    */
-  void resetSync();
+  void reset();
 
 private:
   int bufferStart();
