@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "constants.h"
+#include "spectrum.h"
 #include "util.h"
 #include "kiss_fftr.h"
 
@@ -28,17 +29,18 @@ void sinewave(float freq, int nsamples, vector<float> &target) {
 }
 
 void sinewaves(vector<float> &frequencies, int nsamples, vector<float> &target) {
-  cerr << "IFFT for " << frequencies << endl;
+  //cerr << "IFFT for " << frequencies << endl;
   kiss_fft_cpx buckets[nsamples / 2 + 1];
+  bzero(buckets, sizeof(buckets));
   for (vector<float>::iterator it = frequencies.begin(); it != frequencies.end(); ++it) {
     int bucket = (int)((*it / SAMPLE_RATE) * nsamples);
     buckets[bucket].r = 1.0;
     buckets[bucket].i = 0.0;
-    cerr << bucket << ", ";
+   //cerr << bucket << ", ";
   }
-  cerr << endl;
+  //cerr << endl;
 
-  target.resize(target.size() + nsamples);
+  vector<float> intermediate(nsamples);
 
   // Allocate FFT memory on stack
   size_t fftMemNeeded = 0;
@@ -48,9 +50,16 @@ void sinewaves(vector<float> &frequencies, int nsamples, vector<float> &target) 
 
   kiss_fftr_cfg ifft = kiss_fftr_alloc(nsamples, 1, fftBuffer, &fftMemNeeded);
   assert(ifft == (void*)fftBuffer);
-  kiss_fftri(ifft, buckets, target.data() + target.size() - nsamples);
+  kiss_fftri(ifft, buckets, intermediate.data());
 
-  normalize(target);
+  normalize(intermediate);
+  // TODO: fades
+  //cerr << intermediate << endl;
+
+  // For testing
+  //Spectrum(intermediate.data(), SAMPLE_RATE, nsamples);
+
+  target.insert(target.end(), intermediate.begin(), intermediate.end());
 }
 
 void normalize(vector<float> &waveform) {

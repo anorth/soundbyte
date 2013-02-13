@@ -82,8 +82,8 @@ void Receiver::receiveChips(vector<float> &samples) {
   vector<float>::iterator sampleItr = samples.begin();
   // Finish off any partial chip.
   if (!partialChip.empty()) {
-    int gap = partialChip.size() - cfg->chipSamples;
-    if (samples.size() <= gap) {
+    int gap = cfg->chipSamples - partialChip.size();
+    if (samples.size() < gap) {
       partialChip.insert(partialChip.end(), samples.begin(), samples.end());
       sampleItr = samples.end();
     } else {
@@ -96,6 +96,7 @@ void Receiver::receiveChips(vector<float> &samples) {
 
   // Read full chips.
   while (samples.end() - sampleItr >= cfg->chipSamples) {
+    assert(partialChip.empty());
     makeChip(samples, sampleItr);
     sampleItr += cfg->chipSamples;
   }
@@ -108,9 +109,11 @@ void Receiver::receiveChips(vector<float> &samples) {
   }
   cerr << "Holding " << chips.size() << " chips + " << partialChip.size() << " samples" 
       << " after " << samples.size() << " more samples" << endl;
+  assert(partialChip.size() < cfg->chipSamples);
 }
 
 void Receiver::makeChip(vector<float> &samples, vector<float>::iterator nextSample) {
+  assert(nextSample >= samples.begin());
   float *firstSample = samples.data() + (nextSample - samples.begin());
   chips.push_back(new Spectrum(firstSample, SAMPLE_RATE, cfg->chipSamples));
 }

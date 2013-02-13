@@ -12,7 +12,7 @@
 
 using namespace std;
 
-static const int CHUNK_SAMPLES = SAMPLE_RATE / 10;
+static const int CHUNK_SAMPLES = SAMPLE_RATE / 100;
 static const int CHUNK_BYTES = CHUNK_SAMPLES * 2;
 
 static struct option longopts[] = {
@@ -21,51 +21,34 @@ static struct option longopts[] = {
   { NULL,                 0,                    NULL,           0 }
 };
 
-kiss_fftr_cfg fftConfig;
-kiss_fft_cpx fftResult[CHUNK_SAMPLES];
-
-float abs(kiss_fft_cpx c) {
-  return sqrt(c.r * c.r + c.i * c.i);
-}
-
-void doFft(char chunkBytes[]) {
-  vector<float> samples(CHUNK_SAMPLES);
-  decodePcm16(chunkBytes, CHUNK_BYTES, samples);
-  kiss_fftr(fftConfig, samples.data(), fftResult);
-  cerr << abs(fftResult[44]) << '\n';
-}
-
 void doListen() {
   char chunkBytes[CHUNK_BYTES];
   char messageBuffer[100];
   while (cin.good()) {
     cin.read(chunkBytes, CHUNK_BYTES);
     if (cin.good()) {
-      //doFft(chunkBytes);
-
       decodeAudio(chunkBytes, sizeof(chunkBytes));
       while (messageAvailable()) {
-        takeMessage(messageBuffer, sizeof(messageBuffer));
-        cout << messageBuffer << endl;
+        int bytes = takeMessage(messageBuffer, sizeof(messageBuffer));
+        cout.write(messageBuffer, bytes);
+        cout << endl;
       }
     }
   }
 }
 
 void doSend() {
-  char message[TEST_MESSAGE_SIZE] = "123456789";
+  char message[TEST_MESSAGE_SIZE] = {'A', '\0'};
   char waveform[SAMPLE_RATE * 10];
-  while (true) {
+  //while (true) {
     int waveformBytes = encodeMessage(message, sizeof(message), waveform, sizeof(waveform));
     //cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
     assert(waveformBytes > 0);
     cout.write(waveform, waveformBytes);
-  }
+  //}
 }
 
 int main(int argc, char **argv) {
-  fftConfig = kiss_fftr_alloc(CHUNK_SAMPLES, false, 0, 0);
-
   bool optListen, optSend;
   int ch;
   while ((ch = getopt_long(argc, argv, "ls", longopts, NULL)) != -1) {

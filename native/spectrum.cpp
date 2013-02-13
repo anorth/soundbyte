@@ -20,6 +20,7 @@ Spectrum::Spectrum(float *samples, int rate, int size) :
   kiss_fftr(fft, samples, kissBuckets);
   for (int i = 0; i < buckets.size(); ++i) {
     buckets[i] = complex<float>(kissBuckets[i].r, kissBuckets[i].i);
+    //cerr << abs(buckets[i]) << endl;
   }
   //cerr << buckets << endl;
 
