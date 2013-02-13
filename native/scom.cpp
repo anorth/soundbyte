@@ -40,7 +40,7 @@ static Config initCfg() {
   cfg.sync.chipsPerSyncPulse = 2;
   cfg.sync.numCyclesAsReadyPulses = 1;
   cfg.sync.signalFactor = 1.0;
-  cfg.sync.detectionSamplesPerChip = 6;
+  cfg.sync.detectionSamplesPerChip = 4;
   cfg.sync.misalignmentTolerance = 0.18;
   cfg.sync.chipSize = syncChipSize;
   cfg.sync.longMetaBucket = 2;
