@@ -15,6 +15,9 @@ void sinewaves(std::vector<float> &frequencies, int nsamples, std::vector<float>
 /** Normalizes a waveform, scaling values to a range +/- 1.0. */
 void normalize(std::vector<float> &waveform);
 
+/** Variant that takes iterator range */
+void normalize(std::vector<float>::iterator begin, std::vector<float>::iterator end);
+
 /** Clips a waveform to +/- 1.0 */
 void limit(std::vector<float> &waveform);
 

@@ -40,6 +40,7 @@ private:
   float detectMatch(std::complex<float> *bucketVals);
   int getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
       float *misalignmentOut);
+  void createSyncCycles(int chipsPerPulse, int cycles, std::vector<float> &target);
 
   // Parameters
   SyncConfig* cfg;

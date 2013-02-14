@@ -66,15 +66,19 @@ void sinewaves(vector<float> &frequencies, int nsamples, vector<float> &target) 
 }
 
 void normalize(vector<float> &waveform) {
+  normalize(waveform.begin(), waveform.end());
+}
+
+void normalize(vector<float>::iterator begin, vector<float>::iterator end) {
   float divisor = 0.0;
   vector<float>::iterator it;
-  for (it = waveform.begin(); it != waveform.end(); ++it) {
+  for (it = begin; it != end; ++it) {
     float d = abs(*it);
     if (d > divisor) { divisor = d; }
   }
 
   if (divisor > 0.0) {
-    for (it = waveform.begin(); it != waveform.end(); ++it) {
+    for (it = begin; it != end; ++it) {
       *it = *it / divisor;
     }
   }

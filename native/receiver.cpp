@@ -13,7 +13,7 @@
 
 using namespace std;
 
-static const int BYPASSING_SYNC = -1; // Skip sync until it works
+static const int BYPASSING_SYNC = -1;
 static const int WAITING_SYNC = 0;
 static const int RECEIVING_MESSAGE = 1;
 
@@ -26,6 +26,24 @@ Receiver::Receiver(Config *cfg, Sync *sync, Packeter *packeter) :
 
 void Receiver::receiveAudio(vector<float> &samples) {
   if (state == BYPASSING_SYNC) {
+    state = RECEIVING_MESSAGE;
+  }
+
+  // If not yet synced, try
+  vector<float>::iterator sampleItr = samples.begin();
+  if (state == WAITING_SYNC) {
+    sampleItr = sync->receiveAudioAndSync(samples);
+    if (sampleItr != samples.end()) {
+      state = RECEIVING_MESSAGE;
+
+      // TODO: change code to use a pair of iters, or float*/int,
+      // to avoid unnecessary copying.
+      samples.erase(samples.begin(), sampleItr);
+    }
+  }
+
+  // If synced, start/continue decoding message
+  if (state == RECEIVING_MESSAGE) {
     receiveChips(samples);
     int numMessageSymbols = packeter->numSymbolsForBytes(TEST_MESSAGE_SIZE);
     if (chips.size() >= numMessageSymbols) {
@@ -35,25 +53,12 @@ void Receiver::receiveAudio(vector<float> &samples) {
       vector<char> decoded;
       packeter->decodeMessage(messageChips, decoded);
       messages.push(decoded);
+
+      state = WAITING_SYNC; 
     }
     
-    return;
-  }
-
-  // If not yet synced, try
-  vector<float>::iterator sampleItr = samples.begin();
-  if (state == WAITING_SYNC) {
-    sampleItr = sync->receiveAudioAndSync(samples);
-    if (sampleItr != samples.end()) {
-      state = RECEIVING_MESSAGE;
-    }
-  }
-
-  // If synced, start/continue decoding message
-  if (state == RECEIVING_MESSAGE) {
     // Receive some message from sampleItr
     // If finished decoding message, enqueue it
-    state = WAITING_SYNC;
   }
 }
 

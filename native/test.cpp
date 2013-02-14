@@ -49,15 +49,15 @@ void doSend() {
 }
 
 int main(int argc, char **argv) {
-  bool optListen, optSend;
+  bool optListen = false, optSend = false;
   int ch;
   while ((ch = getopt_long(argc, argv, "ls", longopts, NULL)) != -1) {
     switch (ch) {
       case 'l':
-        optListen = 1;
+        optListen = true;
         break;
       case 's':
-        optSend = 1;
+        optSend = true;
         break;
       default:
         assert(false);
@@ -74,7 +74,6 @@ int main(int argc, char **argv) {
   } else if (optSend) {
     doSend();
   }
-
 
   return 0;
 }

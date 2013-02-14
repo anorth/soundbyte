@@ -86,6 +86,7 @@ int encodeMessage(char* payload, int payloadLength, char *waveform, int waveform
     //cerr << endl;
     return requiredCapacity;
   } else {
+    cerr << "SHIT" << '\n';
     return 0;
   }
 }

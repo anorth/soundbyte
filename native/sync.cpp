@@ -3,6 +3,7 @@
 #include "config.h"
 #include "constants.h"
 #include "spectrum.h"
+#include "audio.h"
 
 #include <iostream>
 #include <cmath>
@@ -36,8 +37,9 @@ Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
   precomp = new complex<float>*[cfg->numChannels];
   for (int i = 0; i < cfg->numChannels; i++) {
     precomp[i] = new complex<float>[cfg->chipSize];
+    int bucket = cfg->baseBucket + (i * cfg->channelSpacing);
     for (int j = 0; j < cfg->chipSize; j++) {
-      double arg = M_PI * 2 * j / cfg->chipSize;
+      double arg = M_PI * 2 * j * bucket / cfg->chipSize;
       precomp[i][j] = complex<float>(cos(arg), sin(arg));
     }
   }
@@ -55,7 +57,27 @@ Sync::~Sync() {
   delete precomp;
 }
 
+void Sync::createSyncCycles(int chipsPerPulse, int cycles, vector<float> &target) {
+
+  int n = 0;
+  for (int i = 0; i < cycles * 2 + 1; i++) {
+    int pattern = i % 2;
+    for (int t = 0; t < cfg->chipSize * chipsPerPulse; t++) {
+      float val = 0;
+      for (int chan = pattern; chan < cfg->numChannels; chan += 2) {
+        val += precomp[chan][t % cfg->chipSize].imag();
+      }
+      n++;
+      target.push_back(val);
+    }
+  }
+
+  normalize(target.end() - n, target.end());
+}
+
 void Sync::generateSync(vector<float> &target) {
+  createSyncCycles(cfg->chipsPerSyncPulse, cfg->longMetaBucket + 1, target);
+  createSyncCycles(1, cfg->chipsPerSyncPulse * 2, target);
 }
 
 void Sync::reset() {
@@ -188,7 +210,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
           // XXX return actual alignment
           int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength) + cfg->chipSize;
           int inputOffset = samples.size() - (buffer.size() - offset);
-          //cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
+          cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
           reset();
           return samples.begin() + inputOffset;
         } else {
@@ -310,6 +332,7 @@ int Sync::bufferStart() {
 }
 
 
+const float HALF_PI = 1.57079632679f;
 float Sync::detectMatch(complex<float> *bucketVals) {
   // Computes dot-product of normalized bucketVals with normalized bit pattern.
 
@@ -336,7 +359,7 @@ float Sync::detectMatch(complex<float> *bucketVals) {
   result += 0.000005;
 
   // Convert to linear correlation
-  result = 1.57079632679f - 2*acos(result);
+  result = HALF_PI - 2*acos(result);
 
   // Map to range -1,1, with sinewave correlation
   result = sin(result);

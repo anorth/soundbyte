@@ -18,8 +18,9 @@ Sender::Sender(Config *cfg, Sync *sync, Packeter *packeter) :
 
 void Sender::encodeMessage(std::vector<char> &message, std::vector<float> &target) {
   // TODO(alex): variable-length packets
-  // TODO(alex): generate sync preamble
   assert(message.size() == TEST_MESSAGE_SIZE);
+
+  sync->generateSync(target);
 
   vector<vector<bool> > chips;
   packeter->encodeMessage(message, chips);
@@ -30,5 +31,9 @@ void Sender::encodeMessage(std::vector<char> &message, std::vector<float> &targe
     buildWaveform(*chit, cfg->baseFrequency, signalSpacing, cfg->chipSamples, target);
     nsamples += cfg->chipSamples;
   }
+
+  // hack for commandline version only.
+  target.resize(target.size() + SAMPLE_RATE / 50);
+
   cerr << "Generated " << nsamples << " samples for " << chips.size() << " chips" << endl;
 }
