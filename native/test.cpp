@@ -43,7 +43,7 @@ void doListen() {
 }
 
 void doSend() {
-  char message[] = "AbCde1234";
+  char message[] = "AbCde1234gghhiieF";
   char waveform[SAMPLE_RATE * 10];
   //while (true) {
     int waveformBytes = encodeMessage(message, strlen(message), waveform, sizeof(waveform));

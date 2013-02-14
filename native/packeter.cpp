@@ -23,7 +23,7 @@ void Packeter::encodeMessage(vector<char> &message, vector<vector<bool> > &targe
   packet.insert(packet.end(), message.begin(), message.end());
   assert(packet.size() == message.size() + 1);
 
-  int size = packet.size(), block = codec->blockBytes();
+  int size = packet.size(), block = codec->blockMessageBytes();
   if (size % block > 0) {
     packet.resize(size + block - (size % block));
   }
@@ -34,7 +34,7 @@ void Packeter::encodeMessage(vector<char> &message, vector<vector<bool> > &targe
   cerr << encodedBits << endl;
 
   // TODO: use iterator ranges or whatever
-  int bitBlock = block * 8;
+  int bitBlock = codec->blockEncodedBytes() * 8;
   for (vector<bool>::iterator it = encodedBits.begin();
       it != encodedBits.end();
       it += bitBlock) {
@@ -96,5 +96,5 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target)
 }
 
 int Packeter::chunkChips() {
-  return assigner->numSymbolsForBits(codec->blockBytes() * 8);
+  return assigner->numSymbolsForBits(codec->blockEncodedBytes() * 8);
 }

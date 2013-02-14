@@ -1,3 +1,5 @@
+# TODO: figure out how to use -Wshadow without getting warnings
+#       for ctor args
 CC=g++ -g
 #CC=g++ -Ofast
 

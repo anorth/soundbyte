@@ -8,8 +8,8 @@ public:
   IdentityCodec(int blockSize);
   void encode(std::vector<char> &message, std::vector<bool> &target);
   int decode(std::vector<float> &bits, std::vector<char> &target);
-  int numEncodedBitsForBytes(int nbytes);
-  int blockBytes();
+  int blockMessageBytes();
+  int blockEncodedBytes();
 
 private:
   int blockSize;
@@ -23,12 +23,13 @@ public:
   ~RsCodec();
   void encode(std::vector<char> &message, std::vector<bool> &target);
   int decode(std::vector<float> &bits, std::vector<char> &target);
-  int numEncodedBitsForBytes(int nbytes);
-  int blockBytes();
+  int blockMessageBytes();
+  int blockEncodedBytes();
 
 private:
   RsParams params;
   int nroots;
+  int pad;
   int blockSize;
   int symsize;
 };
