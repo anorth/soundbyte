@@ -45,16 +45,21 @@ void Receiver::receiveAudio(vector<float> &samples) {
   // If synced, start/continue decoding message
   if (state == RECEIVING_MESSAGE) {
     receiveChips(samples);
-    int numMessageSymbols = packeter->numSymbolsForBytes(TEST_MESSAGE_SIZE);
-    if (chips.size() >= numMessageSymbols) {
+    int numMessageSymbols = packeter->chunkSize();
+    while (chips.size() >= numMessageSymbols) {
       vector<vector<float> > messageChips;
       takeChips(numMessageSymbols, messageChips);
 
       vector<char> decoded;
-      packeter->decodeMessage(messageChips, decoded);
-      messages.push(decoded);
+      int result = packeter->decodeMessage(messageChips, decoded);
+      if (result < 0) {
+        state = WAITING_SYNC;
+        break;
+      } else if (result == 0) {
+        messages.push(decoded);
 
-      state = WAITING_SYNC; 
+        state = WAITING_SYNC; 
+      }
     }
     
     // Receive some message from sampleItr

@@ -20,19 +20,26 @@ public:
    * Decodes a sequence of chips into a message.
    * 
    * Chip elements are bit likelihoods, [-1.0..1.0].
-   * Returns 0 on success, -1 on decode failure.
+   * Returns:
+   *   negative number  -> decode failure.
+   *   zero-or-positive -> number of chunks remaining to complete the message.
+   *
+   * WARNING: STATEFUL (only decode 1 at a time per packeter).
    */
-  int decodeMessage(std::vector<std::vector<float> > &chips, std::vector<char> &target);
+  int decodePartial(std::vector<std::vector<float> > &chips, std::vector<char> &target);
 
   /**
-   * Returns the number of chips required to encode some bytes.
+   * Returns the number of chips the packeter will accept at a time for decoding.
    */
-  int numSymbolsForBytes(int nbytes);
+  int chunkSize();
 
 private:
   Config *cfg;
   Codec *codec;
   Assigner *assigner;
+
+  // state
+  int remaining;
 };
 
 #endif

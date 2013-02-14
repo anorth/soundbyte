@@ -20,5 +20,9 @@ int IdentityCodec::numEncodedBitsForBytes(int nbytes) {
   return nbytes * 8;
 }
 
+int IdentityCodec::blockSize() {
+  return 1;
+}
+
 ///// Utils
 
