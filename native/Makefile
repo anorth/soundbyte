@@ -1,4 +1,6 @@
 CC=g++ -g
+#CC=g++ -Ofast
+
 ODIR=obj
 LIB=third_party
 FFT=$(LIB)/kiss_fft130

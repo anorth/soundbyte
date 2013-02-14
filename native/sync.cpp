@@ -33,6 +33,15 @@ Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
   readyRepeats = 2 * cfg->chipsPerSyncPulse;
   pulseSamples = cfg->chipsPerSyncPulse * cfg->chipSize;
 
+  precomp = new complex<float>*[cfg->numChannels];
+  for (int i = 0; i < cfg->numChannels; i++) {
+    precomp[i] = new complex<float>[cfg->chipSize];
+    for (int j = 0; j < cfg->chipSize; j++) {
+      double arg = M_PI * 2 * j / cfg->chipSize;
+      precomp[i][j] = complex<float>(cos(arg), sin(arg));
+    }
+  }
+
   reset();
 
   //cerr << "VALS " << cfg->baseBucket << ' '
@@ -40,10 +49,13 @@ Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
 }
 
 Sync::~Sync() {
+  for (int i = 0; i < cfg->numChannels; i++) {
+    delete precomp[i];
+  }
+  delete precomp;
 }
 
 void Sync::generateSync(vector<float> &target) {
-  
 }
 
 void Sync::reset() {
@@ -57,7 +69,7 @@ void Sync::reset() {
 }
 
 vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
-  cerr << "do ";
+  //cerr << "do ";
   //cerr << "\n\n\n===========\nCALLED with " << samples.size() << " samples\n";
   // Append samples to buffer
   // TODO: just use a rotating buffer of a fixed float array
@@ -66,17 +78,38 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
   // need extra chipSize at the end for possible alignment signal,
   // which is 1 long cycle + 1 chip in size (sync signals need to
   // have an odd number of pulses).
-  while (buffer.size() >= bufferStart() + pulseSamples + cfg->chipSize) {
-    //Spectrum spectrum(buffer.data() + bufferStart(), SAMPLE_RATE, pulseSamples);
-    Spectrum spectrum(buffer.data() + bufferStart(), SAMPLE_RATE, cfg->chipSize);
-    complex<float> bucketVals[cfg->numChannels];
-    //copyBucketVals(spectrum, cfg->chipsPerSyncPulse, bucketVals);
-    copyBucketVals(spectrum, 1, bucketVals);
-    shortMetaBuffer.push_back(detectMatch(bucketVals));
 
+  while (buffer.size() >= bufferStart() + pulseSamples + cfg->chipSize) {
+   //// Direct version, faster for numChannels less than about 24ish
+    int numChans = cfg->numChannels;
+    complex<float> bucketVals[numChans];
+    assert (buffer.size() > bufferStart() + cfg->chipSize);
+    for (int c = 0; c < numChans; c++) {
+      bucketVals[c] = 0;
+      float *b, *bEnd = buffer.data() + bufferStart() + cfg->chipSize;
+      complex<float> *p, *pEnd = precomp[c] + cfg->chipSize;
+      for (b = buffer.data() + bufferStart(), p = precomp[c];
+          b < bEnd && p < pEnd; b++, p++) {
+        //bucketVals[c] += buffer[i] * precomp[c][i - bufferStart()];
+        bucketVals[c] += (*b) * (*p);
+      }
+    }
+    float match = detectMatch(bucketVals);
+    shortMetaBuffer.push_back(match);
     fftSampleIndex++;
 
+   //// (FFT version)
+   // Spectrum spectrum(buffer.data() + bufferStart(), SAMPLE_RATE, cfg->chipSize);
+   // complex<float> bucketVals[cfg->numChannels];
+   // //copyBucketVals(spectrum, cfg->chipsPerSyncPulse, bucketVals);
+   // copyBucketVals(spectrum, 1, bucketVals);
+
+   // float match = detectMatch(bucketVals);
+   // shortMetaBuffer.push_back(match);
+   // fftSampleIndex++;
+
     if (fftSampleIndex >= cfg->detectionSamplesPerChip) {
+      //metaBuffer.push_back(match);
       float tot = 0;
       for (int j = fftSampleIndex - cfg->detectionSamplesPerChip; j < fftSampleIndex; j++) {
         tot += shortMetaBuffer[j];
@@ -85,13 +118,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
     }
   }
 
-  if (false) {
-    float tot = 0;
-    for (int i = 0; i < metaBuffer.size(); i++) {
-      tot += metaBuffer[i];
-    }
-    //cerr << (tot / metaBuffer.size()) << '\n';
-  }
+      //return samples.end();
 
   //cerr << "\nsyncOffset " << syncOffset << ' ' << 2*pulseSamples << '\n';
   int longMetaSpectrumLength = metaSamplesPerCycle * cfg->longMetaBucket;
@@ -99,7 +126,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
   while (true) {
     int metaBufferStart = (int) (syncOffset / samplesPerMetaSample);
     //cerr << "\n---------loop " << syncOffset << ", " << metaBufferStart << '\n';
-    assert(metaBufferStart < metaBuffer.size());
+    //assert(metaBufferStart < metaBuffer.size());
 
     if (metaBuffer.size() < metaBufferStart + longMetaSpectrumLength) {
       // No sync yet
@@ -125,7 +152,8 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
 
     // final ready pulse is 2 long cycles in size + 1 chip
     if (state >= 1) {
-      cerr << "X ";
+      //cerr << "X ";
+
       int readySignalStart = 
         syncOffset + ((cfg->longMetaBucket - 1) * 2 + 1) * pulseSamples;
       //cerr << "SYNC OFFSET " << syncOffset << ' ' << readySignalStart << '\n';
@@ -154,7 +182,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
           // XXX return actual alignment
           int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength) + cfg->chipSize;
           int inputOffset = samples.size() - (buffer.size() - offset);
-          cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
+          //cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
           reset();
           return samples.begin() + inputOffset;
         } else {

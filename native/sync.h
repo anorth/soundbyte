@@ -49,6 +49,7 @@ private:
   int pulseSamples;
   int metaSamplesPerPulse;
   int metaSamplesPerCycle;
+  std::complex<float> **precomp;
 
   // State
   int state;
