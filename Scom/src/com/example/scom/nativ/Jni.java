@@ -9,6 +9,8 @@ public class Jni {
   }
 
   public native String stringFromJNI();
+  
+  public native void init();
 
   public native ByteBuffer encodeMessage(byte[] payload, ByteBuffer forWaveform);
 

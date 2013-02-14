@@ -20,6 +20,7 @@ public class NativeEngine implements Engine {
 
   public NativeEngine() {
     jni = new Jni();
+    jni.init();
   }
   
   @Override

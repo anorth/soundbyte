@@ -7,17 +7,22 @@
 // Export definitions for JNI
 extern "C" {
   jstring Java_com_example_scom_nativ_Jni_stringFromJNI(JNIEnv* env, jobject thiz);
+  void Java_com_example_scom_nativ_Jni_init(JNIEnv* env, jobject thiz);
   void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
       jobject forWaveform);
   void Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject buffer);
   jboolean Java_com_example_scom_nativ_Jni_messageAvailable(JNIEnv *env, jobject thiz);
-  jbyteArray Java_com_example_scom_nativ_Jni_takeMessage(JNIEnv *env, jobject thiz);
+  jint Java_com_example_scom_nativ_Jni_takeMessage(JNIEnv *env, jobject thiz, jbyteArray target);
 }
 
 // Implementation
 
 jstring Java_com_example_scom_nativ_Jni_stringFromJNI(JNIEnv* env, jobject thiz) {
   return env->NewStringUTF(HELLO);
+}
+
+void Java_com_example_scom_nativ_Jni_init(JNIEnv* env, jobject thiz) {
+  scomInit();
 }
 
 void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
