@@ -86,7 +86,6 @@ def main():
     encoder = ReedSolomonEncoder(assigner.bitsPerChip(),
       int(options.redundancy * CHUNK_DATA_BYTES),
       CHUNK_DATA_BYTES)
-    encoder = IdentityEncoder()
   elif options.encoder == 'repeat':
     encoder = RepeatingEncoder(options.redundancy, assigner.bitsPerChip())
   else:

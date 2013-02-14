@@ -62,7 +62,12 @@ void scomInit() {
   ll(LOG_INFO, "SCOM", "Initialising scom %d", 3);
   cfg = initCfg();
   syncer = new Sync(&cfg.sync);
-  codec = new IdentityCodec(7); // some number, can be 1, can be 50.
+  //codec = new IdentityCodec(7); // some number, can be 1, can be 50.
+  codec = new RsCodec(
+    20, // encoded size (symbols)
+    10, // message size (symbols)
+    8   // symbols size (bits)
+    );
   assigner = new CombinadicAssigner(cfg.numChannels);
   packeter = new Packeter(&cfg, codec, assigner);
   sender = new Sender(&cfg, syncer, packeter);

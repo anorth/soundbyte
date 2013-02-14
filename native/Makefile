@@ -2,9 +2,10 @@ CC=g++ -g
 #CC=g++ -Ofast
 
 ODIR=obj
-LIB=third_party
-FFT=$(LIB)/kiss_fft130
-INC=-I$(FFT) -I$(FFT)/tools
+THIRD=third_party
+FFT=$(THIRD)/kiss_fft130
+RS=$(THIRD)/rs
+INC=-I$(FFT) -I$(FFT)/tools -I$(RS)
 BIN=bin
 
 
@@ -13,6 +14,8 @@ BIN=bin
 
 OBJS=assigners.o audio.o codecs.o log.o packeter.o receiver.o scom.o \
      sender.o spectrum.o sync.o test.o util.o
+THIRDS=$(ODIR)/kiss_fftr.o $(ODIR)/kiss_fft.o \
+     $(ODIR)/init_rs_int.o $(ODIR)/encode_rs_int.o $(ODIR)/decode_rs_int.o
 
 OBJS2=$(patsubst %,$(ODIR)/%,$(OBJS))
 
@@ -20,14 +23,19 @@ LIBS=-lm
 
 stuff: bin/stuff
 
-bin/stuff: $(OBJS2) $(ODIR)/kiss_fftr.o $(ODIR)/kiss_fft.o
-	$(CC) -o $(BIN)/stuff $(OBJS2) $(ODIR)/kiss_fft.o $(ODIR)/kiss_fftr.o $(LIBS) $(INC)
+bin/stuff: $(OBJS2) $(THIRDS)
+	$(CC) -o $(BIN)/stuff $(OBJS2) $(THIRDS) $(LIBS) $(INC)
 
-$(ODIR)/%.o: %.cpp
+# TODO: header files...
+$(ODIR)/%.o: %.cpp Makefile
 	$(CC) -c $< -o $@ $(INC) 
 
-$(ODIR)/kiss_fft.o: $(FFT)/kiss_fft.c $(FFT)/kiss_fft.h
-	$(CC) -c -o $(ODIR)/kiss_fft.o $(FFT)/kiss_fft.c $(INC)
+
+$(ODIR)/%_rs_int.o: $(RS)/%_rs_int.c Makefile
+	$(CC) -c $< -o $@ $(INC)
+
+$(ODIR)/kiss_fft.o: $(FFT)/kiss_fft.c $(FFT)/kiss_fft.h Makefile
+	$(CC) -c $< -o $@ $(INC)
 
 $(ODIR)/kiss_fftr.o: $(FFT)/tools/kiss_fftr.c $(FFT)/tools/kiss_fftr.h
 	$(CC) -c -o $(ODIR)/kiss_fftr.o $(FFT)/tools/kiss_fftr.c $(INC)
