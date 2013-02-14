@@ -31,7 +31,7 @@ public:
   /**
    * Returns the number of chips the packeter will accept at a time for decoding.
    */
-  int chunkSize();
+  int chunkChips();
 
 private:
   Config *cfg;

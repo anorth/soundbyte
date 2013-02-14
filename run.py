@@ -86,6 +86,7 @@ def main():
     encoder = ReedSolomonEncoder(assigner.bitsPerChip(),
       int(options.redundancy * CHUNK_DATA_BYTES),
       CHUNK_DATA_BYTES)
+    encoder = IdentityEncoder()
   elif options.encoder == 'repeat':
     encoder = RepeatingEncoder(options.redundancy, assigner.bitsPerChip())
   else:
@@ -251,7 +252,8 @@ def main():
     assert len(data) <= 255, 'data length cannot exceed 255'
     hasher = md5.new()
     hasher.update(data)
-    packetHash = hasher.digest()[:3]
+    #packetHash = hasher.digest()[:3]
+    packetHash = '';
 
     data = packetHash + chr(len(data)) + data
     logging.info('Packet len %d, num chunks %d' % (len(data), len(partition(data, CHUNK_DATA_BYTES))))
@@ -325,10 +327,13 @@ def main():
         logging.info("+++ Chunk received, SNR %.2f dB, corrected error rate %.3f" % 
             (assigner.lastSignalRatio(), packeter.lastErrorRate()))
         if remaining == -1:
-          packetHash = data[:3]
-          dataLength = ord(data[3])
-          chunkData = data[4:]
-          remaining = math.ceil(float(dataLength + 4) / CHUNK_DATA_BYTES)
+          #packetHash = data[:3]
+          #dataLength = ord(data[3])
+          #chunkData = data[4:]
+          #remaining = math.ceil(float(dataLength + 4) / CHUNK_DATA_BYTES)
+          dataLength = ord(data[0])
+          chunkData = data[1:]
+          remaining = math.ceil(float(dataLength + 1) / CHUNK_DATA_BYTES)
           logging.info('Length %d' % dataLength)
         else:
           chunkData = data

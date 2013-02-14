@@ -17,7 +17,7 @@ public:
   /** Returns the size in bytes which the input to encode() must be a multiple. 
       The input to decode must be a multiple of numEncodedBitsForBytes(blockSize()).
       Can of course return 1. */
-  virtual int blockSize() = 0;
+  virtual int blockBytes() = 0;
 
 protected:
   Codec() {};

@@ -39,10 +39,10 @@ void doListen() {
 }
 
 void doSend() {
-  char message[TEST_MESSAGE_SIZE] = "AbCde1234";
+  char message[] = "AbCde1234";
   char waveform[SAMPLE_RATE * 10];
   //while (true) {
-    int waveformBytes = encodeMessage(message, sizeof(message), waveform, sizeof(waveform));
+    int waveformBytes = encodeMessage(message, strlen(message), waveform, sizeof(waveform));
     //cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
     assert(waveformBytes > 0);
     cout.write(waveform, waveformBytes);

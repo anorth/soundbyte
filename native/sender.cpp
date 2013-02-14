@@ -17,9 +17,6 @@ Sender::Sender(Config *cfg, Sync *sync, Packeter *packeter) :
 }
 
 void Sender::encodeMessage(std::vector<char> &message, std::vector<float> &target) {
-  // TODO(alex): variable-length packets
-  assert(message.size() == TEST_MESSAGE_SIZE);
-
   sync->generateSync(target);
 
   vector<vector<bool> > chips;

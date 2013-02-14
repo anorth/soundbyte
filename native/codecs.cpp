@@ -20,7 +20,7 @@ int IdentityCodec::numEncodedBitsForBytes(int nbytes) {
   return nbytes * 8;
 }
 
-int IdentityCodec::blockSize() {
+int IdentityCodec::blockBytes() {
   return 1;
 }
 
