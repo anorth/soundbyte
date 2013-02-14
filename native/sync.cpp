@@ -10,7 +10,7 @@
 
 using namespace std;
 
-static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 2; // 2s
+static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 10; // num in seconds
 
 //void printArray(float* values, int length) {
 //  cerr << "\n[";
@@ -63,12 +63,18 @@ void Sync::reset() {
   syncOffset = 0;
   state = -1;
   buffer.clear();
+  buffer.reserve(MAX_BUFFER_SAMPLES);
   shortMetaBuffer.clear();
   metaBuffer.clear();
   // TODO: reserve certain size in buffers.
 }
 
 vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
+  if (state == -1 && samples.size() > MAX_BUFFER_SAMPLES) {
+    // TODO: use fixed size float arrays, no need for growing vectors
+    reset();
+  }
+
   //cerr << "do ";
   //cerr << "\n\n\n===========\nCALLED with " << samples.size() << " samples\n";
   // Append samples to buffer
