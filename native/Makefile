@@ -11,7 +11,7 @@ BIN=bin
 #_OBJ = hellomake.o hellofunc.o 
 #OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
-OBJS=assigners.o audio.o codecs.o packeter.o receiver.o scom.o \
+OBJS=assigners.o audio.o codecs.o log.o packeter.o receiver.o scom.o \
      sender.o spectrum.o sync.o test.o util.o
 
 OBJS2=$(patsubst %,$(ODIR)/%,$(OBJS))
