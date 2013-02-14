@@ -5,6 +5,7 @@
 #include "codecs.h"
 #include "config.h"
 #include "constants.h"
+#include "log.h"
 #include "packeter.h"
 #include "receiver.h"
 #include "sender.h"
@@ -58,6 +59,7 @@ static Sender *sender = 0;
 static Receiver *receiver = 0;
 
 void scomInit() {
+  ll(LOG_INFO, "SCOM", "Initialising scom %d", 3);
   cfg = initCfg();
   syncer = new Sync(&cfg.sync);
   codec = new IdentityCodec();
