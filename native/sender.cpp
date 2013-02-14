@@ -32,8 +32,5 @@ void Sender::encodeMessage(std::vector<char> &message, std::vector<float> &targe
     nsamples += cfg->chipSamples;
   }
 
-  // hack for commandline version only.
-  target.resize(target.size() + SAMPLE_RATE / 50);
-
   cerr << "Generated " << nsamples << " samples for " << chips.size() << " chips" << endl;
 }

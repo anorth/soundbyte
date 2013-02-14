@@ -14,6 +14,7 @@ using namespace std;
 
 static const int CHUNK_SAMPLES = SAMPLE_RATE / 100;
 static const int CHUNK_BYTES = CHUNK_SAMPLES * 2;
+char blank_chunk[CHUNK_BYTES];
 
 static struct option longopts[] = {
   { "listen",             no_argument,          NULL,          'l' },
@@ -45,11 +46,19 @@ void doSend() {
     //cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
     assert(waveformBytes > 0);
     cout.write(waveform, waveformBytes);
+
+    // Spit out a blank chunk to ensure any half-filled buffer on the
+    // receiver gets filled before the sender stops sending.
+    cout.write(blank_chunk, CHUNK_BYTES);
   //}
 }
 
 int main(int argc, char **argv) {
   bool optListen = false, optSend = false;
+  for (int i = 0; i < CHUNK_BYTES; i++) {
+    blank_chunk[i] = 0;
+  }
+
   int ch;
   while ((ch = getopt_long(argc, argv, "ls", longopts, NULL)) != -1) {
     switch (ch) {
