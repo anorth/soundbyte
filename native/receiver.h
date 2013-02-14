@@ -25,6 +25,7 @@ private:
   int state;
   std::deque<Spectrum*> chips; // Queue of spectrums
   std::vector<float> partialChip; // Samples from an incomplete chip
+  std::vector<char> decoded;
   std::queue<std::vector<char> > messages;
 
   Config *cfg;

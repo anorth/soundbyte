@@ -7,6 +7,8 @@ using namespace std;
 
 ///// Identity codec
 
+IdentityCodec::IdentityCodec(int blockSize) : blockSize(blockSize) {}
+
 void IdentityCodec::encode(vector<char> &message, vector<bool> &target) {
   toBitSequence(message, target);
 }

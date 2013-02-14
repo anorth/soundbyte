@@ -13,7 +13,6 @@
 
 using namespace std;
 
-static const int BYPASSING_SYNC = -1;
 static const int WAITING_SYNC = 0;
 static const int RECEIVING_MESSAGE = 1;
 
@@ -25,9 +24,6 @@ Receiver::Receiver(Config *cfg, Sync *sync, Packeter *packeter) :
 }
 
 void Receiver::receiveAudio(vector<float> &samples) {
-  if (state == BYPASSING_SYNC) {
-    state = RECEIVING_MESSAGE;
-  }
 
   // If not yet synced, try
   vector<float>::iterator sampleItr = samples.begin();
@@ -35,6 +31,7 @@ void Receiver::receiveAudio(vector<float> &samples) {
     sampleItr = sync->receiveAudioAndSync(samples);
     if (sampleItr != samples.end()) {
       state = RECEIVING_MESSAGE;
+      assert(decoded.size() == 0);
 
       // TODO: change code to use a pair of iters, or float*/int,
       // to avoid unnecessary copying.
@@ -50,14 +47,16 @@ void Receiver::receiveAudio(vector<float> &samples) {
       vector<vector<float> > messageChips;
       takeChips(numMessageSymbols, messageChips);
 
-      vector<char> decoded;
       int result = packeter->decodePartial(messageChips, decoded);
       if (result < 0) {
+        decoded.clear();
         state = WAITING_SYNC;
         break;
       } else if (result == 0) {
         messages.push(decoded);
 
+        // TODO: factor out state transitions & cleanup, etc.
+        decoded.clear();
         state = WAITING_SYNC; 
       }
     }

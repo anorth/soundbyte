@@ -24,7 +24,7 @@ static struct option longopts[] = {
 
 void doListen() {
   char chunkBytes[CHUNK_BYTES];
-  char messageBuffer[100];
+  char messageBuffer[256];
   while (cin.good()) {
     cin.read(chunkBytes, CHUNK_BYTES);
     if (cin.good()) {
@@ -33,6 +33,10 @@ void doListen() {
         int bytes = takeMessage(messageBuffer, sizeof(messageBuffer));
         cout.write(messageBuffer, bytes);
         cout << endl;
+
+        cerr << "MESSAGE: ";
+        cerr.write(messageBuffer, bytes);
+        cerr << endl;
       }
     }
   }

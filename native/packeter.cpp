@@ -32,8 +32,23 @@ void Packeter::encodeMessage(vector<char> &message, vector<vector<bool> > &targe
   codec->encode(packet, encodedBits);
   cerr << "Encoded " << packet.size() << " bytes into " << encodedBits.size() << " bits" << endl;
   cerr << encodedBits << endl;
-  assigner->chipify(encodedBits, target);
-  cerr << "Cooked " << encodedBits.size() << " bits into " << target.size() << " chips" << endl;
+
+  // TODO: use iterator ranges or whatever
+  int bitBlock = block * 8;
+  for (vector<bool>::iterator it = encodedBits.begin();
+      it != encodedBits.end();
+      it += bitBlock) {
+    assert(it < encodedBits.end());
+    vector<bool> tmp;
+
+    vector<bool>::iterator it2 = it;
+
+    tmp.insert(tmp.end(), it2, it + bitBlock);
+
+    assigner->chipify(tmp, target);
+    cerr << "Cooked " << tmp.size() << " bits into " << target.size() << " chips" << endl;
+  }
+
   for (int i = 0; i < target.size(); ++i) {
     cerr << i << ": " << target[i] << endl;
   }
@@ -53,17 +68,21 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target)
   cerr << encodedBits << endl;
 
   vector<char> decoded;
-  int error =  codec->decode(encodedBits, target);
+  int error =  codec->decode(encodedBits, decoded);
   if (error) {
     return -1;
   }
-  cerr << "Decoded " << target.size() << " bytes from " 
+  cerr << "Decoded " << decoded.size() << " bytes from " 
        << encodedBits.size() << " bits" << endl;
 
   vector<char>::iterator it = decoded.begin();
   if (remaining == 0) {
     remaining = (unsigned char) (*it);
     it++;
+
+    cerr << "First chunk, bytes remaining " << remaining << endl;
+  } else {
+    cerr << "Subsequent chunk, bytes remaining " << remaining << endl;
   }
 
   while (it != decoded.end() && remaining > 0) {
@@ -77,5 +96,5 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target)
 }
 
 int Packeter::chunkChips() {
-  return assigner->numSymbolsForBits(codec->blockBytes());
+  return assigner->numSymbolsForBits(codec->blockBytes() * 8);
 }
