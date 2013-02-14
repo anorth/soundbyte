@@ -14,7 +14,7 @@ typedef enum {
 void setPriority(LOG_PRIORITY pri);
 
 /** Logs a simple string. */
-void ll(int pri, const char *tag, const char *text);
+//void ll(int pri, const char *tag, const char *text);
 
 /** Logs a formatted string. */
 void ll(int pri, const char *tag,  const char *fmt, ...)

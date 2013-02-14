@@ -1,5 +1,5 @@
 #include "packeter.h"
-
+#include "log.h"
 #include "util.h"
 
 #include <iostream>
@@ -70,8 +70,10 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target)
   vector<char> decoded;
   int error =  codec->decode(encodedBits, decoded);
   if (error) {
+    ll(LOG_INFO, "SCOM", "Packet Dropped\n");
     return -1;
   }
+  ll(LOG_INFO, "SCOM", "Chunk received\n");
   cerr << "Decoded " << decoded.size() << " bytes from " 
        << encodedBits.size() << " bits" << endl;
 

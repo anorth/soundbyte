@@ -17,13 +17,13 @@ void setPriority(LOG_PRIORITY pri) {
   currentPriority = pri;
 }
 
-void ll(int pri, const char *tag, const char *text) {
-  if (pri >= currentPriority) {
-    logTag(pri, tag);
-    fputs(text, stderr);
-    fputs("\n", stderr);
-  }
-}
+//void ll(int pri, const char *tag, const char *text) {
+//  if (pri >= currentPriority) {
+//    logTag(pri, tag);
+//    fputs(text, stderr);
+//    fputs("\n", stderr);
+//  }
+//}
 
 void ll(int pri, const char *tag,  const char *fmt, ...) {
   va_list ap;
