@@ -14,14 +14,14 @@ using namespace std;
 
 static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 10; // num in seconds
 
-//void printArray(float* values, int length) {
-//  cerr << "\n[";
-//  for (int i = 0; i < length; i++) {
-//    if (i > 0) cerr << ',';
-//    cerr << values[i];
-//  }
-//  cerr << "]\n";
-//}
+void printArray(float* values, int length) {
+  cerr << "\nplot([";
+  for (int i = 0; i < length; i++) {
+    if (i > 0) cerr << ',';
+    cerr << values[i];
+  }
+  cerr << "])\n";
+}
 
 Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
   samplesPerMetaSample = (float) cfg->chipSize / cfg->detectionSamplesPerChip;
@@ -92,7 +92,8 @@ void Sync::reset() {
   // TODO: reserve certain size in buffers.
 }
 
-vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
+bool Sync::receiveAudioAndSync(const vector<float> &samples,
+    vector<float> &trailing) {
   if (state == -1 && samples.size() > MAX_BUFFER_SAMPLES) {
     // TODO: use fixed size float arrays, no need for growing vectors
     reset();
@@ -153,13 +154,20 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
   int longMetaSpectrumLength = metaSamplesPerCycle * cfg->longMetaBucket;
 
   while (true) {
-    int metaBufferStart = (int) (syncOffset / samplesPerMetaSample);
+    float metaBufferStartFloat = syncOffset / samplesPerMetaSample;
+    int metaBufferStart = (int) metaBufferStartFloat;
+    float bufferMisalignment = (metaBufferStart - metaBufferStartFloat)
+        / cfg->detectionSamplesPerChip;
+    //bufferMisalignment = 0;
+    assert(bufferMisalignment <= 0);
+    assert(abs(bufferMisalignment) < 1.0 / cfg->detectionSamplesPerChip);
+
     //cerr << "\n---------loop " << syncOffset << ", " << metaBufferStart << '\n';
     //assert(metaBufferStart < metaBuffer.size());
 
     if (metaBuffer.size() < metaBufferStart + longMetaSpectrumLength) {
       // No sync yet
-      return samples.end();
+      return false;// samples.end();
     }
 
     
@@ -201,44 +209,64 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
       Spectrum shortMetaSpectrumB(readyBuffer, -1, shortMetaSpectrumLength);
       //printArray(readyBuffer, shortMetaSpectrumLength);
       //printArray(shortMetaBuffer.data(), shortMetaBuffer.size());
-      //printArray(metaBuffer.data(), metaBuffer.size());
 
       if (state == 2) {
+        printArray(readyBuffer, shortMetaSpectrumLength);
         float chipMisalignment;
         int resultShortB = getAlignment(shortMetaSpectrumB, cfg->chipsPerSyncPulse,
-            1, 1, &chipMisalignment);
+            1, 1, bufferMisalignment, &chipMisalignment);
         if (resultShortB == 1) {
           //logging.debug('state 2 ALIGNED')
           // XXX return actual alignment
-          int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength + (1-chipMisalignment)*cfg->chipSize);
-          int inputOffset = samples.size() - (buffer.size() - offset);
-          if (inputOffset < 0) {
-            ll(LOG_WARN, "SCOM", "input offset before sample start, probably bad sync");
+          //int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength + (1-chipMisalignment)*cfg->chipSize);
+          int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength + cfg->chipSize);
+          //int inputOffset = samples.size() - (buffer.size() - offset);
+          //if (inputOffset < 0) {
+          //  ll(LOG_WARN, "SCOM", 
+          //      "input offset before sample start, probably bad sync %d %f %f",
+          //      inputOffset, bufferMisalignment, chipMisalignment);
+          //  reset();
+          //  return samples.end();
+          //}
+          //if (inputOffset > samples.size()) {
+          //  ll(LOG_WARN, "SCOM", "input offset after sample end, probably bad sync");
+          //  reset();
+          //  return false;
+          //}
+          if (offset < 0) {
+            ll(LOG_WARN, "SCOM", 
+                "input offset before sample start, probably bad sync %d %f %f",
+                offset, bufferMisalignment, chipMisalignment);
             reset();
-            return samples.end();
+            return false;
           }
-          if (inputOffset > samples.size()) {
+          if (offset > buffer.size()) {
             ll(LOG_WARN, "SCOM", "input offset after sample end, probably bad sync");
             reset();
-            return samples.end();
+            return false;
           }
-          cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
-          ll(LOG_INFO, "SCOM", "SUCCESS %d %d", offset, inputOffset);
+          ll(LOG_INFO, "SCOM", "SUCCESS %d %f",
+              offset, chipMisalignment);
+          trailing.insert(trailing.end(), buffer.begin() + offset, buffer.end());
+
           reset();
-          return samples.begin() + inputOffset;
+    assert(false);
+          return true;
         } else {
+          ll(LOG_INFO, "SCOM", "Argh missed it %d %f", resultShortB, chipMisalignment);
           state = -1;
         }
+    assert(false);
       }
       
       if (state == 1) {
         int resultLongA = getAlignment(longMetaSpectrumA,
-            cfg->longMetaBucket - 1, 1, cfg->chipsPerSyncPulse, NULL);
+            cfg->longMetaBucket - 1, 1, cfg->chipsPerSyncPulse, bufferMisalignment, NULL);
         int resultLongB = getAlignment(longMetaSpectrumB,
-            1, 1, cfg->chipsPerSyncPulse, NULL);
+            1, 1, cfg->chipsPerSyncPulse, bufferMisalignment, NULL);
         float chipMisalignment;
         int resultShortB = getAlignment(shortMetaSpectrumB,
-            cfg->chipsPerSyncPulse, 1, 1, &chipMisalignment);
+            cfg->chipsPerSyncPulse, 1, 1, bufferMisalignment, &chipMisalignment);
         //logging.debug('\n|| %s %s %s' % (resultLongA, resultLongB, resultShortB))
         if (resultLongA == 1 && resultLongB < 1 && resultShortB >= 0) {
           //logging.debug('========= %s %s %s' % (resultLongA, resultLongB, resultShortB))
@@ -250,13 +278,19 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
         //cerr << "XXstate " << state << ',' << resultLongA << ' ' << resultLongB 
             //<< ' ' << resultShortB << '\n';
       }
+
+    cerr << "META BUFFER " << endl;
+    printArray(metaBuffer.data(), metaBuffer.size());
+    cerr << "NEW STATE IS " << state <<  endl;
+
     }
 
     if (state < 2) {
       // Check for, and align to, the long signal
       //#logging.debug('L')
       state = getAlignment(longMetaSpectrum,
-          cfg->longMetaBucket, state, cfg->chipsPerSyncPulse, &misalignment);
+          cfg->longMetaBucket, state, cfg->chipsPerSyncPulse, 
+          bufferMisalignment, &misalignment);
       //cerr << "newstate " << state << ' ' << misalignment << '\n';
     }
         //cerr << "misalignmetn " << misalignment << '\n';
@@ -271,11 +305,12 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
     //  alignedAmount = signalCycleSize * (metaSignalBucket - 1) + pulseSize
     //  logging.debug('aligning +%d cycles' % (metaSignalBucket - 1))
 
-    int alignedAmount = (int)(2*pulseSamples * (1 - misalignment));
+    cerr << "MISMISMISMIS " << misalignment << endl;
+    int alignedAmount = (int)(2*pulseSamples * (1 - misalignment/2));
 
     syncOffset += alignedAmount;
 
-    //cerr << state << ' ';
+    cerr << "state " << state << endl;
 
   }
 }
@@ -296,8 +331,12 @@ float largestOther(Spectrum &spectrum, int notBucket) {
 #define PI2 6.28318530718f
 
 int Sync::getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
-    float *misalignmentOut) {
+    float knownMisalignmentPerChip, float *misalignmentOut) {
   char label = numChips == 1 ? '!' : '.'; // for debugging
+
+  // TODO: make misalignment ALWAYS be per chip in this code and
+  // its return values.
+  float knownMisalignment = knownMisalignmentPerChip / numChips;
   
   complex<float> bucketValue = spectrum.at(bucket);
   float resultAmplitude = abs(bucketValue);
@@ -311,10 +350,14 @@ int Sync::getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
     //logging.debug('%s, %s' % (abs(bucketValue), largestRemaining))
     misalignment = arg(bucketValue) / PI2;
     assert(misalignment >= -0.5 && misalignment <= 0.5);
+    misalignment -= knownMisalignment;
+    //if (misalignment < -0.5) misalignment += 1.0;
+    //if (misalignment > +0.5) misalignment -= 1.0;
     float misalignmentPerChip = misalignment * numChips;
     if (state == -1) {
       //logging.debug('[%s]' % label)
       result = 0; // # don't consider misalignment on first go
+    //} else if (abs(misalignmentPerChip - knownMisalignmentPerChip) <= cfg->misalignmentTolerance) {
     } else if (abs(misalignmentPerChip) <= cfg->misalignmentTolerance) {
       result = 1;
       if (DBG) {
@@ -335,7 +378,9 @@ int Sync::getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
     }
   }
 
-  if (misalignmentOut) *misalignmentOut = misalignment;
+  //cerr << "Mis " << misalignment << " known " << knownMisalignment << endl;
+  //if (misalignmentOut) *misalignmentOut = misalignment - knownMisalignment;
+  if (misalignmentOut) *misalignmentOut = misalignment;// - knownMisalignment;
   return result;
 }
 

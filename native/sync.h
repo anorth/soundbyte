@@ -23,11 +23,12 @@ public:
    * Receives the next segment of audio and attempt to synchronise with this and
    * previous samples.
    * 
-   * If sync is successful, returns an iterator addressing the first sample after
-   * sync and resets state. If sync fails, returns samples.end() and maintains state
-   * to continue processing with the next contiguous samples.
+   * If sync is successful, returns true, and trailing is filled with the start
+   * of the data block.
    */
-  std::vector<float>::iterator receiveAudioAndSync(std::vector<float> &samples);
+  //std::vector<float>::iterator receiveAudioAndSync(std::vector<float> &samples);
+  bool receiveAudioAndSync(const std::vector<float> &samples,
+      std::vector<float> &trailing);
 
   /**
    * Resets internal sync state. 
@@ -39,7 +40,7 @@ private:
   void copyBucketVals(Spectrum &spectrum, int numChipsInSample, std::complex<float> *out);
   float detectMatch(std::complex<float> *bucketVals);
   int getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
-      float *misalignmentOut);
+      float knownMisalignmentPerChip, float *misalignmentOut);
   void createSyncCycles(int chipsPerPulse, int cycles, std::vector<float> &target);
 
   // Parameters
