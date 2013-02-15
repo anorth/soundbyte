@@ -8,6 +8,7 @@
 
 using namespace std;
 
+
 //Spectrum::Spectrum(vector<float> &samples, int rate) : 
 //  this(samples.data(), rate, 0, samples.size())
 

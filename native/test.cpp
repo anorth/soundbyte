@@ -43,9 +43,9 @@ void doListen() {
 }
 
 void doSend() {
-  char message[] = "AbCde1234gghhiieF";
+  char message[] = "http://www.helixta.com.au/";
   char waveform[SAMPLE_RATE * 10];
-  //while (true) {
+  while (true) {
     int waveformBytes = encodeMessage(message, strlen(message), waveform, sizeof(waveform));
     //cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
     assert(waveformBytes > 0);
@@ -54,7 +54,7 @@ void doSend() {
     // Spit out a blank chunk to ensure any half-filled buffer on the
     // receiver gets filled before the sender stops sending.
     cout.write(blank_chunk, CHUNK_BYTES);
-  //}
+  }
 }
 
 int main(int argc, char **argv) {

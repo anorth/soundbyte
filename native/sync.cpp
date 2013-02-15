@@ -4,6 +4,7 @@
 #include "constants.h"
 #include "spectrum.h"
 #include "audio.h"
+#include "log.h"
 
 #include <iostream>
 #include <cmath>
@@ -210,7 +211,18 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
           // XXX return actual alignment
           int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength) + cfg->chipSize;
           int inputOffset = samples.size() - (buffer.size() - offset);
+          if (inputOffset < 0) {
+            ll(LOG_WARN, "SCOM", "input offset before sample start, probably bad sync");
+            reset();
+            return samples.end();
+          }
+          if (inputOffset > samples.size()) {
+            ll(LOG_WARN, "SCOM", "input offset after sample end, probably bad sync");
+            reset();
+            return samples.end();
+          }
           cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
+          ll(LOG_INFO, "SCOM", "SUCCESS %d %d", offset, inputOffset);
           reset();
           return samples.begin() + inputOffset;
         } else {

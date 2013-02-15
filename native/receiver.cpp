@@ -29,6 +29,9 @@ void Receiver::receiveAudio(vector<float> &samples) {
   vector<float>::iterator sampleItr = samples.begin();
   if (state == WAITING_SYNC) {
     sampleItr = sync->receiveAudioAndSync(samples);
+    assert(sampleItr >= samples.begin());
+    assert(sampleItr <= samples.end());
+
     if (sampleItr != samples.end()) {
       state = RECEIVING_MESSAGE;
       assert(decoded.size() == 0);

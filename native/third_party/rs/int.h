@@ -45,12 +45,18 @@ static inline int modnn(struct rs *rs,int x){
 #define INIT_RS init_rs_int
 #define FREE_RS free_rs_int
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void ENCODE_RS(void *p,DTYPE *data,DTYPE *parity);
 int DECODE_RS(void *p,DTYPE *data,int *eras_pos,int no_eras);
 void *INIT_RS(int symsize,int gfpoly,int fcr,
 		   int prim,int nroots,int pad);
 void FREE_RS(void *p);
 
+#ifdef __cplusplus
+}
+#endif
 
 
 
