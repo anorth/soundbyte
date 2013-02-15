@@ -241,10 +241,10 @@ def main():
         else:
           logging.debug("-> %d bytes ok" % len(s))
       else:
-        if s:
-          sys.stdout.write(s)
-        else:
-          sys.stdout.write('!DATA CORRUPT!')
+        #if s:
+        #  sys.stdout.write(s)
+        #else:
+        #  sys.stdout.write('!DATA CORRUPT!')
         sys.stdout.flush()
       Control.packetsReceived += 1
     #except BaseException, e:
@@ -317,7 +317,7 @@ def main():
     while remaining != 0:
       chunkChips = []
       for symbolIndex in xrange(numChunkSymbols):
-        waveform = receiver.receiveBlock(chipSamples)
+        waveform = receiver.receiveBlock(chipSamples, True)
         spectrum = fouriate(window(waveform))
 
         chip = []

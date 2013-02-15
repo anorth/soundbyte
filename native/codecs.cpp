@@ -130,7 +130,7 @@ int RsCodec::decode(vector<float> &bits, vector<char> &target) {
   for (int i = 0; i < rawBytes.size(); i++) {
     data[i] = (unsigned char) rawBytes[i];
   }
-  //cerr << rawBytes << " <--- raw bytes\n";
+  cerr << rawBytes << " <--- raw bytes\n";
 
   int errors = 0;
   int erasures[nroots];
@@ -140,6 +140,7 @@ int RsCodec::decode(vector<float> &bits, vector<char> &target) {
 
   if (count < 0) {
     cerr << "Too many errors " << count << endl;
+    //assert(false);
     return -1;
   }
 

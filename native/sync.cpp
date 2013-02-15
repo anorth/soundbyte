@@ -51,6 +51,8 @@ Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
       //<< cfg->numChannels << ' ' << cfg->channelSpacing << '\n';
 }
 
+static int hack = 0;
+
 Sync::~Sync() {
   for (int i = 0; i < cfg->numChannels; i++) {
     delete precomp[i];
@@ -94,7 +96,10 @@ void Sync::reset() {
 
 bool Sync::receiveAudioAndSync(const vector<float> &samples,
     vector<float> &trailing) {
+  hack++;
+
   if (state == -1 && samples.size() > MAX_BUFFER_SAMPLES) {
+    assert(false);
     // TODO: use fixed size float arrays, no need for growing vectors
     reset();
   }
@@ -109,7 +114,7 @@ bool Sync::receiveAudioAndSync(const vector<float> &samples,
   // which is 1 long cycle + 1 chip in size (sync signals need to
   // have an odd number of pulses).
 
-  while (buffer.size() >= bufferStart() + pulseSamples + cfg->chipSize) {
+  while (buffer.size() >= bufferStart() + pulseSamples + cfg->chipSize * 10) {
    //// Direct version, faster for numChannels less than about 24ish
     int numChans = cfg->numChannels;
     complex<float> bucketVals[numChans];
@@ -158,7 +163,8 @@ bool Sync::receiveAudioAndSync(const vector<float> &samples,
     int metaBufferStart = (int) metaBufferStartFloat;
     float bufferMisalignment = (metaBufferStart - metaBufferStartFloat)
         / cfg->detectionSamplesPerChip;
-    //bufferMisalignment = 0;
+    float cock = bufferMisalignment;
+    bufferMisalignment = 0;
     assert(bufferMisalignment <= 0);
     assert(abs(bufferMisalignment) < 1.0 / cfg->detectionSamplesPerChip);
 
@@ -195,8 +201,8 @@ bool Sync::receiveAudioAndSync(const vector<float> &samples,
         syncOffset + ((cfg->longMetaBucket - 1) * 2 + 1) * pulseSamples;
       //cerr << "SYNC OFFSET " << syncOffset << ' ' << readySignalStart << '\n';
       int shortMetaSpectrumLength = metaSamplesPerCycle;
-      float readyBuffer[shortMetaSpectrumLength];
-      for (int i = 0; i < shortMetaSpectrumLength; i++) {
+      float readyBuffer[shortMetaSpectrumLength * 2];//XXX
+      for (int i = 0; i < shortMetaSpectrumLength * 2; i++) {
         //buffer.size() >= bufferStart() + cfg->chipSize) {
         Spectrum spectrum(
           buffer.data() + readySignalStart + (int)(samplesPerMetaSample*i),
@@ -211,7 +217,8 @@ bool Sync::receiveAudioAndSync(const vector<float> &samples,
       //printArray(shortMetaBuffer.data(), shortMetaBuffer.size());
 
       if (state == 2) {
-        printArray(readyBuffer, shortMetaSpectrumLength);
+        cerr << "READY BUFFER" << endl;
+        printArray(readyBuffer, shortMetaSpectrumLength*2);
         float chipMisalignment;
         int resultShortB = getAlignment(shortMetaSpectrumB, cfg->chipsPerSyncPulse,
             1, 1, bufferMisalignment, &chipMisalignment);
@@ -219,7 +226,13 @@ bool Sync::receiveAudioAndSync(const vector<float> &samples,
           //logging.debug('state 2 ALIGNED')
           // XXX return actual alignment
           //int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength + (1-chipMisalignment)*cfg->chipSize);
+          //int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength + cfg->chipSize  * (1 - misalignment + cock));
           int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength + cfg->chipSize);
+
+          cerr << "!!!!!!!!! " << offset << ' ' << cfg->chipSize << endl;
+          offset += cfg->chipSize*2; //XXX XXX XXX
+          cerr << "!!!!!!!!! " << offset << ' ' << cfg->chipSize << endl;
+          cerr << "COCK " << cock << ' ' << misalignment << endl;
           //int inputOffset = samples.size() - (buffer.size() - offset);
           //if (inputOffset < 0) {
           //  ll(LOG_WARN, "SCOM", 
@@ -243,20 +256,26 @@ bool Sync::receiveAudioAndSync(const vector<float> &samples,
           if (offset > buffer.size()) {
             ll(LOG_WARN, "SCOM", "input offset after sample end, probably bad sync");
             reset();
+            assert(false);
             return false;
           }
           ll(LOG_INFO, "SCOM", "SUCCESS %d %f",
               offset, chipMisalignment);
+          assert(trailing.size() == 0);
           trailing.insert(trailing.end(), buffer.begin() + offset, buffer.end());
+          cerr << "TRAILING";
+          //printArray(trailing.data(), trailing.size());
 
           reset();
-    assert(false);
+          cerr << "========================= HACK " << hack << endl;
+    //if (hack == 63) assert(false);
           return true;
         } else {
           ll(LOG_INFO, "SCOM", "Argh missed it %d %f", resultShortB, chipMisalignment);
           state = -1;
         }
-    assert(false);
+    //if (hack == 63) assert(false);
+    //assert(false);
       }
       
       if (state == 1) {
@@ -279,9 +298,11 @@ bool Sync::receiveAudioAndSync(const vector<float> &samples,
             //<< ' ' << resultShortB << '\n';
       }
 
-    cerr << "META BUFFER " << endl;
-    printArray(metaBuffer.data(), metaBuffer.size());
-    cerr << "NEW STATE IS " << state <<  endl;
+    //if (hack == 61) {
+    //  cerr << "META BUFFER " << endl;
+    //  printArray(longMetaSignal, longMetaSpectrumLength);
+    //  cerr << "NEW STATE IS " << state <<  endl;
+    //}
 
     }
 
@@ -305,8 +326,10 @@ bool Sync::receiveAudioAndSync(const vector<float> &samples,
     //  alignedAmount = signalCycleSize * (metaSignalBucket - 1) + pulseSize
     //  logging.debug('aligning +%d cycles' % (metaSignalBucket - 1))
 
-    cerr << "MISMISMISMIS " << misalignment << endl;
-    int alignedAmount = (int)(2*pulseSamples * (1 - misalignment/2));
+    cock /= cfg->chipsPerSyncPulse;
+    cerr << "misalignment " << misalignment << "  known " << cock << endl;
+    cock = 0;
+    int alignedAmount = (int)(2*pulseSamples * (1 - misalignment + cock));
 
     syncOffset += alignedAmount;
 
@@ -332,6 +355,7 @@ float largestOther(Spectrum &spectrum, int notBucket) {
 
 int Sync::getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
     float knownMisalignmentPerChip, float *misalignmentOut) {
+  assert(knownMisalignmentPerChip == 0);
   char label = numChips == 1 ? '!' : '.'; // for debugging
 
   // TODO: make misalignment ALWAYS be per chip in this code and

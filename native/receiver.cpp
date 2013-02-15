@@ -24,6 +24,7 @@ Receiver::Receiver(Config *cfg, Sync *sync, Packeter *packeter) :
 }
 
 void Receiver::receiveAudio(vector<float> &samples) {
+  //state = RECEIVING_MESSAGE;
 
   // If not yet synced, try
   if (state == WAITING_SYNC) {

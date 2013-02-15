@@ -12,7 +12,7 @@
 
 using namespace std;
 
-static const int CHUNK_SAMPLES = SAMPLE_RATE / 100;
+static const int CHUNK_SAMPLES = SAMPLE_RATE / 50;
 static const int CHUNK_BYTES = CHUNK_SAMPLES * 2;
 char blank_chunk[CHUNK_BYTES];
 
@@ -43,20 +43,26 @@ void doListen() {
 }
 
 void doSend() {
-  char message[] = "http://www.helixta.com.au/";
+  //char message[] = "http://www.helixta.com.au/";
+  char message[] = "hello";
   char waveform[SAMPLE_RATE * 10];
+  int total = 0;
  // while (true) {
-      cout.write(blank_chunk, 16);
-  for (int rpt = 0; rpt < 1; rpt++) {
+      cout.write(blank_chunk, 0);
+  for (int rpt = 0; rpt < 35; rpt++) {
     int waveformBytes = encodeMessage(message, strlen(message), waveform, sizeof(waveform));
     //cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
     assert(waveformBytes > 0);
+    cerr << "@@@@@@@@@ " << total << endl;
     cout.write(waveform, waveformBytes);
+    total += waveformBytes/2;
+
 
     // Spit out a blank chunk to ensure any half-filled buffer on the
     // receiver gets filled before the sender stops sending.
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 7; i++) {
       cout.write(blank_chunk, CHUNK_BYTES);
+      total += CHUNK_BYTES/2;
     }
   }
       cout.write(blank_chunk, CHUNK_BYTES);

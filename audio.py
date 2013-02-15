@@ -6,6 +6,7 @@ import numpy as np
 import pyaudio
 import socket
 import struct
+import sys
 import time
 
 # Consts
@@ -170,13 +171,19 @@ class StreamReceiver(object):
   def __init__(self, stream):
     self.stream = stream
 
-  def receiveBlock(self, numSamples):
+  def receiveBlock(self, numSamples, sendOut=True):
     nBytes = numSamples * 2
     block = ""
     while len(block) < nBytes:
       block = block + self.stream.read(nBytes - len(block))
       if len(block) == 0:
         assert False
+
+
+    if sendOut:
+      sys.stdout.write(block);
+      sys.stdout.flush()
+
     return decodePcm(block)
 
 
