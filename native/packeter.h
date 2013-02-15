@@ -40,6 +40,8 @@ private:
 
   // state
   int remaining;
+  int successful;
+  int total;
 };
 
 #endif

@@ -12,6 +12,8 @@ Packeter::Packeter(Config *cfg, Codec *codec, Assigner *assigner) :
     codec(codec),
     assigner(assigner) {
   remaining = 0;
+  successful = 0;
+  total = 0;
 }
 
 void Packeter::encodeMessage(vector<char> &message, vector<vector<bool> > &target) {
@@ -69,6 +71,10 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target)
 
   vector<char> decoded;
   int error =  codec->decode(encodedBits, decoded);
+
+  ll(LOG_INFO, "SCOM", "======== PACKETS %d / %d ", successful, total);
+  if (remaining == 0) total++;
+
   if (error) {
     ll(LOG_INFO, "SCOM", "Packet Dropped\n");
     return -1;
@@ -79,6 +85,7 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target)
 
   vector<char>::iterator it = decoded.begin();
   if (remaining == 0) {
+
     remaining = (unsigned char) (*it);
     it++;
 
@@ -92,6 +99,10 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target)
 
     it++;
     remaining--;
+  }
+
+  if (remaining == 0) {
+    successful++;
   }
 
   return remaining;

@@ -67,6 +67,8 @@ void scomInit() {
   ll(LOG_INFO, "SCOM", "Data rate %d", cfg.chipRate);
   ll(LOG_INFO, "SCOM", "Data channels %d", cfg.numChannels);
   ll(LOG_INFO, "SCOM", "Data spacing %d", cfg.channelSpacing);
+  ll(LOG_INFO, "SCOM", "Sync metabucket %d", cfg.sync.longMetaBucket);
+  ll(LOG_INFO, "SCOM", "Sync samp per chip %d", cfg.sync.detectionSamplesPerChip);
   ll(LOG_INFO, "SCOM", "Sync rate %d", SAMPLE_RATE / cfg.sync.chipSize);
   ll(LOG_INFO, "SCOM", "Sync channels %d", cfg.sync.numChannels);
   ll(LOG_INFO, "SCOM", "Sync spacing %d", cfg.sync.channelSpacing);

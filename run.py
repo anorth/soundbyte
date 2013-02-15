@@ -142,6 +142,9 @@ def main():
     packetsCorrupt = 0
     bitsCorrupt = 0
 
+    totalPackets = 0
+    successfulPackets = 0
+
   def doSend():
     if options.test:
       data = genTestData(CHUNK_DATA_BYTES)
@@ -307,6 +310,10 @@ def main():
     numChunkSymbols = packeter.symbolsForBytes(CHUNK_DATA_BYTES)
     remaining = -1
     logging.info('...receiving packet')
+
+    logging.info("======== PACKETS %d / %d " % (Control.successfulPackets, Control.totalPackets))
+    Control.totalPackets += 1
+
     while remaining != 0:
       chunkChips = []
       for symbolIndex in xrange(numChunkSymbols):
@@ -345,6 +352,10 @@ def main():
       remaining -= 1
       logging.info('Chunks remaining: %d, Chunk data %s' % (remaining, chunkData))
       assert remaining >= 0
+
+      if remaining == 0:
+        Control.successfulPackets += 1
+
 
     packetData = packetData[:dataLength]
     return (packetData, packetChips)

@@ -204,12 +204,13 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
       //printArray(metaBuffer.data(), metaBuffer.size());
 
       if (state == 2) {
+        float chipMisalignment;
         int resultShortB = getAlignment(shortMetaSpectrumB, cfg->chipsPerSyncPulse,
-            1, 1, NULL);
+            1, 1, &chipMisalignment);
         if (resultShortB == 1) {
           //logging.debug('state 2 ALIGNED')
           // XXX return actual alignment
-          int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength) + cfg->chipSize;
+          int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength + (1-chipMisalignment)*cfg->chipSize);
           int inputOffset = samples.size() - (buffer.size() - offset);
           if (inputOffset < 0) {
             ll(LOG_WARN, "SCOM", "input offset before sample start, probably bad sync");
