@@ -53,6 +53,7 @@ void Receiver::receiveAudio(vector<float> &samples) {
     int numMessageSymbols = packeter->chunkChips();
     while (chips.size() >= numMessageSymbols) {
       vector<vector<float> > messageChips;
+
       takeChips(numMessageSymbols, messageChips);
 
       int result = packeter->decodePartial(messageChips, decoded);
