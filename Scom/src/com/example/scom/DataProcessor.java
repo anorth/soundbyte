@@ -39,15 +39,17 @@ class DataProcessor extends Thread {
   private void receiveMessage() {
     try {
       while (!stopped) {
-        if (engine.messageAvailable()) { // FIXME this is a busy loop.
+        // TODO: rather than busy loop, it would be better to check only
+        // after audio has been received
+        if (engine.messageAvailable()) {
           byte[] buffer = engine.takeMessage();
           if (buffer.length > 0) {
             Log.i(TAG, "Received data buffer of " + buffer.length + " bytes: " + Arrays.toString(buffer));
             handleMessage(new String(buffer));
           } else {
             Log.d(TAG, "receiveBuffer returned empty buffer");
-            Thread.sleep(1000);
           }
+          Thread.sleep(100);
         }
       }
     } catch (InterruptedException e) {

@@ -110,13 +110,34 @@ public class MainActivity extends Activity {
   @Subscribe
   public void messageReceived(final MessageReceived e) {
     if (isForeground) {
-      Intent i = new Intent(Intent.ACTION_VIEW);
-      i.setData(Uri.parse(e.msg));
-      try {
-        startActivity(i);        
-      } catch (RuntimeException ex) {
-        Log.w(TAG, String.format("Failed to launch activity with intent %s", i), ex);
+      String[] tokens = e.msg.split(":", 2);
+      if (tokens.length == 2) {
+         Intent i;
+        if (tokens[0].equals("http")) { // for backwards compatibility
+          i = new Intent(Intent.ACTION_VIEW);
+          i.setData(Uri.parse(e.msg));
+        } else if (tokens[0].equals("u")) {
+          i = new Intent(Intent.ACTION_VIEW);
+          i.setData(Uri.parse(tokens[1]));
+        } else if (tokens[0].equals("m")) {
+          i = new Intent(Intent.ACTION_VIEW);
+          // alt "google.navigation:q=an+address+city"
+          i.setClassName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity");
+          i.setData(Uri.parse("http://maps.google.com/maps?" + tokens[1]));
+        } else if (tokens[0].equals("n")) {
+          i = new Intent(Intent.ACTION_VIEW);
+          i.setData(Uri.parse("google.navigation:" + tokens[1]));
+        } else {
+          Log.e(TAG, "Unrecognised message: " + e.msg);
+          return;
+        }
+        try {
+          startActivity(i);        
+        } catch (RuntimeException ex) {
+          Log.w(TAG, String.format("Failed to launch activity with intent %s", i), ex);
+        }
       }
+      
     }
   }
 }
