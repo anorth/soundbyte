@@ -49,9 +49,9 @@ void Packeter::encodeMessage(vector<char> &message, vector<vector<bool> > &targe
     cerr << "Cooked " << tmp.size() << " bits into " << target.size() << " chips" << endl;
   }
 
-  for (int i = 0; i < target.size(); ++i) {
-    cerr << i << ": " << target[i] << endl;
-  }
+//  for (int i = 0; i < target.size(); ++i) {
+//    cerr << i << ": " << target[i] << endl;
+//  }
 }
 
 int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target) {
@@ -59,13 +59,13 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target)
 
   vector<float> encodedBits;
   cerr << "Decoding " << chips.size() << " chips" << endl;
-  for (int i = 0; i < chips.size(); ++i) {
-    cerr << i << ": " << chips[i] << endl;
-  }
+//  for (int i = 0; i < chips.size(); ++i) {
+//    cerr << i << ": " << chips[i] << endl;
+//  }
   assigner->unchipify(chips, encodedBits);
-  cerr << "Recovered " << encodedBits.size() 
-       << " bits from " << chips.size() << " chips" << endl;
-  cerr << encodedBits << endl;
+  //cerr << "Recovered " << encodedBits.size() 
+  //     << " bits from " << chips.size() << " chips" << endl;
+  //cerr << encodedBits << endl;
 
   vector<char> decoded;
   int error =  codec->decode(encodedBits, decoded);

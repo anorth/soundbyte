@@ -119,8 +119,8 @@ void Receiver::receiveChips(vector<float> &samples) {
     assert(samples.end() - sampleItr < cfg->chipSamples);
     partialChip.insert(partialChip.end(), sampleItr, samples.end());
   }
-  cerr << "Holding " << chips.size() << " chips + " << partialChip.size() << " samples" 
-      << " after " << samples.size() << " more samples" << endl;
+  //cerr << "Holding " << chips.size() << " chips + " << partialChip.size() << " samples" 
+  //    << " after " << samples.size() << " more samples" << endl;
   assert(partialChip.size() < cfg->chipSamples);
 }
 

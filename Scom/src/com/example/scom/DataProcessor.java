@@ -1,11 +1,11 @@
 package com.example.scom;
 
-import java.util.Arrays;
-
 import android.util.Log;
 
 import com.example.scom.Events.MessageReceived;
 import com.squareup.otto.Bus;
+
+import java.util.Arrays;
 
 class DataProcessor extends Thread {
 
@@ -59,7 +59,9 @@ class DataProcessor extends Thread {
 
   private void handleMessage(String msg) {
     Log.e(TAG, "MESSAGE: " + msg);
-    bus.post(new MessageReceived(msg));
+    if (bus != null) {
+      bus.post(new MessageReceived(msg));
+    }
   }
 
   void close() {

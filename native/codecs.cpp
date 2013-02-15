@@ -1,5 +1,6 @@
 #include "codecs.h"
 #include "util.h"
+#include "log.h"
 
 #include "int.h"  // rs
 
@@ -134,6 +135,8 @@ int RsCodec::decode(vector<float> &bits, vector<char> &target) {
   int errors = 0;
   int erasures[nroots];
   int count = decode_rs_int(params, data, erasures, 0);
+
+  ll(LOG_INFO, "SCOM", "RS error count %d", count);
 
   if (count < 0) {
     cerr << "Too many errors " << count << endl;

@@ -51,8 +51,9 @@ public class MainActivity extends Activity {
   public void onStart() {
     super.onStart();
     Log.w(TAG, "Received onStart");
-    engine = new NativeEngine();
+//    engine = new NativeEngine();
 //    engine = new TetheredEngine(DECODER_PORT, bus);
+    engine = new ForkEngine(new NativeEngine(), new TetheredEngine(DECODER_PORT, bus));
     engine.start();
     audioIn = new AudioListener(engine);
     audioIn.start();
@@ -113,7 +114,7 @@ public class MainActivity extends Activity {
       Intent i = new Intent(Intent.ACTION_VIEW);
       i.setData(Uri.parse(e.msg));
       try {
-        startActivity(i);        
+        startActivity(i);
       } catch (RuntimeException ex) {
         Log.w(TAG, String.format("Failed to launch activity with intent %s", i), ex);
       }

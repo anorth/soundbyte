@@ -21,7 +21,7 @@ using namespace std;
 const char *HELLO = "Hello from C++";
 
 static Config initCfg() {
-  int base = 15000;
+  int base = 16000;
   int chipRate = 50;
   int chipSamples = SAMPLE_RATE / chipRate;
 
@@ -61,6 +61,17 @@ static Receiver *receiver = 0;
 void scomInit() {
   ll(LOG_INFO, "SCOM", "Initialising scom %d", 3);
   cfg = initCfg();
+
+  ll(LOG_INFO, "SCOM", "----");
+  ll(LOG_INFO, "SCOM", "Base frequency %d", cfg.baseFrequency);
+  ll(LOG_INFO, "SCOM", "Data rate %d", cfg.chipRate);
+  ll(LOG_INFO, "SCOM", "Data channels %d", cfg.numChannels);
+  ll(LOG_INFO, "SCOM", "Data spacing %d", cfg.channelSpacing);
+  ll(LOG_INFO, "SCOM", "Sync rate %d", SAMPLE_RATE / cfg.sync.chipSize);
+  ll(LOG_INFO, "SCOM", "Sync channels %d", cfg.sync.numChannels);
+  ll(LOG_INFO, "SCOM", "Sync spacing %d", cfg.sync.channelSpacing);
+  ll(LOG_INFO, "SCOM", "----");
+
   syncer = new Sync(&cfg.sync);
   //codec = new IdentityCodec(7); // some number, can be 1, can be 50.
   codec = new RsCodec(
