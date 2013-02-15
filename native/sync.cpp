@@ -12,7 +12,7 @@
 
 using namespace std;
 
-static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 10; // num in seconds
+static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 20; // num in seconds
 
 //void printArray(float* values, int length) {
 //  cerr << "\n[";
@@ -92,7 +92,9 @@ void Sync::reset() {
   // TODO: reserve certain size in buffers.
 }
 
-vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
+bool Sync::receiveAudioAndSync(
+    const vector<float> &samples,
+    vector<float> &trailingSamplesOut) {
   if (state == -1 && samples.size() > MAX_BUFFER_SAMPLES) {
     // TODO: use fixed size float arrays, no need for growing vectors
     reset();
@@ -108,11 +110,29 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
   // which is 1 long cycle + 1 chip in size (sync signals need to
   // have an odd number of pulses).
 
-  while (buffer.size() >= bufferStart() + pulseSamples + cfg->chipSize) {
+  //cerr << "COCK " << bufferStart() << ' ' << 2*pulseSamples << endl;
+
+  int minDataWindowSize = (1 + cfg->longMetaBucket * 2) * pulseSamples + cfg->chipSize;
+
+  while (true) {
+    if (buffer.size() <= bufferStart() + minDataWindowSize) {
+      //cerr << "NOT enough DATA YET" << endl;
+      // No sync yet
+      //return samples.end();
+      return false;
+    }
+    cerr << "getting " << minDataWindowSize << endl;
+
+    shortMetaBuffer.clear();
+    metaBuffer.clear();
+
+  fftSampleIndex = 0;
+  int end = bufferStart() + minDataWindowSize;
+  while (bufferStart() /*+ pulseSamples*/ + cfg->chipSize <= end) {
    //// Direct version, faster for numChannels less than about 24ish
     int numChans = cfg->numChannels;
     complex<float> bucketVals[numChans];
-    assert (buffer.size() > bufferStart() + cfg->chipSize);
+    assert(buffer.size() >= bufferStart() + cfg->chipSize);
     for (int c = 0; c < numChans; c++) {
       bucketVals[c] = 0;
       float *b, *bEnd = buffer.data() + bufferStart() + cfg->chipSize;
@@ -126,6 +146,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
     float match = detectMatch(bucketVals);
     shortMetaBuffer.push_back(match);
     fftSampleIndex++;
+    //cerr << fftSampleIndex << endl;
 
    //// (FFT version)
    // Spectrum spectrum(buffer.data() + bufferStart(), SAMPLE_RATE, cfg->chipSize);
@@ -152,15 +173,23 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
   //cerr << "\nsyncOffset " << syncOffset << ' ' << 2*pulseSamples << '\n';
   int longMetaSpectrumLength = metaSamplesPerCycle * cfg->longMetaBucket;
 
-  while (true) {
-    int metaBufferStart = (int) (syncOffset / samplesPerMetaSample);
+    // XXX
+    int metaBufferStart = 0;
+  //while (true) {
+    //int metaBufferStart = (int) (syncOffset / samplesPerMetaSample);
+
     //cerr << "\n---------loop " << syncOffset << ", " << metaBufferStart << '\n';
     //assert(metaBufferStart < metaBuffer.size());
 
-    if (metaBuffer.size() < metaBufferStart + longMetaSpectrumLength) {
-      // No sync yet
-      return samples.end();
-    }
+    cerr << "size " << metaBuffer.size() << " min " << longMetaSpectrumLength << endl;
+    assert(metaBuffer.size() >= metaBufferStart + longMetaSpectrumLength);
+   // if (metaBuffer.size() < metaBufferStart + longMetaSpectrumLength) {
+   //   cerr << "NO SYNC YET" << endl;
+   //   // No sync yet
+   //   return samples.end();
+   // }
+   //   cerr << "YES ENOUGH DATA "  << metaBuffer.size() << endl;
+      //return samples.end();
 
     
     float *longMetaSignal = metaBuffer.data() + metaBufferStart;
@@ -210,22 +239,31 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
         if (resultShortB == 1) {
           //logging.debug('state 2 ALIGNED')
           // XXX return actual alignment
-          int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength + (1-chipMisalignment)*cfg->chipSize);
-          int inputOffset = samples.size() - (buffer.size() - offset);
-          if (inputOffset < 0) {
-            ll(LOG_WARN, "SCOM", "input offset before sample start, probably bad sync");
+          int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength) + cfg->chipSize;
+
+          if (offset >= 0 && offset < buffer.size()) {
+            trailingSamplesOut.insert(trailingSamplesOut.end(),
+                buffer.begin() + offset, buffer.end());
+
+            ll(LOG_INFO, "SCOM", "SUCCESS %d", offset);
             reset();
-            return samples.end();
+            return true;
           }
-          if (inputOffset > samples.size()) {
-            ll(LOG_WARN, "SCOM", "input offset after sample end, probably bad sync");
-            reset();
-            return samples.end();
+          cerr << "readySignalStart " << readySignalStart << endl;
+          cerr << "offset " << offset << endl;
+          cerr << "buffer.size() " << buffer.size() << endl;
+          cerr << "samples.size() " << samples.size() << endl;
+          cerr << "syncOffset " << syncOffset << endl;
+          //int inputOffset = samples.size() - (buffer.size() - offset);
+          state = -1;
+          if (offset < 0) {
+            ll(LOG_WARN, "SCOM", "input offset before sample start, probably bad sync %d",
+                offset);
           }
-          cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
-          ll(LOG_INFO, "SCOM", "SUCCESS %d %d", offset, inputOffset);
-          reset();
-          return samples.begin() + inputOffset;
+          if (offset >= buffer.size()) {
+            ll(LOG_WARN, "SCOM", "input offset after sample end, probably bad sync %d",
+                offset);
+          }
         } else {
           state = -1;
         }
@@ -271,6 +309,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
     //  alignedAmount = signalCycleSize * (metaSignalBucket - 1) + pulseSize
     //  logging.debug('aligning +%d cycles' % (metaSignalBucket - 1))
 
+    cerr << "STATE " << state << ",  misalignment " << misalignment << endl;
     int alignedAmount = (int)(2*pulseSamples * (1 - misalignment));
 
     syncOffset += alignedAmount;
@@ -341,6 +380,8 @@ int Sync::getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
 
 
 int Sync::bufferStart() {
+  return syncOffset + (int) (samplesPerMetaSample * fftSampleIndex);
+  // XXX
   return (int) (samplesPerMetaSample * fftSampleIndex);
 }
 

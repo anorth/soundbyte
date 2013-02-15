@@ -26,19 +26,18 @@ Receiver::Receiver(Config *cfg, Sync *sync, Packeter *packeter) :
 void Receiver::receiveAudio(vector<float> &samples) {
 
   // If not yet synced, try
-  vector<float>::iterator sampleItr = samples.begin();
   if (state == WAITING_SYNC) {
-    sampleItr = sync->receiveAudioAndSync(samples);
-    assert(sampleItr >= samples.begin());
-    assert(sampleItr <= samples.end());
+    vector<float> trailing;
+    bool synced = sync->receiveAudioAndSync(samples, trailing);
 
-    if (sampleItr != samples.end()) {
+    if (synced) {
       state = RECEIVING_MESSAGE;
       assert(decoded.size() == 0);
 
       // TODO: change code to use a pair of iters, or float*/int,
       // to avoid unnecessary copying.
-      samples.erase(samples.begin(), sampleItr);
+      samples.clear();
+      samples.insert(samples.begin(), trailing.begin(), trailing.end());
     }
   }
 
@@ -63,9 +62,6 @@ void Receiver::receiveAudio(vector<float> &samples) {
         state = WAITING_SYNC; 
       }
     }
-    
-    // Receive some message from sampleItr
-    // If finished decoding message, enqueue it
   }
 }
 

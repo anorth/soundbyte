@@ -23,11 +23,10 @@ public:
    * Receives the next segment of audio and attempt to synchronise with this and
    * previous samples.
    * 
-   * If sync is successful, returns an iterator addressing the first sample after
-   * sync and resets state. If sync fails, returns samples.end() and maintains state
-   * to continue processing with the next contiguous samples.
+   * returns true if synced, and initial data in trailingSamplesOut.
    */
-  std::vector<float>::iterator receiveAudioAndSync(std::vector<float> &samples);
+  bool receiveAudioAndSync(const std::vector<float> &samples,
+      std::vector<float> &trailingSamplesOut);
 
   /**
    * Resets internal sync state. 
