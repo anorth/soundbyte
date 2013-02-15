@@ -49,11 +49,11 @@ void doSend() {
   int total = 0;
  // while (true) {
       cout.write(blank_chunk, 0);
-  for (int rpt = 0; rpt < 35; rpt++) {
+  for (int rpt = 0; rpt < 20; rpt++) {
     int waveformBytes = encodeMessage(message, strlen(message), waveform, sizeof(waveform));
     //cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
     assert(waveformBytes > 0);
-    cerr << "@@@@@@@@@ " << total << endl;
+    //cerr << "@@@@@@@@@ " << total << endl;
     cout.write(waveform, waveformBytes);
     total += waveformBytes/2;
 

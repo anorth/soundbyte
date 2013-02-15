@@ -317,7 +317,8 @@ def main():
     while remaining != 0:
       chunkChips = []
       for symbolIndex in xrange(numChunkSymbols):
-        waveform = receiver.receiveBlock(chipSamples, True)
+        #waveform = receiver.receiveBlock(chipSamples, True)
+        waveform = receiver.receiveBlock(chipSamples, False)
         spectrum = fouriate(window(waveform))
 
         chip = []

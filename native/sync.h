@@ -36,30 +36,30 @@ public:
   void reset();
 
 private:
-  int bufferStart();
+  //int bufferStart();
   void copyBucketVals(Spectrum &spectrum, int numChipsInSample, std::complex<float> *out);
   float detectMatch(std::complex<float> *bucketVals);
   int getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
-      float knownMisalignmentPerChip, float *misalignmentOut);
+      /*float knownMisalignmentPerChip,*/ float *misalignmentOut);
   void createSyncCycles(int chipsPerPulse, int cycles, std::vector<float> &target);
 
   // Parameters
   SyncConfig* cfg;
-  float samplesPerMetaSample;
+  //float samplesPerMetaSample;
   float bitPatternAbs;
-  int readyRepeats;
-  int pulseSamples;
-  int metaSamplesPerPulse;
-  int metaSamplesPerCycle;
+  //int readyRepeats;
+  //int pulseSamples;
+  //int metaSamplesPerPulse;
+  //int metaSamplesPerCycle;
   std::complex<float> **precomp;
 
   // State
   int state;
-  int fftSampleIndex;
-  int syncOffset; // Sync offset in samples
+  //int fftSampleIndex;
+  //int syncOffset; // Sync offset in samples
   std::vector<float> buffer;
-  std::vector<float> shortMetaBuffer;
-  std::vector<float> metaBuffer;
+  //std::vector<float> shortMetaBuffer;
+  //std::vector<float> metaBuffer;
 };
 
 #endif

@@ -12,7 +12,6 @@ import com.example.scom.Events.MessageReceived;
 import com.example.scom.Events.SocketConnected;
 import com.example.scom.Events.SocketDisconnected;
 import com.example.scom.nativ.NativeEngine;
-import com.example.scom.tethered.TetheredEngine;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 import com.squareup.otto.ThreadEnforcer;
@@ -51,9 +50,9 @@ public class MainActivity extends Activity {
   public void onStart() {
     super.onStart();
     Log.w(TAG, "Received onStart");
-//    engine = new NativeEngine();
+    engine = new NativeEngine();
 //    engine = new TetheredEngine(DECODER_PORT, bus);
-    engine = new ForkEngine(new NativeEngine(), new TetheredEngine(DECODER_PORT, bus));
+//    engine = new ForkEngine(new NativeEngine(), new TetheredEngine(DECODER_PORT, bus));
     engine.start();
     audioIn = new AudioListener(engine);
     audioIn.start();

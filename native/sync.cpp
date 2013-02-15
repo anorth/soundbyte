@@ -24,16 +24,16 @@ void printArray(float* values, int length) {
 }
 
 Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
-  samplesPerMetaSample = (float) cfg->chipSize / cfg->detectionSamplesPerChip;
+  //samplesPerMetaSample = (float) cfg->chipSize / cfg->detectionSamplesPerChip;
 
   assert(cfg->numChannels % 2 == 0);
   bitPatternAbs = sqrt((float)cfg->numChannels/2);
 
-  metaSamplesPerPulse = cfg->detectionSamplesPerChip * cfg->chipsPerSyncPulse;
+  //metaSamplesPerPulse = cfg->detectionSamplesPerChip * cfg->chipsPerSyncPulse;
   //cerr << metaSamplesPerPulse << "<------------\n";
-  metaSamplesPerCycle = 2 * metaSamplesPerPulse;
-  readyRepeats = 2 * cfg->chipsPerSyncPulse;
-  pulseSamples = cfg->chipsPerSyncPulse * cfg->chipSize;
+  //metaSamplesPerCycle = 2 * metaSamplesPerPulse;
+  //readyRepeats = 2 * cfg->chipsPerSyncPulse;
+  //pulseSamples = cfg->chipsPerSyncPulse * cfg->chipSize;
 
   precomp = new complex<float>*[cfg->numChannels];
   for (int i = 0; i < cfg->numChannels; i++) {
@@ -84,16 +84,195 @@ void Sync::generateSync(vector<float> &target) {
 }
 
 void Sync::reset() {
-  fftSampleIndex = 0;
-  syncOffset = 0;
+  //fftSampleIndex = 0;
+  //syncOffset = 0;
   state = -1;
   buffer.clear();
   buffer.reserve(MAX_BUFFER_SAMPLES);
-  shortMetaBuffer.clear();
-  metaBuffer.clear();
+  //shortMetaBuffer.clear();
+  //metaBuffer.clear();
   // TODO: reserve certain size in buffers.
 }
 
+bool Sync::receiveAudioAndSync(const vector<float> &samples,
+    vector<float> &trailing) {
+
+  buffer.insert(buffer.end(), samples.begin(), samples.end());
+
+  int chipSize = cfg->chipSize;
+
+  int pulseSize = cfg->chipsPerSyncPulse * chipSize;
+  int pulseWindow = pulseSize;
+
+  int signalCycleSize = 2 * pulseSize;
+  int metaSignalBucket = cfg->longMetaBucket;
+  int readyMetaSignalBucket = metaSignalBucket * cfg->chipsPerSyncPulse;
+
+  int longSignalWindow = (1 + metaSignalBucket * 2) * pulseSize;
+  int dataWindow = longSignalWindow + chipSize;
+
+  int readySize = (1 + 2 * cfg->chipsPerSyncPulse) * chipSize;
+  assert(readySize == signalCycleSize + chipSize);
+
+  int metaSamplesPerPulse = cfg->chipsPerSyncPulse * cfg->detectionSamplesPerChip;
+  int metaSamplesPerCycle = 2 * metaSamplesPerPulse;
+  float samplesPerMetaSample = ((float)chipSize) / cfg->detectionSamplesPerChip;
+
+  assert(cfg->chipsPerSyncPulse == (pulseWindow / chipSize));
+
+//  if (buffer.size() < dataWindow) {
+//    return false;
+//  }
+ // state = -1
+
+  cerr << "Buff size " << buffer.size() << endl;
+
+  while (buffer.size() >= dataWindow) {
+    cerr << "do " << endl;
+    //shortMetaSignal = []
+
+    //for i in xrange(longSignalWindow * self.detectionSamplesPerChip / chipSize):
+    //  start = int(i * samplesPerMetaSample)
+    //  end = start + chipSize # + pulseWindow
+    //  assert end <= len(data)
+    //  spectrum = np.fft.rfft(data[start:end])
+    //  bucketVals = [spectrum[b] for b in bucketIndices]
+    //  match = self.detectStrategy(bucketVals, pattern)
+    //  shortMetaSignal.append(match)
+
+    vector<float> shortMetaSignal;
+    assert(shortMetaSignal.size() == 0);
+
+    for (int i = 0; i < longSignalWindow * cfg->detectionSamplesPerChip / chipSize; i++) {
+     //// Direct version, faster for numChannels less than about 24ish
+      int start = (int)(i * samplesPerMetaSample);
+      int end = start + chipSize;
+      assert(end <= buffer.size());
+      
+      int numChans = cfg->numChannels;
+      complex<float> bucketVals[numChans];
+      //assert (buffer.size() > bufferStart() + cfg->chipSize);
+      for (int c = 0; c < numChans; c++) {
+        bucketVals[c] = 0;
+        float *b, *bEnd = buffer.data() + end;
+        complex<float> *p, *pEnd = precomp[c] + cfg->chipSize;
+        for (b = buffer.data() + start, p = precomp[c];
+            b < bEnd && p < pEnd; b++, p++) {
+          //bucketVals[c] += buffer[i] * precomp[c][i - bufferStart()];
+          bucketVals[c] += (*b) * (*p);
+        }
+      }
+      float match = detectMatch(bucketVals);
+      shortMetaSignal.push_back(match);
+    }
+
+   //// (FFT version)
+   // Spectrum spectrum(buffer.data() + bufferStart(), SAMPLE_RATE, cfg->chipSize);
+   // complex<float> bucketVals[cfg->numChannels];
+   // //copyBucketVals(spectrum, cfg->chipsPerSyncPulse, bucketVals);
+   // copyBucketVals(spectrum, 1, bucketVals);
+
+   // float match = detectMatch(bucketVals);
+   // shortMetaBuffer.push_back(match);
+   // fftSampleIndex++;
+
+    vector<float> longMetaSignal;
+    assert(longMetaSignal.size() == 0);
+
+    for (int i = 0; i < metaSamplesPerCycle * metaSignalBucket; i++) {
+      float tot = 0;
+      for (int j = i; j < i+metaSamplesPerPulse; j++) {
+        tot += shortMetaSignal[j];
+      }
+
+      float lms = tot / metaSamplesPerPulse;
+      assert(lms >= -1 && lms <= 1);
+      longMetaSignal.push_back(lms);
+    }
+    assert(longMetaSignal.size() == metaSamplesPerCycle * metaSignalBucket);
+
+    cerr << endl;
+    //printArray(shortMetaSignal.data(), shortMetaSignal.size());
+    //printArray(longMetaSignal.data(), longMetaSignal.size());
+
+    //longMetaSpectrum = np.fft.rfft(longMetaSignal)
+    //partALength = metaSamplesPerCycle * (metaSignalBucket - 1)
+    //assert partALength >= metaSamplesPerCycle
+    //longMetaSpectrumA = np.fft.rfft(longMetaSignal[:partALength])
+    //longMetaSpectrumB = np.fft.rfft(longMetaSignal[partALength:])
+
+    //partBLength = self.chipsPerSyncPulse * (self.detectionSamplesPerChip * 2)
+    //#shortMetaSpectrumA = np.fft.rfft(shortMetaSignal[:-partBLength])
+    //shortMetaSpectrumB = np.fft.rfft(shortMetaSignal[-partBLength:])
+
+    Spectrum longMetaSpectrum(longMetaSignal.data(), -1, longMetaSignal.size());
+    int partALength = metaSamplesPerCycle * (metaSignalBucket - 1);
+    assert(partALength >= metaSamplesPerCycle);
+    Spectrum longMetaSpectrumA(longMetaSignal.data(),-1,  partALength);
+    Spectrum longMetaSpectrumB(longMetaSignal.data() + partALength, -1,
+        longMetaSignal.size() - partALength);
+
+    int partBLength = cfg->chipsPerSyncPulse * (cfg->detectionSamplesPerChip * 2);
+    Spectrum shortMetaSpectrumB(
+        shortMetaSignal.data() + shortMetaSignal.size() - partBLength, -1,
+        partBLength);
+
+    float misalignment = 0;
+
+    if (state == 2) {
+      float chipMisalignment;
+      int resultShortB = getAlignment(shortMetaSpectrumB,
+          cfg->chipsPerSyncPulse, 1, 1, &chipMisalignment);
+      if (resultShortB == 1) {
+        ll(LOG_INFO, "SCOM", "SUCCESS %f", chipMisalignment);
+        assert(buffer.begin() + dataWindow < buffer.end());
+        trailing.insert(trailing.end(), buffer.begin() + dataWindow, buffer.end());
+        cerr << ">>>>>>>>   Trailing size " << trailing.size() << endl;
+        reset();
+        return true;
+      } else {
+        state = -1;
+        cerr << "Missed it " << endl;
+      }
+    }
+
+    if (state == 1) {
+      int resultLongA = getAlignment(longMetaSpectrumA,
+          metaSignalBucket - 1, 1, cfg->chipsPerSyncPulse, NULL);
+      int resultLongB = getAlignment(longMetaSpectrumB,
+          1, 1, cfg->chipsPerSyncPulse, NULL);
+      float chipMisalignment;
+      int resultShortB = getAlignment(shortMetaSpectrumB,
+          cfg->chipsPerSyncPulse, 1, 1, &chipMisalignment);
+      //('\n|| %s %s %s' % (resultLongA, resultLongB, resultShortB))
+      if (resultLongA == 1 && resultLongB < 1 && resultShortB >= 0) {
+        state = 2;
+        misalignment = chipMisalignment / cfg->chipsPerSyncPulse;
+      }
+    }
+
+    if (state < 2) {
+      state = getAlignment(longMetaSpectrum,
+          metaSignalBucket, state, cfg->chipsPerSyncPulse, &misalignment);
+    }
+
+    if (state < 0) {
+      misalignment = 0;
+    }
+    cerr << "misaligned " << misalignment << endl;
+
+    int alignedAmount = (int)(signalCycleSize * (1 - misalignment));
+
+    buffer.erase(buffer.begin(), buffer.begin() + alignedAmount); 
+    //data = data.er[alignedAmount:] + list(receiver.receiveBlock(alignedAmount))
+
+    cerr << "state " << state << "  aligned " << alignedAmount << endl;
+  }
+
+  return false;
+}
+
+/*
 bool Sync::receiveAudioAndSync(const vector<float> &samples,
     vector<float> &trailing) {
   hack++;
@@ -337,7 +516,7 @@ bool Sync::receiveAudioAndSync(const vector<float> &samples,
 
   }
 }
-
+*/
 float largestOther(Spectrum &spectrum, int notBucket) {
   // skip bucket 0 and 'notBucket'
   float max = 0;
@@ -354,13 +533,13 @@ float largestOther(Spectrum &spectrum, int notBucket) {
 #define PI2 6.28318530718f
 
 int Sync::getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
-    float knownMisalignmentPerChip, float *misalignmentOut) {
-  assert(knownMisalignmentPerChip == 0);
-  char label = numChips == 1 ? '!' : '.'; // for debugging
+    /*float knownMisalignmentPerChip,*/ float *misalignmentOut) {
+  //assert(knownMisalignmentPerChip == 0);
+  //char label = numChips == 1 ? '!' : '.'; // for debugging
 
   // TODO: make misalignment ALWAYS be per chip in this code and
   // its return values.
-  float knownMisalignment = knownMisalignmentPerChip / numChips;
+  //float knownMisalignment = knownMisalignmentPerChip / numChips;
   
   complex<float> bucketValue = spectrum.at(bucket);
   float resultAmplitude = abs(bucketValue);
@@ -373,8 +552,9 @@ int Sync::getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
   if (abs(bucketValue) > cfg->signalFactor * largestRemaining) {
     //logging.debug('%s, %s' % (abs(bucketValue), largestRemaining))
     misalignment = arg(bucketValue) / PI2;
+    cerr << misalignment << " <------------ IT " << endl;
     assert(misalignment >= -0.5 && misalignment <= 0.5);
-    misalignment -= knownMisalignment;
+    //misalignment -= knownMisalignment;
     //if (misalignment < -0.5) misalignment += 1.0;
     //if (misalignment > +0.5) misalignment -= 1.0;
     float misalignmentPerChip = misalignment * numChips;
@@ -409,9 +589,9 @@ int Sync::getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
 }
 
 
-int Sync::bufferStart() {
-  return (int) (samplesPerMetaSample * fftSampleIndex);
-}
+//int Sync::bufferStart() {
+//  return (int) (samplesPerMetaSample * fftSampleIndex);
+//}
 
 
 const float HALF_PI = 1.57079632679f;
@@ -437,15 +617,18 @@ float Sync::detectMatch(complex<float> *bucketVals) {
   result /= bitPatternAbs;
 
   // can rarely get NaNs, guard against
-  result *= 0.99999;
-  result += 0.000005;
+  result *= 0.999;
+  result += 0.0005;
+
+  result = result * 2 - 1;
+  return result;
 
   // Convert to linear correlation
   result = HALF_PI - 2*acos(result);
 
   // Map to range -1,1, with sinewave correlation
-  result = sin(result);
-  //result = result / 1.57079632679f;
+  //result = sin(result);
+  result = result / 1.57079632679f;
 
   // TODO: If fed random data, this actually yields
   // an average of about -0.15, figure out why

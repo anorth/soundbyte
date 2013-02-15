@@ -187,6 +187,10 @@ class SyncUtil(object):
         assert lms >= -1 and lms <= 1, lms
         longMetaSignal.append(lms)
 
+      print 'short plot(', shortMetaSignal, ')'
+      print 'long plot(', longMetaSignal, ')'
+      #sys.exit();
+
       longMetaSpectrum = np.fft.rfft(longMetaSignal)
       partALength = metaSamplesPerCycle * (metaSignalBucket - 1)
       assert partALength >= metaSamplesPerCycle
@@ -240,6 +244,7 @@ class SyncUtil(object):
         if (abs(bucketValue) > self.signalFactor * largestRemaining):
           #logging.debug('%s, %s' % (abs(bucketValue), largestRemaining))
           misalignment = phase(bucketValue) / PI2
+          print misalignment, ' <------------ IT'
           assert misalignment >= -0.5 and misalignment <= 0.5
           misalignmentPerChip = misalignment * chips
           if state == -1:
@@ -292,6 +297,7 @@ class SyncUtil(object):
         (resultShortB, dummy) = getAlignment(shortMetaSpectrumB,
             self.chipsPerSyncPulse, 1, 1, '#')
         if resultShortB == 1:
+          print "FUCK FUCK ", dummy
           logging.debug('state 2 ALIGNED')
           #time.sleep(1)
           #receiver.receiveBlock(int(chipSize*2.0))

@@ -171,7 +171,7 @@ class StreamReceiver(object):
   def __init__(self, stream):
     self.stream = stream
 
-  def receiveBlock(self, numSamples, sendOut=True):
+  def receiveBlock(self, numSamples, sendOut=False):
     nBytes = numSamples * 2
     block = ""
     while len(block) < nBytes:

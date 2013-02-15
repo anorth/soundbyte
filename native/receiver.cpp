@@ -27,6 +27,7 @@ void Receiver::receiveAudio(vector<float> &samples) {
   //state = RECEIVING_MESSAGE;
 
   // If not yet synced, try
+  vector<float> fuck;
   if (state == WAITING_SYNC) {
     vector<float> trailing;
     bool synced = sync->receiveAudioAndSync(samples, trailing);
@@ -37,14 +38,18 @@ void Receiver::receiveAudio(vector<float> &samples) {
 
       // TODO: change code to use a pair of iters, or float*/int,
       // to avoid unnecessary copying.
-      samples.clear();
-      samples.insert(samples.begin(), trailing.begin(), trailing.end());
+      //samples.clear();
+      //samples.insert(samples.begin(), trailing.begin(), trailing.end());
+      fuck.clear();
+      fuck.insert(fuck.begin(), trailing.begin(), trailing.end());
     }
+  } else {
+    fuck.insert(fuck.begin(), samples.begin(), samples.end());
   }
 
   // If synced, start/continue decoding message
   if (state == RECEIVING_MESSAGE) {
-    receiveChips(samples);
+    receiveChips(fuck);
     int numMessageSymbols = packeter->chunkChips();
     while (chips.size() >= numMessageSymbols) {
       vector<vector<float> > messageChips;
