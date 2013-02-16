@@ -23,18 +23,17 @@ public:
 
 private:
   int state;
-  std::deque<Spectrum*> chips; // Queue of spectrums
-  std::vector<float> partialChip; // Samples from an incomplete chip
-  std::vector<char> decoded;
+  std::vector<float> buffer;
+  std::vector<char> partialMessage;
   std::queue<std::vector<char> > messages;
 
   Config *cfg;
   Sync *sync;
   Packeter *packeter;
 
-  void receiveChips(std::vector<float> &samples);
-  void makeChip(std::vector<float> &samples, std::vector<float>::iterator nextSample);
-  void takeChips(int numChips, std::vector<std::vector<float> > &target);
+  std::vector<float>::iterator receiveChips(std::vector<float> &samples, 
+    std::vector<float>::iterator firstSample, int numChips, 
+    std::vector<std::vector<float> > &target);
 };
 
 #endif /* _RECEIVER_H_ */

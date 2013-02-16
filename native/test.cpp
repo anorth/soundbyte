@@ -12,8 +12,9 @@
 
 using namespace std;
 
-static const int CHUNK_SAMPLES = SAMPLE_RATE / 100;
+static const int CHUNK_SAMPLES = SAMPLE_RATE / 50;
 static const int CHUNK_BYTES = CHUNK_SAMPLES * 2;
+static char *MESSAGE = "http://www.helixta.com.au/";
 char blank_chunk[CHUNK_BYTES];
 
 static struct option longopts[] = {
@@ -37,13 +38,16 @@ void doListen() {
         cerr << "MESSAGE: ";
         cerr.write(messageBuffer, bytes);
         cerr << endl;
+        if (strncmp(messageBuffer, MESSAGE, strlen(MESSAGE))) {
+          assert(false);
+        } 
       }
     }
   }
 }
 
 void doSend() {
-  char message[] = "http://www.helixta.com.au/";
+  char *message = MESSAGE;
   char waveform[SAMPLE_RATE * 10];
   while (true) {
     int waveformBytes = encodeMessage(message, strlen(message), waveform, sizeof(waveform));
