@@ -24,22 +24,28 @@ Receiver::Receiver(Config *cfg, Sync *sync, Packeter *packeter) :
 }
 
 void Receiver::receiveAudio(vector<float> &samples) {
+  //cerr << "Receiving audio" << endl;
   buffer.insert(buffer.end(), samples.begin(), samples.end());
   vector<float>::iterator sampleItr = buffer.begin();
 
   while (true) {
+    cerr << "while true" << endl;
     // If not yet synced, try
     if (state == WAITING_SYNC) {
+      //cerr << "waiting sync" << endl;
       sampleItr = sync->receiveAudioAndSync(buffer);
       assert(sampleItr >= buffer.begin());
       assert(sampleItr <= buffer.end());
 
       if (sampleItr != buffer.end()) { // synced
+        //cerr << "synced" << endl;
         state = RECEIVING_MESSAGE;
         assert(partialMessage.size() == 0);
       } else {
+        //cerr << "didn't sync" << endl;
         // Consumed all buffer
         buffer.clear();
+        sampleItr = buffer.begin();
         break;
       }
     }
@@ -47,6 +53,7 @@ void Receiver::receiveAudio(vector<float> &samples) {
     assert(sampleItr <= buffer.end());
     // If synced, start/continue decoding message
     if (state == RECEIVING_MESSAGE) {
+      //cerr << "recevingg message" << endl;
       int chunkChips = packeter->chunkChips();
       int chunkSamples = chunkChips * cfg->chipSamples;
       bool messageDone = false;
@@ -77,7 +84,9 @@ void Receiver::receiveAudio(vector<float> &samples) {
     assert(sampleItr <= buffer.end());
     buffer.erase(buffer.begin(), sampleItr);
     sampleItr = buffer.begin();
+    //cerr << "wend" << endl;
   }
+  //cerr << "exiting" << endl;
 }
 
 bool Receiver::messageAvailable() {

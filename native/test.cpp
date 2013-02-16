@@ -14,7 +14,7 @@ using namespace std;
 
 static const int CHUNK_SAMPLES = SAMPLE_RATE / 50;
 static const int CHUNK_BYTES = CHUNK_SAMPLES * 2;
-static char *MESSAGE = "http://www.helixta.com.au/";
+static char *MESSAGE = "hello";
 char blank_chunk[CHUNK_BYTES];
 
 static struct option longopts[] = {
@@ -47,11 +47,12 @@ void doListen() {
 }
 
 void doSend() {
-  char *message = MESSAGE;
-  char waveform[SAMPLE_RATE * 10];
+  int bufSize = SAMPLE_RATE * 10;
+  char *waveform = new char[bufSize];
   while (true) {
-    int waveformBytes = encodeMessage(message, strlen(message), waveform, sizeof(waveform));
-    //cerr << "Message '" << message << "', waveform " << waveformBytes << " bytes" << endl;
+    int waveformBytes = encodeMessage(MESSAGE, strlen(MESSAGE), waveform, bufSize);
+    assert(waveformBytes <= bufSize);
+    //cerr << "Message '" << MESSAGE << "', waveform " << waveformBytes << " bytes" << endl;
     assert(waveformBytes > 0);
     cout.write(waveform, waveformBytes);
 
@@ -59,6 +60,7 @@ void doSend() {
     // receiver gets filled before the sender stops sending.
     cout.write(blank_chunk, CHUNK_BYTES);
   }
+  delete waveform;
 }
 
 int main(int argc, char **argv) {

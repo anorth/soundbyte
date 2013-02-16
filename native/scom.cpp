@@ -99,6 +99,7 @@ int encodeMessage(char* payload, int payloadLength, char *waveform, int waveform
 }
 
 void decodeAudio(char *buffer, int buflen) {
+  cerr << "decode audio" << endl;
   std::vector<float> samples;
   decodePcm16(buffer, buflen, samples);
   //cerr << "Decoded PCM" << endl;
