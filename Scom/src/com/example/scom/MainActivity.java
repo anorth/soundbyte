@@ -39,11 +39,43 @@ public class MainActivity extends Activity {
   private Button sendButton = null;
   
   private Charset UTF8 = Charset.forName("UTF-8");
-
+  private String defaultText = "";
+  
+  // TODO: fix .au
+  private static final String MAPS_PREFIX = "http://m.google.com.au/u/m/";
+  
   @Override
   public void onCreate(Bundle savedInstanceState) {
     Log.w(TAG, "Received onCreate");
     super.onCreate(savedInstanceState);
+
+    Intent intent = getIntent();
+    Bundle extras = intent.getExtras();
+    String action = intent.getAction();
+    // if this is from the share menu
+    String key = Intent.EXTRA_TEXT;
+    if (Intent.ACTION_SEND.equals(action)) {
+      if (extras.containsKey(key)) {
+        try {
+          String data = extras.getString(key);
+          Log.e(TAG, "HERE IS THE SHIT" + defaultText);
+          String[] bits = data.split("\n");
+          defaultText = bits[0]; // by default
+          for (String bit : bits) {
+            if (bit.startsWith(MAPS_PREFIX)) {
+              defaultText = "M:" + bit.substring(MAPS_PREFIX.length());
+            } else if (bit.startsWith("http://")) {
+              defaultText = bit;
+              break;
+            }
+          }
+        } catch (Exception e) {
+          Log.e(TAG, e.toString());
+        }
+      } else {
+        Log.e(TAG, "GOt NOTHING");
+      }
+    }
     setContentView(R.layout.activity_main);
     statusLabel = (TextView) findViewById(R.id.statusLabel);
     dataText = (EditText) findViewById(R.id.dataText);
@@ -70,12 +102,12 @@ public class MainActivity extends Activity {
     audioOut.start();
     dataProcessor = new DataProcessor(engine, bus);
     dataProcessor.start();
-    statusLabel.setText("Waiting...");
     getWindow().getDecorView().getRootView().setKeepScreenOn(true);
     isForeground = true;
     
-    dataText.setText("ABC");
-    
+    statusLabel.setText("Waiting...");
+    dataText.setText(defaultText);
+  
     sendButton.setOnClickListener(new OnClickListener() {
       @Override public void onClick(View arg) {
         String data = dataText.getText().toString();
@@ -136,6 +168,11 @@ public class MainActivity extends Activity {
         if (tokens[0].equals("http")) { // for backwards compatibility
           i = new Intent(Intent.ACTION_VIEW);
           i.setData(Uri.parse(e.msg));
+        } else if (tokens[0].equals("M")) {
+          // Specific minified maps share url
+          i = new Intent(Intent.ACTION_VIEW);
+          i.setClassName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity");
+          i.setData(Uri.parse(MAPS_PREFIX + tokens[1]));
         } else if (tokens[0].equals("u")) {
           i = new Intent(Intent.ACTION_VIEW);
           i.setData(Uri.parse(tokens[1]));
