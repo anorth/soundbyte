@@ -1,5 +1,7 @@
 package com.example.scom;
 
+import java.nio.ByteBuffer;
+
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -40,7 +42,7 @@ class AudioPlayer extends Thread {
             tracker.write(buffer, 0, buffer.length);
           } else {
 //            Log.v(TAG, "receiveBuffer returned empty buffer");
-            Thread.sleep(1000);
+            Thread.sleep(500);
           }
         }
       } else {
@@ -64,7 +66,10 @@ class AudioPlayer extends Thread {
   }
 
   private byte[] receiveBuffer() {
-    return engine.takeAudio().array();
+    ByteBuffer buffer = engine.takeAudio();
+    byte[] data = new byte[buffer.remaining()];
+    buffer.get(data);
+    return data;
   }
 
   void close() {

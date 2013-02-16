@@ -7,6 +7,7 @@ extern const char *HELLO;
 /**
  * Initialises system.
  */
+void scomInit(int base, int chipRate, int channelSpacing, int numChans);
 void scomInit();
 
 /**

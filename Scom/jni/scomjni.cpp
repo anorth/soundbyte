@@ -3,11 +3,13 @@
 #include <assert.h>
 
 #include "scom.h"
+#include "log.h"
 
 // Export definitions for JNI
 extern "C" {
   jstring Java_com_example_scom_nativ_Jni_stringFromJNI(JNIEnv* env, jobject thiz);
-  void Java_com_example_scom_nativ_Jni_init(JNIEnv* env, jobject thiz);
+  void Java_com_example_scom_nativ_Jni_init(JNIEnv* env, jobject thiz,
+      jint base, jint chipRate, jint channelSpacing, jint numChannels);
   void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
       jobject forWaveform);
   void Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject buffer);
@@ -21,8 +23,9 @@ jstring Java_com_example_scom_nativ_Jni_stringFromJNI(JNIEnv* env, jobject thiz)
   return env->NewStringUTF(HELLO);
 }
 
-void Java_com_example_scom_nativ_Jni_init(JNIEnv* env, jobject thiz) {
-  scomInit();
+void Java_com_example_scom_nativ_Jni_init(JNIEnv* env, jobject thiz,
+    jint base, jint chipRate, jint channelSpacing, jint numChannels) {
+  scomInit(base, chipRate, channelSpacing, numChannels);
 }
 
 void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
@@ -32,6 +35,7 @@ void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jb
   int payloadLength = env->GetArrayLength(payload);
   char *waveformBuffer = (char *)env->GetDirectBufferAddress(forWaveform);
   int waveformBufferCapacity = env->GetDirectBufferCapacity(forWaveform);
+  assert(waveformBuffer);
 
   // Call into scom
   int bytesWritten = encodeMessage((char *)payloadBytes, payloadLength, waveformBuffer,
@@ -43,6 +47,7 @@ void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jb
   jclass cls = env->GetObjectClass(forWaveform);
   jmethodID limitMethod = env->GetMethodID(cls, "limit", "(I)Ljava/nio/Buffer;");
   env->CallObjectMethod(forWaveform, limitMethod, bytesWritten);
+  ll(LOG_INFO, "SCOM", "Buffer size written %d", bytesWritten);
 }
 
 void Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject waveform) {

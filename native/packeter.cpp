@@ -81,8 +81,6 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<char> &target)
   if (remaining == 0) {
     remaining = (unsigned char) (*it);
     it++;
-
-    assert(remaining == 5);
     cerr << "First chunk, bytes remaining " << remaining << endl;
   } else {
     cerr << "Subsequent chunk, bytes remaining " << remaining << endl;

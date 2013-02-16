@@ -14,7 +14,7 @@ using namespace std;
 
 static const int CHUNK_SAMPLES = SAMPLE_RATE / 50;
 static const int CHUNK_BYTES = CHUNK_SAMPLES * 2;
-static char *MESSAGE = "hello";
+static char *MESSAGE = "http://www.helixta.com.au/";
 char blank_chunk[CHUNK_BYTES];
 
 static struct option longopts[] = {

@@ -10,9 +10,9 @@ public class Jni {
 
   public native String stringFromJNI();
   
-  public native void init();
+  public native void init(int base, int chipRate, int channelSpacing, int numChans);
 
-  public native ByteBuffer encodeMessage(byte[] payload, ByteBuffer forWaveform);
+  public native void encodeMessage(byte[] payload, ByteBuffer forWaveform);
 
   public native void decodeAudio(ByteBuffer audio);
 

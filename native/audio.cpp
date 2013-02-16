@@ -8,6 +8,7 @@
 #include "constants.h"
 #include "spectrum.h"
 #include "util.h"
+#include "log.h"
 #include "kiss_fftr.h"
 
 using namespace std;
@@ -133,6 +134,7 @@ void decodePcm16(char *buffer, int buflen, vector<float> &target) {
 }
 
 void encodePcm16(vector<float> &samples, char *buffer) {
+    ll(LOG_INFO, "SCOM", "  buffer %d", buffer);
   for (int i = 0; i < samples.size(); ++i) {
     short s = floor(PCM_QUANT * samples[i]);
     ((short *)buffer)[i] = s;

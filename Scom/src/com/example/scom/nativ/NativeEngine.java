@@ -13,14 +13,19 @@ import com.example.scom.Engine;
 public class NativeEngine implements Engine {
 
   private static final String TAG = "NativeEngine";
-  private static final int MAX_MESSAGE_LENGTH = 200;
+  private static final int MAX_MESSAGE_LENGTH = 250;
   
   private final Jni jni;
   private final BlockingQueue<ByteBuffer> waveforms = new ArrayBlockingQueue<ByteBuffer>(100);
 
   public NativeEngine() {
     jni = new Jni();
-    jni.init();
+    jni.init(
+        14000, //base
+        50,    //rate
+        2,     //spacing 
+        8      //channels
+        );
   }
   
   @Override
@@ -35,7 +40,11 @@ public class NativeEngine implements Engine {
   @Override
   public void receiveMessage(byte[] payload) {
     ByteBuffer forWaveform = allocateWaveformBuffer();
+    
+    // TODO: don't do work in this thread.
     jni.encodeMessage(payload, forWaveform);
+    
+    Log.i(TAG, "Encoded returned " + forWaveform.limit() + " " + forWaveform.remaining());
     waveforms.add(forWaveform);
   }
 
@@ -46,9 +55,14 @@ public class NativeEngine implements Engine {
 
   @Override
   public ByteBuffer takeAudio() {
+    Log.e(TAG, "native.takeAudio()");
+    
     try {
-      return waveforms.take();
+      ByteBuffer result = waveforms.take();
+      Log.e(TAG, "native.takeAudio() TAKEN");
+      return result;
     } catch (InterruptedException e) {
+      Log.e(TAG, "native.takeAudio() INTERRUPTED");
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);
     }
@@ -56,7 +70,6 @@ public class NativeEngine implements Engine {
 
   @Override
   public void receiveAudio(ByteBuffer audio) {
-    // TODO Auto-generated method stub
     jni.decodeAudio(audio);
   }
 
@@ -80,6 +93,6 @@ public class NativeEngine implements Engine {
 
   private static ByteBuffer allocateWaveformBuffer() {
     int nbytes = Constants.SAMPLE_RATE * Constants.BYTES_PER_SAMPLE * 10; // max 10s
-    return ByteBuffer.allocate(nbytes);
+    return ByteBuffer.allocateDirect(nbytes);
   }
 }

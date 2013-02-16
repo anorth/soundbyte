@@ -1,18 +1,23 @@
 package com.example.scom;
 
+import java.nio.charset.Charset;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.scom.Events.MessageReceived;
 import com.example.scom.Events.SocketConnected;
 import com.example.scom.Events.SocketDisconnected;
 import com.example.scom.nativ.NativeEngine;
-import com.example.scom.tethered.TetheredEngine;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 import com.squareup.otto.ThreadEnforcer;
@@ -29,15 +34,20 @@ public class MainActivity extends Activity {
   private DataProcessor dataProcessor = null;
 
   private boolean isForeground = false;
-  private TextView statusTextView = null;
-
+  private TextView statusLabel = null;
+  private EditText dataText = null;
+  private Button sendButton = null;
+  
+  private Charset UTF8 = Charset.forName("UTF-8");
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     Log.w(TAG, "Received onCreate");
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    statusTextView = (TextView) findViewById(R.id.textView4);
+    statusLabel = (TextView) findViewById(R.id.statusLabel);
+    dataText = (EditText) findViewById(R.id.dataText);
+    sendButton = (Button) findViewById(R.id.sendButton);
     bus.register(this);
   }
 
@@ -60,9 +70,21 @@ public class MainActivity extends Activity {
     audioOut.start();
     dataProcessor = new DataProcessor(engine, bus);
     dataProcessor.start();
-    statusTextView.setText("Waiting...");
+    statusLabel.setText("Waiting...");
     getWindow().getDecorView().getRootView().setKeepScreenOn(true);
     isForeground = true;
+    
+    dataText.setText("ABC");
+    
+    sendButton.setOnClickListener(new OnClickListener() {
+      @Override public void onClick(View arg) {
+        String data = dataText.getText().toString();
+        statusLabel.setText(data);
+        Log.e(TAG, "DATA: " + data);
+        assert arg == sendButton;
+        engine.receiveMessage(data.getBytes(UTF8));
+      }
+    });
   }
 
   @Override
@@ -89,20 +111,18 @@ public class MainActivity extends Activity {
 
   @Subscribe
   public void socketConnected(final SocketConnected e) {
-    statusTextView.post(new Runnable() {
-      @Override
-      public void run() {
-        statusTextView.setText("Connected " + e.name + ". Streaming...");
+    statusLabel.post(new Runnable() {
+      @Override public void run() {
+        statusLabel.setText("Connected " + e.name + ". Streaming...");
       }
     });
   }
 
   @Subscribe
   public void socketDisconnected(final SocketDisconnected e) {
-    statusTextView.post(new Runnable() {
-      @Override
-      public void run() {
-        statusTextView.setText("Disconnected " + e.name + ". Waiting...");
+    statusLabel.post(new Runnable() {
+      @Override public void run() {
+        statusLabel.setText("Disconnected " + e.name + ". Waiting...");
       }
     });
   }
