@@ -14,7 +14,7 @@ public class Jni {
 
   public native void encodeMessage(byte[] payload, ByteBuffer forWaveform);
 
-  public native void decodeAudio(ByteBuffer audio);
+  public native int decodeAudio(ByteBuffer audio);
 
   public native boolean messageAvailable();
 

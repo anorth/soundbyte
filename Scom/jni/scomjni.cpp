@@ -12,7 +12,7 @@ extern "C" {
       jint base, jint chipRate, jint channelSpacing, jint numChannels);
   void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
       jobject forWaveform);
-  void Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject buffer);
+  jint Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject buffer);
   jboolean Java_com_example_scom_nativ_Jni_messageAvailable(JNIEnv *env, jobject thiz);
   jint Java_com_example_scom_nativ_Jni_takeMessage(JNIEnv *env, jobject thiz, jbyteArray target);
 }
@@ -50,13 +50,13 @@ void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jb
   ll(LOG_INFO, "SCOM", "Buffer size written %d", bytesWritten);
 }
 
-void Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject waveform) {
+jint Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject waveform) {
   char *waveformBuffer = (char *)env->GetDirectBufferAddress(waveform);
   jclass cls = env->GetObjectClass(waveform);
   jmethodID limitMethod = env->GetMethodID(cls, "limit", "()I");
   int waveformBytes = env->CallIntMethod(waveform, limitMethod);
 
-  decodeAudio(waveformBuffer, waveformBytes);
+  return decodeAudio(waveformBuffer, waveformBytes);
 }
 
 jboolean Java_com_example_scom_nativ_Jni_messageAvailable(JNIEnv *env, jobject thiz) {

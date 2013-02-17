@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.scom.Events.MessageProgress;
 import com.example.scom.Events.MessageReceived;
 import com.example.scom.Events.SocketConnected;
 import com.example.scom.Events.SocketDisconnected;
@@ -40,6 +41,7 @@ public class MainActivity extends Activity {
   
   private Charset UTF8 = Charset.forName("UTF-8");
   private String defaultText = "";
+  private boolean sending;
   
   // TODO: fix .au
   private static final String MAPS_PREFIX = "http://m.google.com.au/u/m/";
@@ -110,13 +112,28 @@ public class MainActivity extends Activity {
   
     sendButton.setOnClickListener(new OnClickListener() {
       @Override public void onClick(View arg) {
-        String data = dataText.getText().toString();
-        statusLabel.setText(data);
-        Log.e(TAG, "DATA: " + data);
-        assert arg == sendButton;
-        engine.receiveMessage(data.getBytes(UTF8));
+        doSend();
       }
     });
+    
+    if (!defaultText.isEmpty()) {
+      doSend();
+    }
+  }
+  
+  private void doSend() {
+    sending = !sending;
+    if (sending) {
+      String data = dataText.getText().toString();
+      statusLabel.setText("Sending..."); // + data);
+      Log.e(TAG, "Will send: " + data);
+      engine.receiveMessage(data.getBytes(UTF8));
+      sendButton.setText("Stop");
+    } else {
+      engine.receiveMessage(null);
+      Log.e(TAG, "Stop sending.");
+      sendButton.setText("Send");
+    }
   }
 
   @Override
@@ -159,9 +176,27 @@ public class MainActivity extends Activity {
     });
   }
 
+
+  @Subscribe
+  public void messageProgress(final MessageProgress e) {
+    statusLabel.post(new Runnable() {
+      @Override public void run() {
+        if (e.progress == 0) {
+          statusLabel.setText("Listening");
+        } else {
+          StringBuilder s = new StringBuilder();
+          for (int i = 0; i < e.progress; i++) {
+            s.append('-');
+          }
+          statusLabel.setText("Receiving " + s);
+        }
+      }
+    });
+  }
+
   @Subscribe
   public void messageReceived(final MessageReceived e) {
-    if (isForeground) {
+    if (isForeground || true) {
       String[] tokens = e.msg.split(":", 2);
       if (tokens.length == 2) {
          Intent i;

@@ -67,4 +67,8 @@ public class TetheredEngine implements Engine {
     return decodingSocket.receive(100);
   }
 
+  @Override
+  public int messageProgress() {
+    return 0;
+  }
 }

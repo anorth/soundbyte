@@ -29,6 +29,8 @@ public:
    */
   std::vector<float>::iterator receiveAudioAndSync(std::vector<float> &samples);
 
+  int getState();
+
   /**
    * Resets internal sync state. 
    */

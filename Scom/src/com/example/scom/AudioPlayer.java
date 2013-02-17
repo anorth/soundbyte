@@ -37,9 +37,9 @@ class AudioPlayer extends Thread {
         tracker.play();
         while (!stopped) {
           Log.v(TAG, "Awaiting buffer, state " + tracker.getPlayState());
-          byte[] buffer = receiveBuffer();
+          byte[] buffer = engine.audioAvailable() ? receiveBuffer() : null;
           // Note: bytes represent shorts, little-endian
-          if (buffer.length > 0) {
+          if (buffer != null && buffer.length > 0) {
             int samples = buffer.length / Constants.BYTES_PER_SAMPLE;
             Log.v(TAG, "Received audio buffer of " + samples + " samples");
             int sendMillis = (samples * 1000 / Constants.SAMPLE_RATE);
@@ -53,7 +53,7 @@ class AudioPlayer extends Thread {
             }
           } else {
 //            Log.v(TAG, "receiveBuffer returned empty buffer");
-            Thread.sleep(500);
+            Thread.sleep(200);
           }
         }
       } else {

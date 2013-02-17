@@ -15,14 +15,17 @@ class Receiver {
 public:
   Receiver(Config *cfg, Sync *sync, Packeter *packeter);
 
-  void receiveAudio(std::vector<float> &samples);
+  /* returns an integer vaguely indicative of progress (useful for UI) */
+  int receiveAudio(std::vector<float> &samples);
 
   bool messageAvailable();
 
   int takeMessage(char *buffer, int bufferCapacity);
 
 private:
-  int state;
+  int state; // actual state
+  int progress; // progress indicator based on state and other factors
+  int subProgress;
   std::vector<float> buffer;
   std::vector<char> partialMessage;
   std::queue<std::vector<char> > messages;

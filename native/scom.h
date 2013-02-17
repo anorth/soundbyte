@@ -21,8 +21,10 @@ int encodeMessage(char *payload, int payloadLength, char *waveform, int waveform
  * Decodes the next segment of audio.
  *
  * After this method, messageAvailable indicates whether a complete message has been received.
+ *
+ * returns vague progress indicator
  */
-void decodeAudio(char *buffer, int buflen);
+int decodeAudio(char *buffer, int buflen);
 
 /**
  * Whether a message is available.

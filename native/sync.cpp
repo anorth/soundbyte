@@ -58,6 +58,10 @@ Sync::~Sync() {
   delete precomp;
 }
 
+int Sync::getState() {
+  return state;
+}
+
 void Sync::createSyncCycles(int chipsPerPulse, int cycles, vector<float> &target) {
 
   int n = 0;

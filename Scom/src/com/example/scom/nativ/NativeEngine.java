@@ -16,15 +16,19 @@ public class NativeEngine implements Engine {
   private static final int MAX_MESSAGE_LENGTH = 250;
   
   private final Jni jni;
-  private final BlockingQueue<ByteBuffer> waveforms = new ArrayBlockingQueue<ByteBuffer>(100);
+  //private final BlockingQueue<ByteBuffer> waveforms = new ArrayBlockingQueue<ByteBuffer>(100);
+  private volatile ByteBuffer waveform = null;
+  private volatile long lastSent = 0;
+  
+  private volatile int progress;
 
   public NativeEngine() {
     jni = new Jni();
     jni.init(
-        16000, //base
-        50,    //rate
+        18000, //base
+        200,    //rate
         2,     //spacing 
-        8      //channels
+        4      //channels
         );
   }
   
@@ -35,42 +39,60 @@ public class NativeEngine implements Engine {
 
   @Override
   public void stop() {
+    waveform = null;
   }
 
   @Override
   public void receiveMessage(byte[] payload) {
+    if (payload == null) {
+      waveform = null;
+      return;
+    }
+    
     ByteBuffer forWaveform = allocateWaveformBuffer();
     
     // TODO: don't do work in this thread.
     jni.encodeMessage(payload, forWaveform);
     
     Log.i(TAG, "Encoded returned " + forWaveform.limit() + " " + forWaveform.remaining());
-    waveforms.add(forWaveform);
+    //waveforms.add(forWaveform);
+    waveform = forWaveform;
   }
 
   @Override
   public boolean audioAvailable() {
-    return !waveforms.isEmpty();
+    return waveform != null && millisUntilReady() <= 0; //!waveforms.isEmpty();
+  }
+  
+  private long millisUntilReady() {
+    if (waveform == null) return 0;
+    waveform.rewind();
+    return Math.max(0,
+        lastSent + 250 // leave a 250ms gap 
+        + (waveform.remaining() * 1000 / Constants.SAMPLE_RATE)
+        - System.currentTimeMillis());
   }
 
   @Override
   public ByteBuffer takeAudio() {
     Log.e(TAG, "native.takeAudio()");
     
-    try {
-      ByteBuffer result = waveforms.take();
-      Log.e(TAG, "native.takeAudio() TAKEN");
-      return result;
-    } catch (InterruptedException e) {
-      Log.e(TAG, "native.takeAudio() INTERRUPTED");
-      Thread.currentThread().interrupt();
-      throw new RuntimeException(e);
-    }
+//    try {
+    ByteBuffer result = waveform; //waveforms.take();
+    waveform.rewind();
+    lastSent = System.currentTimeMillis();
+    Log.e(TAG, "native.takeAudio() TAKEN");
+    return result;
+//    } catch (InterruptedException e) {
+//      Log.e(TAG, "native.takeAudio() INTERRUPTED");
+//      Thread.currentThread().interrupt();
+//      throw new RuntimeException(e);
+//    }
   }
 
   @Override
   public void receiveAudio(ByteBuffer audio) {
-    jni.decodeAudio(audio);
+    progress = jni.decodeAudio(audio);
   }
 
   @Override
@@ -89,6 +111,11 @@ public class NativeEngine implements Engine {
     } else {
       throw new IllegalStateException("No message available");
     }
+  }
+  
+  @Override
+  public int messageProgress() {
+    return progress;
   }
 
   private static ByteBuffer allocateWaveformBuffer() {

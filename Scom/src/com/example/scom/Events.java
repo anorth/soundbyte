@@ -21,4 +21,11 @@ public interface Events {
       this.msg = msg;
     }
   }
+  
+  final class MessageProgress {
+    public final int progress;
+    public MessageProgress(int progress) {
+      this.progress = progress;
+    }
+  }
 }

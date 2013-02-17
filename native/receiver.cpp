@@ -15,15 +15,18 @@ using namespace std;
 
 static const int WAITING_SYNC = 0;
 static const int RECEIVING_MESSAGE = 1;
+static const int SUB_PROGRESS_PARTS = 5;
 
 Receiver::Receiver(Config *cfg, Sync *sync, Packeter *packeter) :
     state(WAITING_SYNC),
     cfg(cfg),
     sync(sync),
     packeter(packeter) {
+  progress = 0;
+  subProgress = 0;
 }
 
-void Receiver::receiveAudio(vector<float> &samples) {
+int Receiver::receiveAudio(vector<float> &samples) {
   cerr << "Received " << samples.size() << " samples, have " << buffer.size() << " buffered" << endl;
   buffer.insert(buffer.end(), samples.begin(), samples.end());
   vector<float>::iterator sampleItr = buffer.begin();
@@ -40,6 +43,7 @@ void Receiver::receiveAudio(vector<float> &samples) {
       if (sampleItr != buffer.end()) { // synced
         cerr << "synced at " << (sampleItr - buffer.begin()) << endl;
         state = RECEIVING_MESSAGE;
+        progress = 1;
         assert(partialMessage.size() == 0);
       } else {
         //cerr << "didn't sync" << endl;
@@ -57,7 +61,11 @@ void Receiver::receiveAudio(vector<float> &samples) {
       int chunkChips = packeter->chunkChips();
       int chunkSamples = chunkChips * cfg->chipSamples;
       bool messageDone = false;
-      if ((buffer.end() - sampleItr) >= chunkSamples) {
+      int bufferedSamples = (buffer.end() - sampleItr);
+      subProgress = bufferedSamples * SUB_PROGRESS_PARTS / chunkSamples;
+      if (bufferedSamples >= chunkSamples) {
+        progress += SUB_PROGRESS_PARTS;
+        subProgress = 0;
         vector<vector<float> > chips;
         sampleItr = receiveChips(buffer, sampleItr, chunkChips, chips);
         cerr << "Recieved " << chunkChips << " chips, sample " << (sampleItr - buffer.begin()) << endl;
@@ -76,6 +84,7 @@ void Receiver::receiveAudio(vector<float> &samples) {
         if (messageDone) {
           partialMessage.clear();
           state = WAITING_SYNC;
+          progress = 0;
         }
       } else {
         cerr << "Need more samples than " << (buffer.end() - sampleItr) << endl;
@@ -91,6 +100,8 @@ void Receiver::receiveAudio(vector<float> &samples) {
     //cerr << "wend" << endl;
   }
   //cerr << "exiting" << endl;
+
+  return progress + subProgress;
 }
 
 bool Receiver::messageAvailable() {
