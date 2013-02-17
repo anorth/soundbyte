@@ -29,10 +29,10 @@ void buildWaveform(std::vector<bool> &chip, float base, float spacing, int nsamp
 void window(std::vector<float> &waveform);
 
 /** Fades in a waveform over some samples. */
-void fadein(std::vector<float> &waveform, int nsamples);
+void fadein(std::vector<float>::iterator start, int nsamples);
 
 /** Fades out a waveform over some samples. */
-void fadeout(std::vector<float> &waveform, int nsamples);
+void fadeout(std::vector<float>::iterator start, int nsamples);
 
 /** Decodes a little-endian PCM-16 buffer into a waveform. */
 void decodePcm16(char *buffer, int buflen, std::vector<float> &target);

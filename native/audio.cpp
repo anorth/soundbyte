@@ -102,6 +102,8 @@ void buildWaveform(vector<bool> &chip, float base, float channelSpacing, int nsa
     }
   }
   sinewaves(freqs, nsamples, target);
+  fadein(target.end() - nsamples, nsamples / 10);
+  fadeout(target.end() - nsamples/10, nsamples / 10);
 }
 
 void window(vector<float> &waveform) {
@@ -111,17 +113,17 @@ void window(vector<float> &waveform) {
   }
 }
 
-void fadein(vector<float> &waveform, int nsamples) {
-  assert(nsamples <= waveform.size());
+void fadein(vector<float>::iterator it, int nsamples) {
   for (int i = 0; i < nsamples; ++i) {
-    waveform[i] *= ((float)i) / nsamples;
+    *it *= ((float)i) / nsamples;
+    it++;
   }
 }
 
-void fadeout(vector<float> &waveform, int nsamples) {
-  assert(nsamples <= waveform.size());
-  for (int i = waveform.size() - nsamples; i < waveform.size(); ++i) {
-    waveform[i] *= (waveform.size() - i) / (float)nsamples;
+void fadeout(vector<float>::iterator it, int nsamples) {
+  for (int i = 0; i < nsamples; ++i) {
+    *it *= (nsamples - (float)i) / nsamples;
+    it++;
   }
 }
 

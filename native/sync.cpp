@@ -78,6 +78,8 @@ void Sync::createSyncCycles(int chipsPerPulse, int cycles, vector<float> &target
   }
 
   normalize(target.end() - n, target.end());
+  fadein(target.end() - n, cfg->chipSize / 20);
+  fadeout(target.end() - cfg->chipSize / 20, cfg->chipSize / 20);
 }
 
 void Sync::generateSync(vector<float> &target) {
