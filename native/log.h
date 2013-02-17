@@ -4,12 +4,19 @@
 #include <cstdarg>
 
 typedef enum {
-    LOG_VERBOSE = 0,
-    LOG_DEBUG,
-    LOG_INFO,
-    LOG_WARN,
-    LOG_ERROR,
+  // See android/log.h
+  LOG_UNKNOWN = 0,
+  LOG_DEFAULT,
+  LOG_VERBOSE,
+  LOG_DEBUG,
+  LOG_INFO,
+  LOG_WARN,
+  LOG_ERROR,
+  LOG_FATAL,
+  LOG_SILENT,
 } LOG_PRIORITY;
+
+
 
 void setPriority(LOG_PRIORITY pri);
 
