@@ -36,7 +36,7 @@ class AudioPlayer extends Thread {
         Log.i(TAG, "New audio tracker initialised " + tracker.getPlayState());
         tracker.play();
         while (!stopped) {
-          Log.v(TAG, "Awaiting buffer, state " + tracker.getPlayState());
+          //Log.v(TAG, "Awaiting buffer, state " + tracker.getPlayState());
           byte[] buffer = engine.audioAvailable() ? receiveBuffer() : null;
           // Note: bytes represent shorts, little-endian
           if (buffer != null && buffer.length > 0) {

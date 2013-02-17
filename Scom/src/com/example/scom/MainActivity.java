@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -36,8 +37,12 @@ public class MainActivity extends Activity {
 
   private boolean isForeground = false;
   private TextView statusLabel = null;
-  private EditText dataText = null;
-  private Button sendButton = null;
+//  private EditText dataText = null;
+//  private Button sendButton = null;
+  
+
+  private String TWITTER = "com.twitter.android";
+
   
   private Charset UTF8 = Charset.forName("UTF-8");
   private String defaultText = "";
@@ -45,6 +50,8 @@ public class MainActivity extends Activity {
   
   // TODO: fix .au
   private static final String MAPS_PREFIX = "http://m.google.com.au/u/m/";
+  private static final String PLAY_PREFIX = "https://play.google.com/store/apps/details?id=";
+
   
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -64,7 +71,14 @@ public class MainActivity extends Activity {
           String[] bits = data.split("\n");
           defaultText = bits[0]; // by default
           for (String bit : bits) {
-            if (bit.startsWith(MAPS_PREFIX)) {
+            if (bit.startsWith(PLAY_PREFIX)) {
+              String app = bit.substring(PLAY_PREFIX.length());
+              if (app.equals(TWITTER)) {
+                app = "twit";
+              }
+              defaultText = "P:" + app;
+                
+            } else if (bit.startsWith(MAPS_PREFIX)) {
               defaultText = "M:" + bit.substring(MAPS_PREFIX.length());
             } else if (bit.startsWith("http://")) {
               defaultText = bit;
@@ -80,9 +94,11 @@ public class MainActivity extends Activity {
     }
     setContentView(R.layout.activity_main);
     statusLabel = (TextView) findViewById(R.id.statusLabel);
-    dataText = (EditText) findViewById(R.id.dataText);
-    sendButton = (Button) findViewById(R.id.sendButton);
+//    dataText = (EditText) findViewById(R.id.dataText);
+//    sendButton = (Button) findViewById(R.id.sendButton);
     bus.register(this);
+    
+    statusLabel.setTextColor(Color.WHITE);
   }
 
   @Override
@@ -108,13 +124,13 @@ public class MainActivity extends Activity {
     isForeground = true;
     
     statusLabel.setText("Waiting...");
-    dataText.setText(defaultText);
-  
-    sendButton.setOnClickListener(new OnClickListener() {
-      @Override public void onClick(View arg) {
-        doSend();
-      }
-    });
+//    dataText.setText(defaultText);
+//  
+//    sendButton.setOnClickListener(new OnClickListener() {
+//      @Override public void onClick(View arg) {
+//        doSend();
+//      }
+//    });
     
     if (!defaultText.isEmpty()) {
       doSend();
@@ -124,15 +140,16 @@ public class MainActivity extends Activity {
   private void doSend() {
     sending = !sending;
     if (sending) {
-      String data = dataText.getText().toString();
+//      String data = dataText.getText().toString();
+      String data = defaultText;
       statusLabel.setText("Sending..."); // + data);
       Log.e(TAG, "Will send: " + data);
       engine.receiveMessage(data.getBytes(UTF8));
-      sendButton.setText("Stop");
+//      sendButton.setText("Stop");
     } else {
       engine.receiveMessage(null);
       Log.e(TAG, "Stop sending.");
-      sendButton.setText("Send");
+//      sendButton.setText("Send");
     }
   }
 
@@ -203,6 +220,15 @@ public class MainActivity extends Activity {
         if (tokens[0].equals("http")) { // for backwards compatibility
           i = new Intent(Intent.ACTION_VIEW);
           i.setData(Uri.parse(e.msg));
+        } else if (tokens[0].equals("P")) {
+          String app = tokens[1];
+          if (app.equals("twit")) {
+            app = TWITTER;
+          }
+          // Specific minified maps share url
+          i = new Intent(Intent.ACTION_VIEW);
+          //i.setClassName("com.google.android.apps.maps", "com.google.android.maps.MapsActivity");
+          i.setData(Uri.parse(PLAY_PREFIX + app));
         } else if (tokens[0].equals("M")) {
           // Specific minified maps share url
           i = new Intent(Intent.ACTION_VIEW);

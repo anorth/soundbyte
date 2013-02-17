@@ -20,15 +20,21 @@ public class NativeEngine implements Engine {
   private volatile ByteBuffer waveform = null;
   private volatile long lastSent = 0;
   
+
   private volatile int progress;
 
   public NativeEngine() {
     jni = new Jni();
     jni.init(
         18000, //base
-        200,    //rate
+        50,    //rate
         2,     //spacing 
-        4      //channels
+        8      //channels
+        
+//        18000, //base
+//        200,    //rate
+//        2,     //spacing 
+//        4      //channels
         );
   }
   
@@ -68,7 +74,7 @@ public class NativeEngine implements Engine {
     if (waveform == null) return 0;
     waveform.rewind();
     return Math.max(0,
-        lastSent + 250 // leave a 250ms gap 
+        lastSent + 50 // leave a 50ms gap 
         + (waveform.remaining() * 1000 / Constants.SAMPLE_RATE)
         - System.currentTimeMillis());
   }
