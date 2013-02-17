@@ -58,7 +58,7 @@ public class MainActivity extends Activity {
       if (extras.containsKey(key)) {
         try {
           String data = extras.getString(key);
-          Log.e(TAG, "HERE IS THE SHIT" + defaultText);
+          Log.e(TAG, "Raw intent data: " + defaultText);
           String[] bits = data.split("\n");
           defaultText = bits[0]; // by default
           for (String bit : bits) {
@@ -96,10 +96,10 @@ public class MainActivity extends Activity {
     engine = new NativeEngine();
 //    engine = new TetheredEngine(DECODER_PORT, bus);
     engine.start();
-    audioIn = new AudioListener(engine);
-    audioIn.start();
     audioOut = new AudioPlayer(engine);
     audioOut.start();
+    audioIn = new AudioListener(engine, audioOut);
+    audioIn.start();
     dataProcessor = new DataProcessor(engine, bus);
     dataProcessor.start();
     getWindow().getDecorView().getRootView().setKeepScreenOn(true);

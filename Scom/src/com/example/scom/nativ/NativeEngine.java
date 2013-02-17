@@ -21,7 +21,7 @@ public class NativeEngine implements Engine {
   public NativeEngine() {
     jni = new Jni();
     jni.init(
-        14000, //base
+        16000, //base
         50,    //rate
         2,     //spacing 
         8      //channels

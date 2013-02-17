@@ -14,11 +14,13 @@ class AudioListener extends Thread {
   private static final String TAG = "AudioIn";
   
   private final Engine engine;
+  private final AudioPlayer player; // hack
   
   private volatile boolean stopped = false;
   
-  AudioListener(Engine engine) {
+  AudioListener(Engine engine, AudioPlayer player) {
     this.engine = engine;
+    this.player = player;
   }
  
   @Override
@@ -48,6 +50,14 @@ class AudioListener extends Thread {
 //          Log.v(TAG, "Awaiting buffer, recording state " + recorder.getRecordingState());
           // Note: bytes represent shorts, little-endian
           int bytesRead = recorder.read(buffer, buffer.capacity());
+          
+          // hack: silence incoming audio if sending.
+          if (player.isSending()) {
+            buffer.rewind();
+            buffer.put(new byte[bytesRead]);
+            //Log.d(TAG, "Zeroing receive buffer due to concurrent send");
+          }
+              
           if (bytesRead > 0) {
 //            Log.v(TAG, "Received audio buffer of " + (bytesRead / Constants.BYTES_PER_SAMPLE) + " samples");
             buffer.rewind();

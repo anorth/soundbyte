@@ -16,6 +16,8 @@ class AudioPlayer extends Thread {
   private final Engine engine;
   
   private volatile boolean stopped = false;
+  private volatile boolean isWriting = false;
+  private volatile long sendFinishAt = -1;
   
   AudioPlayer(Engine engine) {
     this.engine = engine;
@@ -38,8 +40,17 @@ class AudioPlayer extends Thread {
           byte[] buffer = receiveBuffer();
           // Note: bytes represent shorts, little-endian
           if (buffer.length > 0) {
-            Log.v(TAG, "Received audio buffer of " + (buffer.length / Constants.BYTES_PER_SAMPLE) + " samples");
-            tracker.write(buffer, 0, buffer.length);
+            int samples = buffer.length / Constants.BYTES_PER_SAMPLE;
+            Log.v(TAG, "Received audio buffer of " + samples + " samples");
+            int sendMillis = (samples * 1000 / Constants.SAMPLE_RATE);
+            isWriting = true;
+            try {
+              Log.i(TAG, "Sending");
+              tracker.write(buffer, 0, buffer.length);
+              sendFinishAt = System.currentTimeMillis() + sendMillis;
+            } finally {
+              isWriting = false;
+            }
           } else {
 //            Log.v(TAG, "receiveBuffer returned empty buffer");
             Thread.sleep(500);
@@ -63,6 +74,17 @@ class AudioPlayer extends Thread {
         tracker = null;
       }
     }
+  }
+  
+  public boolean isSending() {
+    if (isWriting) {
+      return true;
+    }
+    
+    // TODO: get some event when sending actually finished instead?
+    long now = System.currentTimeMillis();
+    boolean isSending = sendFinishAt >= now;
+    return isSending;
   }
 
   private byte[] receiveBuffer() {
