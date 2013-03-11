@@ -38,8 +38,8 @@ public:
 
 private:
   int bufferStart();
-  void copyBucketVals(Spectrum &spectrum, int numChipsInSample, std::complex<float> *out);
-  float detectMatch(std::complex<float> *bucketVals);
+  void copyBucketVals(Spectrum &spectrum, int numChipsInSample, std::vector<std::complex<float> > &out);
+  float detectMatch(std::vector<std::complex<float> > &bucketVals);
   int getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
       float *misalignmentOut);
   void createSyncCycles(int chipsPerPulse, int cycles, std::vector<float> &target);

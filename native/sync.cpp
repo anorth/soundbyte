@@ -117,7 +117,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
   while (buffer.size() >= bufferStart() + pulseSamples + cfg->chipSize) {
    //// Direct version, faster for numChannels less than about 24ish
     int numChans = cfg->numChannels;
-    complex<float> bucketVals[numChans];
+    vector<complex<float> > bucketVals(numChans);
     assert (buffer.size() > bufferStart() + cfg->chipSize);
     for (int c = 0; c < numChans; c++) {
       bucketVals[c] = 0;
@@ -199,7 +199,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
         Spectrum spectrum(
           buffer.data() + readySignalStart + (int)(samplesPerMetaSample*i),
           SAMPLE_RATE, cfg->chipSize);
-        complex<float> bucketVals[cfg->numChannels];
+        vector<complex<float> > bucketVals(cfg->numChannels);
 
         copyBucketVals(spectrum, 1, bucketVals);
         readyBuffer[i] = detectMatch(bucketVals);
@@ -351,7 +351,7 @@ int Sync::bufferStart() {
 
 
 const float HALF_PI = 1.57079632679f;
-float Sync::detectMatch(complex<float> *bucketVals) {
+float Sync::detectMatch(vector<complex<float> > &bucketVals) {
   // Computes dot-product of normalized bucketVals with normalized bit pattern.
 
   float bucketSum = 0.0;
@@ -405,7 +405,7 @@ float Sync::detectMatch(complex<float> *bucketVals) {
   return result;
 }
 
-void Sync::copyBucketVals(Spectrum &spectrum, int numChipsInSample, complex<float> *out) {
+void Sync::copyBucketVals(Spectrum &spectrum, int numChipsInSample, vector<complex<float> > &out) {
   for (int i = 0; i < cfg->numChannels; i++) {
     out[i] = spectrum.at(
         numChipsInSample * (cfg->baseBucket + (i * cfg->channelSpacing)));
