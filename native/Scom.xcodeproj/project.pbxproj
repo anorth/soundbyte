@@ -17,18 +17,17 @@
 		FA49106F16ED573A005477E3 /* sender.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49105F16ED573A005477E3 /* sender.cpp */; };
 		FA49107016ED573A005477E3 /* spectrum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49106116ED573A005477E3 /* spectrum.cpp */; };
 		FA49107116ED573A005477E3 /* sync.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49106316ED573A005477E3 /* sync.cpp */; };
-		FA49107216ED573A005477E3 /* test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49106516ED573A005477E3 /* test.cpp */; };
 		FA49107316ED573A005477E3 /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49106616ED573A005477E3 /* util.cpp */; };
 		FA49107D16ED5AE4005477E3 /* decode_rs_int.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49107616ED5AE4005477E3 /* decode_rs_int.c */; };
 		FA49107F16ED5AE4005477E3 /* encode_rs_int.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49107816ED5AE4005477E3 /* encode_rs_int.c */; };
 		FA49108116ED5AE4005477E3 /* init_rs_int.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49107A16ED5AE4005477E3 /* init_rs_int.c */; };
 		FA49108916ED5BD5005477E3 /* kiss_fft.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49108516ED5BD5005477E3 /* kiss_fft.c */; };
-		FA49109516ED5C3A005477E3 /* fftutil.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49108B16ED5C3A005477E3 /* fftutil.c */; };
 		FA49109616ED5C3A005477E3 /* kfc.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49108C16ED5C3A005477E3 /* kfc.c */; };
 		FA49109716ED5C3A005477E3 /* kiss_fastfir.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49108E16ED5C3A005477E3 /* kiss_fastfir.c */; };
 		FA49109816ED5C3A005477E3 /* kiss_fftnd.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49108F16ED5C3A005477E3 /* kiss_fftnd.c */; };
 		FA49109916ED5C3A005477E3 /* kiss_fftndr.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49109116ED5C3A005477E3 /* kiss_fftndr.c */; };
 		FA49109A16ED5C3A005477E3 /* kiss_fftr.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49109316ED5C3A005477E3 /* kiss_fftr.c */; };
+		FA77B64E170F8394003EFF19 /* scom.h in Headers */ = {isa = PBXBuildFile; fileRef = FA49105E16ED573A005477E3 /* scom.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -69,7 +68,6 @@
 		FA49106216ED573A005477E3 /* spectrum.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = spectrum.h; sourceTree = "<group>"; };
 		FA49106316ED573A005477E3 /* sync.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sync.cpp; sourceTree = "<group>"; };
 		FA49106416ED573A005477E3 /* sync.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sync.h; sourceTree = "<group>"; };
-		FA49106516ED573A005477E3 /* test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test.cpp; sourceTree = "<group>"; };
 		FA49106616ED573A005477E3 /* util.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = util.cpp; sourceTree = "<group>"; };
 		FA49106716ED573A005477E3 /* util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = util.h; sourceTree = "<group>"; };
 		FA49107616ED5AE4005477E3 /* decode_rs_int.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = decode_rs_int.c; path = third_party/rs/decode_rs_int.c; sourceTree = "<group>"; };
@@ -80,7 +78,6 @@
 		FA49108516ED5BD5005477E3 /* kiss_fft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = kiss_fft.c; path = third_party/kiss_fft130/kiss_fft.c; sourceTree = "<group>"; };
 		FA49108616ED5BD5005477E3 /* kiss_fft.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kiss_fft.h; path = third_party/kiss_fft130/kiss_fft.h; sourceTree = "<group>"; };
 		FA49108816ED5BD5005477E3 /* kissfft.hh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = kissfft.hh; path = third_party/kiss_fft130/kissfft.hh; sourceTree = "<group>"; };
-		FA49108B16ED5C3A005477E3 /* fftutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = fftutil.c; path = third_party/kiss_fft130/tools/fftutil.c; sourceTree = "<group>"; };
 		FA49108C16ED5C3A005477E3 /* kfc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = kfc.c; path = third_party/kiss_fft130/tools/kfc.c; sourceTree = "<group>"; };
 		FA49108D16ED5C3A005477E3 /* kfc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = kfc.h; path = third_party/kiss_fft130/tools/kfc.h; sourceTree = "<group>"; };
 		FA49108E16ED5C3A005477E3 /* kiss_fastfir.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = kiss_fastfir.c; path = third_party/kiss_fft130/tools/kiss_fastfir.c; sourceTree = "<group>"; };
@@ -148,7 +145,6 @@
 				FA49106216ED573A005477E3 /* spectrum.h */,
 				FA49106316ED573A005477E3 /* sync.cpp */,
 				FA49106416ED573A005477E3 /* sync.h */,
-				FA49106516ED573A005477E3 /* test.cpp */,
 				FA49106616ED573A005477E3 /* util.cpp */,
 				FA49106716ED573A005477E3 /* util.h */,
 			);
@@ -178,7 +174,6 @@
 		FA49108316ED5BB9005477E3 /* Kiss FFT */ = {
 			isa = PBXGroup;
 			children = (
-				FA49108B16ED5C3A005477E3 /* fftutil.c */,
 				FA49108C16ED5C3A005477E3 /* kfc.c */,
 				FA49108D16ED5C3A005477E3 /* kfc.h */,
 				FA49108E16ED5C3A005477E3 /* kiss_fastfir.c */,
@@ -198,6 +193,17 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXHeadersBuildPhase section */
+		FA77B64D170F8382003EFF19 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA77B64E170F8394003EFF19 /* scom.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
 /* Begin PBXNativeTarget section */
 		FA49103A16ED5520005477E3 /* Scom */ = {
 			isa = PBXNativeTarget;
@@ -206,6 +212,7 @@
 				FA49103716ED5520005477E3 /* Sources */,
 				FA49103816ED5520005477E3 /* Frameworks */,
 				FA49103916ED5520005477E3 /* CopyFiles */,
+				FA77B64D170F8382003EFF19 /* Headers */,
 			);
 			buildRules = (
 			);
@@ -257,13 +264,11 @@
 				FA49106F16ED573A005477E3 /* sender.cpp in Sources */,
 				FA49107016ED573A005477E3 /* spectrum.cpp in Sources */,
 				FA49107116ED573A005477E3 /* sync.cpp in Sources */,
-				FA49107216ED573A005477E3 /* test.cpp in Sources */,
 				FA49107316ED573A005477E3 /* util.cpp in Sources */,
 				FA49107D16ED5AE4005477E3 /* decode_rs_int.c in Sources */,
 				FA49107F16ED5AE4005477E3 /* encode_rs_int.c in Sources */,
 				FA49108116ED5AE4005477E3 /* init_rs_int.c in Sources */,
 				FA49108916ED5BD5005477E3 /* kiss_fft.c in Sources */,
-				FA49109516ED5C3A005477E3 /* fftutil.c in Sources */,
 				FA49109616ED5C3A005477E3 /* kfc.c in Sources */,
 				FA49109716ED5C3A005477E3 /* kiss_fastfir.c in Sources */,
 				FA49109816ED5C3A005477E3 /* kiss_fftnd.c in Sources */,
@@ -335,8 +340,10 @@
 				GCC_LINK_WITH_DYNAMIC_LIBRARIES = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "";
+				GENERATE_MASTER_OBJECT_FILE = NO;
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = Scom;
+				PUBLIC_HEADERS_FOLDER_PATH = "include/$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
 			name = Debug;
@@ -350,8 +357,10 @@
 				GCC_LINK_WITH_DYNAMIC_LIBRARIES = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "";
+				GENERATE_MASTER_OBJECT_FILE = NO;
 				OTHER_LDFLAGS = "";
 				PRODUCT_NAME = Scom;
+				PUBLIC_HEADERS_FOLDER_PATH = "include/$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
 			name = Release;

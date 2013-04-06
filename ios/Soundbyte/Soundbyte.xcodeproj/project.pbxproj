@@ -1,0 +1,391 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		FA77B612170F77A6003EFF19 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B611170F77A6003EFF19 /* UIKit.framework */; };
+		FA77B614170F77A6003EFF19 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B613170F77A6003EFF19 /* Foundation.framework */; };
+		FA77B616170F77A6003EFF19 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B615170F77A6003EFF19 /* CoreGraphics.framework */; };
+		FA77B61C170F77A6003EFF19 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = FA77B61A170F77A6003EFF19 /* InfoPlist.strings */; };
+		FA77B61E170F77A6003EFF19 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = FA77B61D170F77A6003EFF19 /* main.m */; };
+		FA77B622170F77A6003EFF19 /* SBTAppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = FA77B621170F77A6003EFF19 /* SBTAppDelegate.mm */; };
+		FA77B624170F77A6003EFF19 /* Default.png in Resources */ = {isa = PBXBuildFile; fileRef = FA77B623170F77A6003EFF19 /* Default.png */; };
+		FA77B626170F77A6003EFF19 /* Default@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = FA77B625170F77A6003EFF19 /* Default@2x.png */; };
+		FA77B628170F77A6003EFF19 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = FA77B627170F77A6003EFF19 /* Default-568h@2x.png */; };
+		FA77B62B170F77A6003EFF19 /* MainStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FA77B629170F77A6003EFF19 /* MainStoryboard.storyboard */; };
+		FA77B62E170F77A6003EFF19 /* SBTViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = FA77B62D170F77A6003EFF19 /* SBTViewController.m */; };
+		FA77B646170F7A7D003EFF19 /* libScom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B645170F7A5A003EFF19 /* libScom.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FA77B644170F7A5A003EFF19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA77B640170F7A5A003EFF19 /* Scom.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = FA49103B16ED5520005477E3;
+			remoteInfo = Scom;
+		};
+		FA77B648170F7D83003EFF19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA77B640170F7A5A003EFF19 /* Scom.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = FA49103A16ED5520005477E3;
+			remoteInfo = Scom;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		FA77B60E170F77A6003EFF19 /* Soundbyte.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Soundbyte.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA77B611170F77A6003EFF19 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		FA77B613170F77A6003EFF19 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		FA77B615170F77A6003EFF19 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		FA77B619170F77A6003EFF19 /* Soundbyte-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Soundbyte-Info.plist"; sourceTree = "<group>"; };
+		FA77B61B170F77A6003EFF19 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		FA77B61D170F77A6003EFF19 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		FA77B61F170F77A6003EFF19 /* Soundbyte-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Soundbyte-Prefix.pch"; sourceTree = "<group>"; };
+		FA77B620170F77A6003EFF19 /* SBTAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SBTAppDelegate.h; sourceTree = "<group>"; };
+		FA77B621170F77A6003EFF19 /* SBTAppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SBTAppDelegate.mm; sourceTree = "<group>"; };
+		FA77B623170F77A6003EFF19 /* Default.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Default.png; sourceTree = "<group>"; };
+		FA77B625170F77A6003EFF19 /* Default@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default@2x.png"; sourceTree = "<group>"; };
+		FA77B627170F77A6003EFF19 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
+		FA77B62A170F77A6003EFF19 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/MainStoryboard.storyboard; sourceTree = "<group>"; };
+		FA77B62C170F77A6003EFF19 /* SBTViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SBTViewController.h; sourceTree = "<group>"; };
+		FA77B62D170F77A6003EFF19 /* SBTViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SBTViewController.m; sourceTree = "<group>"; };
+		FA77B640170F7A5A003EFF19 /* Scom.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Scom.xcodeproj; path = ../../native/Scom.xcodeproj; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FA77B60B170F77A6003EFF19 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA77B646170F7A7D003EFF19 /* libScom.a in Frameworks */,
+				FA77B612170F77A6003EFF19 /* UIKit.framework in Frameworks */,
+				FA77B614170F77A6003EFF19 /* Foundation.framework in Frameworks */,
+				FA77B616170F77A6003EFF19 /* CoreGraphics.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		FA77B605170F77A6003EFF19 = {
+			isa = PBXGroup;
+			children = (
+				FA77B617170F77A6003EFF19 /* Soundbyte */,
+				FA77B610170F77A6003EFF19 /* Frameworks */,
+				FA77B60F170F77A6003EFF19 /* Products */,
+				FA77B640170F7A5A003EFF19 /* Scom.xcodeproj */,
+			);
+			sourceTree = "<group>";
+		};
+		FA77B60F170F77A6003EFF19 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FA77B60E170F77A6003EFF19 /* Soundbyte.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FA77B610170F77A6003EFF19 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FA77B611170F77A6003EFF19 /* UIKit.framework */,
+				FA77B613170F77A6003EFF19 /* Foundation.framework */,
+				FA77B615170F77A6003EFF19 /* CoreGraphics.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		FA77B617170F77A6003EFF19 /* Soundbyte */ = {
+			isa = PBXGroup;
+			children = (
+				FA77B620170F77A6003EFF19 /* SBTAppDelegate.h */,
+				FA77B621170F77A6003EFF19 /* SBTAppDelegate.mm */,
+				FA77B629170F77A6003EFF19 /* MainStoryboard.storyboard */,
+				FA77B62C170F77A6003EFF19 /* SBTViewController.h */,
+				FA77B62D170F77A6003EFF19 /* SBTViewController.m */,
+				FA77B618170F77A6003EFF19 /* Supporting Files */,
+			);
+			path = Soundbyte;
+			sourceTree = "<group>";
+		};
+		FA77B618170F77A6003EFF19 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				FA77B619170F77A6003EFF19 /* Soundbyte-Info.plist */,
+				FA77B61A170F77A6003EFF19 /* InfoPlist.strings */,
+				FA77B61D170F77A6003EFF19 /* main.m */,
+				FA77B61F170F77A6003EFF19 /* Soundbyte-Prefix.pch */,
+				FA77B623170F77A6003EFF19 /* Default.png */,
+				FA77B625170F77A6003EFF19 /* Default@2x.png */,
+				FA77B627170F77A6003EFF19 /* Default-568h@2x.png */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		FA77B641170F7A5A003EFF19 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FA77B645170F7A5A003EFF19 /* libScom.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FA77B60D170F77A6003EFF19 /* Soundbyte */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FA77B631170F77A6003EFF19 /* Build configuration list for PBXNativeTarget "Soundbyte" */;
+			buildPhases = (
+				FA77B60A170F77A6003EFF19 /* Sources */,
+				FA77B60B170F77A6003EFF19 /* Frameworks */,
+				FA77B60C170F77A6003EFF19 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FA77B649170F7D83003EFF19 /* PBXTargetDependency */,
+			);
+			name = Soundbyte;
+			productName = Soundbyte;
+			productReference = FA77B60E170F77A6003EFF19 /* Soundbyte.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FA77B606170F77A6003EFF19 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				CLASSPREFIX = SBT;
+				LastUpgradeCheck = 0460;
+				ORGANIZATIONNAME = Soundbyte;
+			};
+			buildConfigurationList = FA77B609170F77A6003EFF19 /* Build configuration list for PBXProject "Soundbyte" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = FA77B605170F77A6003EFF19;
+			productRefGroup = FA77B60F170F77A6003EFF19 /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = FA77B641170F7A5A003EFF19 /* Products */;
+					ProjectRef = FA77B640170F7A5A003EFF19 /* Scom.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				FA77B60D170F77A6003EFF19 /* Soundbyte */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		FA77B645170F7A5A003EFF19 /* libScom.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libScom.a;
+			remoteRef = FA77B644170F7A5A003EFF19 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXResourcesBuildPhase section */
+		FA77B60C170F77A6003EFF19 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA77B61C170F77A6003EFF19 /* InfoPlist.strings in Resources */,
+				FA77B624170F77A6003EFF19 /* Default.png in Resources */,
+				FA77B626170F77A6003EFF19 /* Default@2x.png in Resources */,
+				FA77B628170F77A6003EFF19 /* Default-568h@2x.png in Resources */,
+				FA77B62B170F77A6003EFF19 /* MainStoryboard.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FA77B60A170F77A6003EFF19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA77B61E170F77A6003EFF19 /* main.m in Sources */,
+				FA77B622170F77A6003EFF19 /* SBTAppDelegate.mm in Sources */,
+				FA77B62E170F77A6003EFF19 /* SBTViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		FA77B649170F7D83003EFF19 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Scom;
+			targetProxy = FA77B648170F7D83003EFF19 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		FA77B61A170F77A6003EFF19 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				FA77B61B170F77A6003EFF19 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		FA77B629170F77A6003EFF19 /* MainStoryboard.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				FA77B62A170F77A6003EFF19 /* en */,
+			);
+			name = MainStoryboard.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		FA77B62F170F77A6003EFF19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		FA77B630170F77A6003EFF19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 2;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FA77B632170F77A6003EFF19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++98";
+				CLANG_CXX_LIBRARY = "libstdc++";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Soundbyte/Soundbyte-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"”$(TARGET_BUILD_DIR)/usr/local/lib/include”",
+					"”$(OBJROOT)/UninstalledProducts/include”",
+				);
+				INFOPLIST_FILE = "Soundbyte/Soundbyte-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				OTHER_LDFLAGS = (
+					"-all_load",
+					"-ObjC",
+					"-read_only_relocs",
+					suppress,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 1;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		FA77B633170F77A6003EFF19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++98";
+				CLANG_CXX_LIBRARY = "libstdc++";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Soundbyte/Soundbyte-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"”$(TARGET_BUILD_DIR)/usr/local/lib/include”",
+					"”$(OBJROOT)/UninstalledProducts/include”",
+				);
+				INFOPLIST_FILE = "Soundbyte/Soundbyte-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				OTHER_LDFLAGS = (
+					"-all_load",
+					"-ObjC",
+					"-read_only_relocs",
+					suppress,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = 1;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FA77B609170F77A6003EFF19 /* Build configuration list for PBXProject "Soundbyte" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA77B62F170F77A6003EFF19 /* Debug */,
+				FA77B630170F77A6003EFF19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FA77B631170F77A6003EFF19 /* Build configuration list for PBXNativeTarget "Soundbyte" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA77B632170F77A6003EFF19 /* Debug */,
+				FA77B633170F77A6003EFF19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FA77B606170F77A6003EFF19 /* Project object */;
+}
