@@ -1,4 +1,4 @@
-package com.example.scom.nativ;
+package com.example.scom.core;
 
 import java.nio.ByteBuffer;
 

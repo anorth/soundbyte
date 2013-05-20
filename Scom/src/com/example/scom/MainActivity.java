@@ -15,7 +15,7 @@ import com.example.scom.Events.MessageProgress;
 import com.example.scom.Events.MessageReceived;
 import com.example.scom.Events.SocketConnected;
 import com.example.scom.Events.SocketDisconnected;
-import com.example.scom.nativ.NativeEngine;
+import com.example.scom.core.NativeEngine;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 import com.squareup.otto.ThreadEnforcer;
