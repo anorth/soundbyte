@@ -1,27 +1,34 @@
-package io.soundbyte.app;
+package io.soundbyte.support;
 
 import io.soundbyte.core.Engine;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
 
-class AudioListener extends Thread {
+/**
+ * Records audio from the Android system and provides it to the Soundbyte engine.
+ */
+public class AudioListener extends Thread {
 
   private static final int BUF_SAMPLES = 441;
   private static final int N_BUFS = 100;
   private static final String TAG = "AudioIn";
   
   private final Engine engine;
+  private final MessageReceiver messageReceiver;
   private final AudioPlayer player; // hack
-  
+
+  private int lastProgress = 0;
   private volatile boolean stopped = false;
   
-  AudioListener(Engine engine, AudioPlayer player) {
+  public AudioListener(Engine engine, MessageReceiver receiver, AudioPlayer player) {
     this.engine = engine;
+    this.messageReceiver = receiver;
     this.player = player;
   }
  
@@ -64,7 +71,7 @@ class AudioListener extends Thread {
 //            Log.v(TAG, "Received audio buffer of " + (bytesRead / Constants.BYTES_PER_SAMPLE) + " samples");
             buffer.rewind();
             buffer.limit(bytesRead);
-            sendBuffer(buffer);
+            processBuffer(buffer);
           } else {
             Log.e(TAG, "AudioRecord.read returned " + bytesRead);
             Thread.sleep(1000);
@@ -90,11 +97,23 @@ class AudioListener extends Thread {
     }
   }
 
-  private void sendBuffer(ByteBuffer buffer) {
+  private void processBuffer(ByteBuffer buffer) {
     engine.receiveAudio(buffer);
+    int progress = engine.messageProgress();
+    if (progress != lastProgress) {
+      messageReceiver.receiveProgress(progress);
+      lastProgress = progress;
+    }
+    if (engine.messageAvailable()) {
+      byte[] msg = engine.takeMessage();
+      Log.i(TAG, "Received data buffer of " + msg.length + " bytes: " + Arrays.toString(msg));
+      if (messageReceiver != null && msg.length > 0) {
+        messageReceiver.receiveMessage(msg);
+      }
+    }
   }
 
-  void close() {
+  public void close() {
     stopped = true;
   }
 }

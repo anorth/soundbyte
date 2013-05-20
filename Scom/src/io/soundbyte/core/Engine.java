@@ -19,7 +19,11 @@ public interface Engine {
   /** Shuts down internals. */
   void stop();
   
-  /** Receives and (possibly synchronously) processes a message payload. */
+  /** 
+   * Receives and processes a message payload into audio data. After this method returns,
+   * {@link #audioAvailable()} indicates whether audio data is available for playing (which
+   * it always is if the payload was non-empty}.
+   */
   public void receiveMessage(byte[] payload);
   
   /** Whether audio data is available for playing. */
@@ -29,7 +33,9 @@ public interface Engine {
   public ByteBuffer takeAudio();
   
   /** 
-   * Receives and (possibly synchronously) processes a segment of audio data. 
+   * Receives and processes a segment of audio data. After this method returns,
+   * {@link #messageAvailable()} indicates whether a complete message has been decoded
+   * and is available.
    */
   void receiveAudio(ByteBuffer audio);
   

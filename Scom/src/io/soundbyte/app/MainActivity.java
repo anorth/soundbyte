@@ -1,12 +1,12 @@
 package io.soundbyte.app;
 
-import io.soundbyte.app.R;
-import io.soundbyte.app.Events.MessageProgress;
-import io.soundbyte.app.Events.MessageReceived;
 import io.soundbyte.app.Events.SocketConnected;
 import io.soundbyte.app.Events.SocketDisconnected;
 import io.soundbyte.core.Engine;
 import io.soundbyte.core.NativeEngine;
+import io.soundbyte.support.AudioListener;
+import io.soundbyte.support.AudioPlayer;
+import io.soundbyte.support.MessageReceiver;
 
 import java.nio.charset.Charset;
 
@@ -23,22 +23,18 @@ import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 import com.squareup.otto.ThreadEnforcer;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements MessageReceiver {
   private static final String TAG = "AudioServerMain";
   public static final int DECODER_PORT = 16000;
 
   private final Bus bus = new Bus(ThreadEnforcer.ANY);
 
   private Engine engine = null;
-  private AudioListener audioIn = null;
-  private AudioPlayer audioOut = null;
-  private DataProcessor dataProcessor = null;
+  private AudioListener listener = null;
+  private AudioPlayer player = null;
 
   private boolean isForeground = false;
-  private TextView statusLabel = null;
-//  private EditText dataText = null;
-//  private Button sendButton = null;
-  
+  private TextView statusLabel = null;  
 
   private String TWITTER = "com.twitter.android";
 
@@ -93,8 +89,6 @@ public class MainActivity extends Activity {
     }
     setContentView(R.layout.activity_main);
     statusLabel = (TextView) findViewById(R.id.statusLabel);
-//    dataText = (EditText) findViewById(R.id.dataText);
-//    sendButton = (Button) findViewById(R.id.sendButton);
     bus.register(this);
     
     statusLabel.setTextColor(Color.WHITE);
@@ -113,24 +107,14 @@ public class MainActivity extends Activity {
     engine = new NativeEngine();
 //    engine = new TetheredEngine(DECODER_PORT, bus);
     engine.start();
-    audioOut = new AudioPlayer(engine);
-    audioOut.start();
-    audioIn = new AudioListener(engine, audioOut);
-    audioIn.start();
-    dataProcessor = new DataProcessor(engine, bus);
-    dataProcessor.start();
+    player = new AudioPlayer(engine);
+    player.start();
+    listener = new AudioListener(engine, this, player);
+    listener.start();
     getWindow().getDecorView().getRootView().setKeepScreenOn(true);
     isForeground = true;
     
-    statusLabel.setText("Waiting...");
-//    dataText.setText(defaultText);
-//  
-//    sendButton.setOnClickListener(new OnClickListener() {
-//      @Override public void onClick(View arg) {
-//        doSend();
-//      }
-//    });
-    
+    statusLabel.setText("Waiting...");    
     if (!defaultText.isEmpty()) {
       doSend();
     }
@@ -139,28 +123,23 @@ public class MainActivity extends Activity {
   private void doSend() {
     sending = !sending;
     if (sending) {
-//      String data = dataText.getText().toString();
       String data = defaultText;
       statusLabel.setText("Sending..."); // + data);
       Log.e(TAG, "Will send: " + data);
       engine.receiveMessage(data.getBytes(UTF8));
-//      sendButton.setText("Stop");
     } else {
       engine.receiveMessage(null);
       Log.e(TAG, "Stop sending.");
-//      sendButton.setText("Send");
     }
   }
 
   @Override
   public void onStop() {
     Log.w(TAG, "Received onStop");
-    audioIn.close();
+    listener.close();
     engine.stop();
-    dataProcessor.close();
     try {
-      audioIn.join(1000);
-      dataProcessor.join(1000);
+      listener.join(1000);
     } catch (InterruptedException e) {
       Log.e(TAG, "Interrupted waiting for threads to close");
     }
@@ -174,34 +153,15 @@ public class MainActivity extends Activity {
     super.onDestroy();
   }
 
-  @Subscribe
-  public void socketConnected(final SocketConnected e) {
+  @Override
+  public void receiveProgress(final int progress) {
     statusLabel.post(new Runnable() {
       @Override public void run() {
-        statusLabel.setText("Connected " + e.name + ". Streaming...");
-      }
-    });
-  }
-
-  @Subscribe
-  public void socketDisconnected(final SocketDisconnected e) {
-    statusLabel.post(new Runnable() {
-      @Override public void run() {
-        statusLabel.setText("Disconnected " + e.name + ". Waiting...");
-      }
-    });
-  }
-
-
-  @Subscribe
-  public void messageProgress(final MessageProgress e) {
-    statusLabel.post(new Runnable() {
-      @Override public void run() {
-        if (e.progress == 0) {
+        if (progress == 0) {
           statusLabel.setText("Listening");
         } else {
           StringBuilder s = new StringBuilder();
-          for (int i = 0; i < e.progress; i++) {
+          for (int i = 0; i < progress; i++) {
             s.append('-');
           }
           statusLabel.setText("Receiving " + s);
@@ -210,15 +170,16 @@ public class MainActivity extends Activity {
     });
   }
 
-  @Subscribe
-  public void messageReceived(final MessageReceived e) {
+  @Override
+  public void receiveMessage(byte[] messageBytes) {
+    String msg = new String(messageBytes);
     if (isForeground || true) {
-      String[] tokens = e.msg.split(":", 2);
+      String[] tokens = msg.split(":", 2);
       if (tokens.length == 2) {
          Intent i;
         if (tokens[0].equals("http")) { // for backwards compatibility
           i = new Intent(Intent.ACTION_VIEW);
-          i.setData(Uri.parse(e.msg));
+          i.setData(Uri.parse(msg));
         } else if (tokens[0].equals("P")) {
           String app = tokens[1];
           if (app.equals("twit")) {
@@ -245,7 +206,7 @@ public class MainActivity extends Activity {
           i = new Intent(Intent.ACTION_VIEW);
           i.setData(Uri.parse("google.navigation:" + tokens[1]));
         } else {
-          Log.e(TAG, "Unrecognised message: " + e.msg);
+          Log.e(TAG, "Unrecognised message: " + msg);
           return;
         }
         try {
@@ -254,7 +215,24 @@ public class MainActivity extends Activity {
           Log.w(TAG, String.format("Failed to launch activity with intent %s", i), ex);
         }
       }
-      
     }
+  }
+
+  @Subscribe
+  public void socketConnected(final SocketConnected e) {
+    statusLabel.post(new Runnable() {
+      @Override public void run() {
+        statusLabel.setText("Connected " + e.name + ". Streaming...");
+      }
+    });
+  }
+
+  @Subscribe
+  public void socketDisconnected(final SocketDisconnected e) {
+    statusLabel.post(new Runnable() {
+      @Override public void run() {
+        statusLabel.setText("Disconnected " + e.name + ". Waiting...");
+      }
+    });
   }
 }

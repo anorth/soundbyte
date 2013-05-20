@@ -1,4 +1,4 @@
-package io.soundbyte.app;
+package io.soundbyte.support;
 
 import io.soundbyte.core.Engine;
 
@@ -9,7 +9,7 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.util.Log;
 
-class AudioPlayer extends Thread {
+public class AudioPlayer extends Thread {
   
   private static final String TAG = "AudioOut";
   
@@ -19,7 +19,7 @@ class AudioPlayer extends Thread {
   private volatile boolean isWriting = false;
   private volatile long sendFinishAt = -1;
   
-  AudioPlayer(Engine engine) {
+  public AudioPlayer(Engine engine) {
     this.engine = engine;
   }
   
@@ -96,7 +96,7 @@ class AudioPlayer extends Thread {
     return data;
   }
 
-  void close() {
+  public void close() {
     stopped = true;
   }
 }
