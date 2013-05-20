@@ -18,7 +18,10 @@
 		FA77B628170F77A6003EFF19 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = FA77B627170F77A6003EFF19 /* Default-568h@2x.png */; };
 		FA77B62B170F77A6003EFF19 /* MainStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FA77B629170F77A6003EFF19 /* MainStoryboard.storyboard */; };
 		FA77B62E170F77A6003EFF19 /* SBTViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = FA77B62D170F77A6003EFF19 /* SBTViewController.m */; };
-		FA77B646170F7A7D003EFF19 /* libScom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B645170F7A5A003EFF19 /* libScom.a */; };
+		FA77B646170F7A7D003EFF19 /* libScom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B645170F7A5A003EFF19 /* libScom.a */; settings = {ATTRIBUTES = (Required, ); }; };
+		FA77B653170FF768003EFF19 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B652170FF767003EFF19 /* AudioToolbox.framework */; settings = {ATTRIBUTES = (Required, ); }; };
+		FA77B657171004A5003EFF19 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B656171004A5003EFF19 /* CoreAudio.framework */; settings = {ATTRIBUTES = (Required, ); }; };
+		FA77B66117126026003EFF19 /* CAStreamBasicDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA77B65F17126026003EFF19 /* CAStreamBasicDescription.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +59,18 @@
 		FA77B62C170F77A6003EFF19 /* SBTViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SBTViewController.h; sourceTree = "<group>"; };
 		FA77B62D170F77A6003EFF19 /* SBTViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SBTViewController.m; sourceTree = "<group>"; };
 		FA77B640170F7A5A003EFF19 /* Scom.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Scom.xcodeproj; path = ../../native/Scom.xcodeproj; sourceTree = "<group>"; };
+		FA77B650170FED57003EFF19 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		FA77B652170FF767003EFF19 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		FA77B654170FFB3B003EFF19 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		FA77B656171004A5003EFF19 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		FA77B65D17126026003EFF19 /* CADebugMacros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CADebugMacros.h; path = CoreAudioUtility/PublicUtility/CADebugMacros.h; sourceTree = SOURCE_ROOT; };
+		FA77B65E17126026003EFF19 /* CAMath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAMath.h; path = CoreAudioUtility/PublicUtility/CAMath.h; sourceTree = SOURCE_ROOT; };
+		FA77B65F17126026003EFF19 /* CAStreamBasicDescription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CAStreamBasicDescription.cpp; path = CoreAudioUtility/PublicUtility/CAStreamBasicDescription.cpp; sourceTree = SOURCE_ROOT; };
+		FA77B66017126026003EFF19 /* CAStreamBasicDescription.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CAStreamBasicDescription.h; path = CoreAudioUtility/PublicUtility/CAStreamBasicDescription.h; sourceTree = SOURCE_ROOT; };
+		FA77B66217126068003EFF19 /* CADebugPrintf.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = CADebugPrintf.cpp; path = CoreAudioUtility/PublicUtility/CADebugPrintf.cpp; sourceTree = SOURCE_ROOT; };
+		FA77B66317126068003EFF19 /* CADebugPrintf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CADebugPrintf.h; path = CoreAudioUtility/PublicUtility/CADebugPrintf.h; sourceTree = SOURCE_ROOT; };
+		FA77B664171261AB003EFF19 /* CAXException.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = CAXException.cpp; path = CoreAudioUtility/PublicUtility/CAXException.cpp; sourceTree = SOURCE_ROOT; };
+		FA77B665171261AB003EFF19 /* CAXException.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CAXException.h; path = CoreAudioUtility/PublicUtility/CAXException.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,10 +78,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FA77B646170F7A7D003EFF19 /* libScom.a in Frameworks */,
 				FA77B612170F77A6003EFF19 /* UIKit.framework in Frameworks */,
 				FA77B614170F77A6003EFF19 /* Foundation.framework in Frameworks */,
+				FA77B657171004A5003EFF19 /* CoreAudio.framework in Frameworks */,
 				FA77B616170F77A6003EFF19 /* CoreGraphics.framework in Frameworks */,
+				FA77B653170FF768003EFF19 /* AudioToolbox.framework in Frameworks */,
+				FA77B646170F7A7D003EFF19 /* libScom.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -76,6 +93,10 @@
 		FA77B605170F77A6003EFF19 = {
 			isa = PBXGroup;
 			children = (
+				FA77B656171004A5003EFF19 /* CoreAudio.framework */,
+				FA77B654170FFB3B003EFF19 /* AudioUnit.framework */,
+				FA77B652170FF767003EFF19 /* AudioToolbox.framework */,
+				FA77B650170FED57003EFF19 /* AVFoundation.framework */,
 				FA77B617170F77A6003EFF19 /* Soundbyte */,
 				FA77B610170F77A6003EFF19 /* Frameworks */,
 				FA77B60F170F77A6003EFF19 /* Products */,
@@ -104,12 +125,13 @@
 		FA77B617170F77A6003EFF19 /* Soundbyte */ = {
 			isa = PBXGroup;
 			children = (
+				FA77B65817125E57003EFF19 /* CoreAudioUtility */,
+				FA77B618170F77A6003EFF19 /* Supporting Files */,
 				FA77B620170F77A6003EFF19 /* SBTAppDelegate.h */,
 				FA77B621170F77A6003EFF19 /* SBTAppDelegate.mm */,
-				FA77B629170F77A6003EFF19 /* MainStoryboard.storyboard */,
 				FA77B62C170F77A6003EFF19 /* SBTViewController.h */,
 				FA77B62D170F77A6003EFF19 /* SBTViewController.m */,
-				FA77B618170F77A6003EFF19 /* Supporting Files */,
+				FA77B629170F77A6003EFF19 /* MainStoryboard.storyboard */,
 			);
 			path = Soundbyte;
 			sourceTree = "<group>";
@@ -134,6 +156,29 @@
 				FA77B645170F7A5A003EFF19 /* libScom.a */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FA77B65817125E57003EFF19 /* CoreAudioUtility */ = {
+			isa = PBXGroup;
+			children = (
+				FA77B65917125E61003EFF19 /* PublicUtility */,
+			);
+			name = CoreAudioUtility;
+			sourceTree = "<group>";
+		};
+		FA77B65917125E61003EFF19 /* PublicUtility */ = {
+			isa = PBXGroup;
+			children = (
+				FA77B66217126068003EFF19 /* CADebugPrintf.cpp */,
+				FA77B66317126068003EFF19 /* CADebugPrintf.h */,
+				FA77B65D17126026003EFF19 /* CADebugMacros.h */,
+				FA77B65E17126026003EFF19 /* CAMath.h */,
+				FA77B65F17126026003EFF19 /* CAStreamBasicDescription.cpp */,
+				FA77B66017126026003EFF19 /* CAStreamBasicDescription.h */,
+				FA77B664171261AB003EFF19 /* CAXException.cpp */,
+				FA77B665171261AB003EFF19 /* CAXException.h */,
+			);
+			name = PublicUtility;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -223,6 +268,7 @@
 				FA77B61E170F77A6003EFF19 /* main.m in Sources */,
 				FA77B622170F77A6003EFF19 /* SBTAppDelegate.mm in Sources */,
 				FA77B62E170F77A6003EFF19 /* SBTViewController.m in Sources */,
+				FA77B66117126026003EFF19 /* CAStreamBasicDescription.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -281,7 +327,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 2;
@@ -306,7 +352,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 2;
@@ -328,10 +374,10 @@
 				INFOPLIST_FILE = "Soundbyte/Soundbyte-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				OTHER_LDFLAGS = (
-					"-all_load",
-					"-ObjC",
 					"-read_only_relocs",
 					suppress,
+					"-ObjC",
+					"-all_load",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = 1;
@@ -353,10 +399,10 @@
 				INFOPLIST_FILE = "Soundbyte/Soundbyte-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				OTHER_LDFLAGS = (
-					"-all_load",
-					"-ObjC",
 					"-read_only_relocs",
 					suppress,
+					"-ObjC",
+					"-all_load",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = 1;
