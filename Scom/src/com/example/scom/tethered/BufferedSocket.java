@@ -101,6 +101,7 @@ class BufferedSocket extends Thread {
     }
   }
 
+  @SuppressWarnings("unused")
   private void makeConnection() throws InterruptedException {
     while (true) {
       try {

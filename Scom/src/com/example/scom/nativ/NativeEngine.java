@@ -2,8 +2,6 @@ package com.example.scom.nativ;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 import android.util.Log;
 
