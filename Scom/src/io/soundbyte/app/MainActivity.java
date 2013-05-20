@@ -1,4 +1,11 @@
-package com.example.scom;
+package io.soundbyte.app;
+
+import io.soundbyte.app.R;
+import io.soundbyte.app.Events.MessageProgress;
+import io.soundbyte.app.Events.MessageReceived;
+import io.soundbyte.app.Events.SocketConnected;
+import io.soundbyte.app.Events.SocketDisconnected;
+import io.soundbyte.core.NativeEngine;
 
 import java.nio.charset.Charset;
 
@@ -11,11 +18,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.widget.TextView;
 
-import com.example.scom.Events.MessageProgress;
-import com.example.scom.Events.MessageReceived;
-import com.example.scom.Events.SocketConnected;
-import com.example.scom.Events.SocketDisconnected;
-import com.example.scom.core.NativeEngine;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 import com.squareup.otto.ThreadEnforcer;

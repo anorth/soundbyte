@@ -1,11 +1,12 @@
-package com.example.scom;
+package io.soundbyte.app;
+
+import io.soundbyte.app.Events.MessageProgress;
+import io.soundbyte.app.Events.MessageReceived;
 
 import java.util.Arrays;
 
 import android.util.Log;
 
-import com.example.scom.Events.MessageProgress;
-import com.example.scom.Events.MessageReceived;
 import com.squareup.otto.Bus;
 
 class DataProcessor extends Thread {

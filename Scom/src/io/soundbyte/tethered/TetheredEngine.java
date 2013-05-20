@@ -1,10 +1,11 @@
-package com.example.scom.tethered;
+package io.soundbyte.tethered;
+
+import io.soundbyte.app.Engine;
 
 import java.nio.ByteBuffer;
 
 import android.util.Log;
 
-import com.example.scom.Engine;
 import com.squareup.otto.Bus;
 
 public class TetheredEngine implements Engine {

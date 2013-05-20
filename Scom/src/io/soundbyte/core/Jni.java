@@ -1,4 +1,4 @@
-package com.example.scom.core;
+package io.soundbyte.core;
 
 import java.nio.ByteBuffer;
 

@@ -1,4 +1,4 @@
-package com.example.scom;
+package io.soundbyte.app;
 
 public interface Events {
   final class SocketConnected {

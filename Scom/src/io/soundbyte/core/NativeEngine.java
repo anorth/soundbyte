@@ -1,12 +1,13 @@
-package com.example.scom.core;
+package io.soundbyte.core;
+
+import io.soundbyte.app.Constants;
+import io.soundbyte.app.Engine;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import android.util.Log;
 
-import com.example.scom.Constants;
-import com.example.scom.Engine;
 
 public class NativeEngine implements Engine {
 

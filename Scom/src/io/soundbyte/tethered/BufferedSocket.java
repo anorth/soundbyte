@@ -1,4 +1,7 @@
-package com.example.scom.tethered;
+package io.soundbyte.tethered;
+
+import io.soundbyte.app.Events.SocketConnected;
+import io.soundbyte.app.Events.SocketDisconnected;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -13,8 +16,6 @@ import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
 
-import com.example.scom.Events.SocketConnected;
-import com.example.scom.Events.SocketDisconnected;
 import com.squareup.otto.Bus;
 
 class BufferedSocket extends Thread {
