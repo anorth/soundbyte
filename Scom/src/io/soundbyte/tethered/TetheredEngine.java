@@ -1,6 +1,7 @@
 package io.soundbyte.tethered;
 
-import io.soundbyte.app.Engine;
+import io.soundbyte.core.Constants;
+import io.soundbyte.core.Engine;
 
 import java.nio.ByteBuffer;
 
@@ -21,7 +22,17 @@ public class TetheredEngine implements Engine {
     decodingSocket = new BufferedSocket("decoding", port, bus);
     encodingSocket = new BufferedSocket("encoding", port + 1, bus);
   }
-  
+
+  @Override
+  public int bytesPerSample() {
+    return Constants.BYTES_PER_SAMPLE;
+  }
+
+  @Override
+  public int sampleRate() {
+    return Constants.SAMPLE_RATE;
+  }
+
   @Override
   public void start() {
     Log.i(TAG, "Tethered engine starting");

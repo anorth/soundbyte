@@ -8,12 +8,17 @@
 // Export definitions for JNI
 extern "C" {
   jstring Java_io_soundbyte_core_Jni_stringFromJNI(JNIEnv* env, jobject thiz);
+
   void Java_io_soundbyte_core_Jni_init(JNIEnv* env, jobject thiz,
-      jint base, jint chipRate, jint channelSpacing, jint numChannels);
+      jint base, jint subcarriers, jint subcarrierSpacing, jint chipRate);
+
   void Java_io_soundbyte_core_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
       jobject forWaveform);
+
   jint Java_io_soundbyte_core_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject buffer);
+
   jboolean Java_io_soundbyte_core_Jni_messageAvailable(JNIEnv *env, jobject thiz);
+
   jint Java_io_soundbyte_core_Jni_takeMessage(JNIEnv *env, jobject thiz, jbyteArray target);
 }
 
@@ -24,8 +29,8 @@ jstring Java_io_soundbyte_core_Jni_stringFromJNI(JNIEnv* env, jobject thiz) {
 }
 
 void Java_io_soundbyte_core_Jni_init(JNIEnv* env, jobject thiz,
-    jint base, jint chipRate, jint channelSpacing, jint numChannels) {
-  scomInit(base, chipRate, channelSpacing, numChannels);
+    jint base, jint subcarriers, jint subcarrierSpacing, jint chipRate) {
+  scomInit(base, chipRate, subcarrierSpacing, subcarriers);
 }
 
 void Java_io_soundbyte_core_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,

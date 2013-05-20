@@ -5,6 +5,7 @@ import io.soundbyte.app.Events.MessageProgress;
 import io.soundbyte.app.Events.MessageReceived;
 import io.soundbyte.app.Events.SocketConnected;
 import io.soundbyte.app.Events.SocketDisconnected;
+import io.soundbyte.core.Engine;
 import io.soundbyte.core.NativeEngine;
 
 import java.nio.charset.Charset;

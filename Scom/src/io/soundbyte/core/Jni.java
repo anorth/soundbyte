@@ -10,7 +10,7 @@ public class Jni {
 
   public native String stringFromJNI();
   
-  public native void init(int base, int chipRate, int channelSpacing, int numChans);
+  public native void init(int base, int subcarriers, int subcarrierSpacing, int chipRate);
 
   public native void encodeMessage(byte[] payload, ByteBuffer forWaveform);
 

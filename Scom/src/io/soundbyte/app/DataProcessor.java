@@ -2,6 +2,7 @@ package io.soundbyte.app;
 
 import io.soundbyte.app.Events.MessageProgress;
 import io.soundbyte.app.Events.MessageReceived;
+import io.soundbyte.core.Engine;
 
 import java.util.Arrays;
 

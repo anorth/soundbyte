@@ -1,5 +1,7 @@
 package io.soundbyte.app;
 
+import io.soundbyte.core.Engine;
+
 import java.nio.ByteBuffer;
 
 import android.media.AudioFormat;
@@ -9,8 +11,6 @@ import android.util.Log;
 
 class AudioPlayer extends Thread {
   
-  private static final int BUFFER_SIZE = AudioTrack.getMinBufferSize(Constants.SAMPLE_RATE,
-      AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
   private static final String TAG = "AudioOut";
   
   private final Engine engine;
@@ -29,8 +29,10 @@ class AudioPlayer extends Thread {
     
     AudioTrack tracker = null;
     try {
-      tracker = new AudioTrack(AudioManager.STREAM_MUSIC, Constants.SAMPLE_RATE,
-          AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, BUFFER_SIZE,
+      int bufferSize = AudioTrack.getMinBufferSize(engine.sampleRate(),
+          AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+      tracker = new AudioTrack(AudioManager.STREAM_MUSIC, engine.sampleRate(),
+          AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize,
           AudioTrack.MODE_STREAM);
       if (tracker.getState() == AudioTrack.STATE_INITIALIZED) {
         Log.i(TAG, "New audio tracker initialised " + tracker.getPlayState());
@@ -40,9 +42,9 @@ class AudioPlayer extends Thread {
           byte[] buffer = engine.audioAvailable() ? receiveBuffer() : null;
           // Note: bytes represent shorts, little-endian
           if (buffer != null && buffer.length > 0) {
-            int samples = buffer.length / Constants.BYTES_PER_SAMPLE;
+            int samples = buffer.length / engine.bytesPerSample();
             Log.v(TAG, "Received audio buffer of " + samples + " samples");
-            int sendMillis = (samples * 1000 / Constants.SAMPLE_RATE);
+            int sendMillis = (samples * 1000 / engine.sampleRate());
             isWriting = true;
             try {
               Log.i(TAG, "Sending");

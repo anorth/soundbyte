@@ -1,13 +1,10 @@
 package io.soundbyte.core;
 
-import io.soundbyte.app.Constants;
-import io.soundbyte.app.Engine;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import android.util.Log;
-
 
 public class NativeEngine implements Engine {
 
@@ -18,25 +15,32 @@ public class NativeEngine implements Engine {
   //private final BlockingQueue<ByteBuffer> waveforms = new ArrayBlockingQueue<ByteBuffer>(100);
   private volatile ByteBuffer waveform = null;
   private volatile long lastSent = 0;
-  
-
   private volatile int progress;
 
-  public NativeEngine() {
-    jni = new Jni();
-    jni.init(
-        18000, //base
-        50,    //rate
-        2,     //spacing 
-        8      //channels
-        
-//        18000, //base
-//        200,    //rate
-//        2,     //spacing 
-//        4      //channels
-        );
+  public static EngineConfiguration defaultConfiguration() {
+    return new EngineConfiguration(18000, 8, 2, 50);
   }
   
+  public NativeEngine() {
+    this(defaultConfiguration());
+  }
+  
+  public NativeEngine(EngineConfiguration config) {
+    jni = new Jni();
+    jni.init(config.baseFrequency, config.subcarriers, config.subcarrierSpacing, 
+        config.chipRate);
+  }
+  
+  @Override
+  public int bytesPerSample() {
+    return Constants.BYTES_PER_SAMPLE;
+  }
+
+  @Override
+  public int sampleRate() {
+    return Constants.SAMPLE_RATE;
+  }
+
   @Override
   public void start() {
     Log.i(TAG, "Native engine starting: " + jni.stringFromJNI());

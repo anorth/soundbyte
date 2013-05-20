@@ -1,5 +1,7 @@
 package io.soundbyte.app;
 
+import io.soundbyte.core.Engine;
+
 import java.nio.ByteBuffer;
 
 import android.media.AudioFormat;
@@ -28,18 +30,18 @@ class AudioListener extends Thread {
     android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
     ByteBuffer[] buffers = new ByteBuffer[N_BUFS];
     for (int i = 0; i < buffers.length; ++i) {
-      buffers[i] = ByteBuffer.allocateDirect(BUF_SAMPLES * Constants.BYTES_PER_SAMPLE);
+      buffers[i] = ByteBuffer.allocateDirect(BUF_SAMPLES * engine.bytesPerSample());
     }
 
     int bufIndex = 0;
 
-    int minArInternalBufferSize = AudioRecord.getMinBufferSize(Constants.SAMPLE_RATE,
+    int minArInternalBufferSize = AudioRecord.getMinBufferSize(engine.sampleRate(),
         AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
     Log.d(TAG, "Min AudioRecord internal buffer size = " + minArInternalBufferSize);
     
     AudioRecord recorder = null;
     try {
-      recorder = new AudioRecord(AudioSource.MIC, Constants.SAMPLE_RATE, 
+      recorder = new AudioRecord(AudioSource.MIC, engine.sampleRate(), 
           AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minArInternalBufferSize * 10);
       if (recorder.getState() == AudioRecord.STATE_INITIALIZED) {
         Log.i(TAG, "New audio recorder initialised " + recorder.getRecordingState());

@@ -1,4 +1,4 @@
-package io.soundbyte.app;
+package io.soundbyte.core;
 
 import java.nio.ByteBuffer;
 
@@ -7,6 +7,12 @@ import java.nio.ByteBuffer;
  */
 public interface Engine {
 
+  /** The number of bytes representing an audio sample (usually 2). */
+  int bytesPerSample();
+  
+  /** The number of samples per second of signals this engine processes (usually 44.1k) */
+  int sampleRate();
+  
   /** Initialises engine internals. */
   void start();
   
