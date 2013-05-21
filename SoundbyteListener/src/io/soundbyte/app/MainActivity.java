@@ -2,6 +2,7 @@ package io.soundbyte.app;
 
 import io.soundbyte.core.Engine;
 import io.soundbyte.core.NativeEngine;
+import io.soundbyte.listenapp.R;
 import io.soundbyte.support.AudioListener;
 import io.soundbyte.support.AudioPlayer;
 import io.soundbyte.support.MessageReceiver;
