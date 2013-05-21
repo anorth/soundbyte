@@ -15,6 +15,8 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
   
   private static final String TAG = "AudioPlayer";
   private static final int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+  // Millis of silence to play after each message.
+  private static final int SILENCE_MS = 50;
   
   private final Engine engine;
   // Audio data to play. Bytes represent shorts, little-endian.
@@ -32,7 +34,8 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
   @Override
   public void run() {
     android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO); 
-    
+    int numSilenceSamples = engine.sampleRate() * SILENCE_MS / 1000;
+    byte[] silence = new byte[numSilenceSamples * engine.bytesPerSample()];
     try {
       int bufferSize = AudioTrack.getMinBufferSize(engine.sampleRate(),
           AudioFormat.CHANNEL_OUT_MONO, AUDIO_ENCODING);
@@ -41,18 +44,19 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
       if (tracker.getState() == AudioTrack.STATE_INITIALIZED) {
         Log.i(TAG, "New audio tracker initialised " + tracker.getPlayState());
         tracker.play();
-        // TODO(alex): remove this busy loop
+        // This looks like a busy loop but it's not very busy as the thread quickly
+        // blocks on tracker.write().
         while (!stopped) {
           byte[] buffer = playBuffer.get();
           if (buffer != null && buffer.length > 0) {
-            // TODO(alex): add a short break between consecutive messages
-            // to minimise interference. Perhaps with a playback head marker?
             int bufferSamples = buffer.length / engine.bytesPerSample();
             isWritingToTracker = true;
             try {
               Log.i(TAG, "Writing " + bufferSamples + " samples to player");
               tracker.write(buffer, 0, buffer.length);
               numSamplesWritten.addAndGet(bufferSamples);
+              tracker.write(silence, 0, silence.length);
+              numSamplesWritten.addAndGet(numSilenceSamples);
             } finally {
               isWritingToTracker = false;
             }
