@@ -141,7 +141,7 @@ public class MainActivity extends Activity implements MessageReceiver {
     engine.stop();
     try {
       listener.join(1000);
-      player.join(1000);
+      player.join(5000);
     } catch (InterruptedException e) {
       Log.e(TAG, "Interrupted waiting for threads to close");
     }

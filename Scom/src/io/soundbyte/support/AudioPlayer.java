@@ -3,6 +3,7 @@ package io.soundbyte.support;
 import io.soundbyte.core.Engine;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -19,11 +20,13 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
   private static final int SILENCE_MS = 50;
   
   private final Engine engine;
-  // Audio data to play. Bytes represent shorts, little-endian.
+  // Audio data to play. Bytes represent shorts, little-endian. The value may be null,
+  // but not an empty array.
   private final AtomicReference<byte[]> playBuffer = new AtomicReference<byte[]>();
   private final AtomicLong numSamplesWritten = new AtomicLong();
   
   private AudioTrack tracker = null;
+  private volatile CountDownLatch playLatch = new CountDownLatch(1);
   private volatile boolean stopped = false;
   private volatile boolean isWritingToTracker = false;
   
@@ -45,10 +48,11 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
         Log.i(TAG, "New audio tracker initialised " + tracker.getPlayState());
         tracker.play();
         // This looks like a busy loop but it's not very busy as the thread quickly
-        // blocks on tracker.write().
+        // blocks on playLatch.await() or tracker.write().
         while (!stopped) {
+          playLatch.await();
           byte[] buffer = playBuffer.get();
-          if (buffer != null && buffer.length > 0) {
+          if (buffer != null) {
             int bufferSamples = buffer.length / engine.bytesPerSample();
             isWritingToTracker = true;
             try {
@@ -60,21 +64,18 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
             } finally {
               isWritingToTracker = false;
             }
-          } else {
-//            Log.v(TAG, "receiveBuffer returned empty buffer");
-            Thread.sleep(200);
           }
         }
       } else {
         Log.e(TAG, "Couldn't initialise tracker");
       }
-    } catch (RuntimeException e) {
-      Log.e(TAG, "Failed", e);
-      throw e;
     } catch (InterruptedException e) {
       Log.e(TAG, "Interrupted", e);
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);
+    } catch (RuntimeException e) {
+      Log.e(TAG, "Failed", e);
+      throw e;
     } finally {
       Log.w(TAG, "AudioOut exiting");
       if (tracker != null) {
@@ -95,13 +96,21 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
 
   /**
    * Schedules a message for sending when the previous message has finished. The message
-   * is sent repeatedly, until replaced or set null.
+   * is sent repeatedly, until replaced or set null/empty.
    */
   public void sendMessage(byte[] payload) {
-    ByteBuffer buffer = engine.encodeMessage(payload);
-    byte[] data = new byte[buffer.remaining()];
-    buffer.get(data);
+    byte[] data = null;
+    if (payload != null && payload.length > 0) {
+      ByteBuffer buffer = engine.encodeMessage(payload);
+      data = new byte[buffer.remaining()];
+      buffer.get(data);
+    }
+    assert (data == null) || data.length > 0;
     playBuffer.set(data);
+    playLatch.countDown();
+    if (data == null) {
+      playLatch = new CountDownLatch(1);      
+    }
   }
   
   public void close() {
