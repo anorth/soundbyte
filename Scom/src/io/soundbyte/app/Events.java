@@ -14,18 +14,4 @@ public interface Events {
       this.name = name;
     }
   };
-  
-  final class MessageReceived {
-    public final String msg;
-    public MessageReceived(String msg) {
-      this.msg = msg;
-    }
-  }
-  
-  final class MessageProgress {
-    public final int progress;
-    public MessageProgress(int progress) {
-      this.progress = progress;
-    }
-  }
 }

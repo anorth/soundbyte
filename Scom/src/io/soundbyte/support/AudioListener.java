@@ -18,7 +18,7 @@ public class AudioListener extends Thread {
 
   private static final int BUF_SAMPLES = 441;
   private static final int N_BUFS = 100;
-  private static final String TAG = "AudioListener";
+  private static final String TAG = "SoundbyteAudioListener";
   
   private final Engine engine;
   private final MessageReceiver messageReceiver;

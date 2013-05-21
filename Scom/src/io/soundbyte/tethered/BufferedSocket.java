@@ -1,8 +1,5 @@
 package io.soundbyte.tethered;
 
-import io.soundbyte.app.Events.SocketConnected;
-import io.soundbyte.app.Events.SocketDisconnected;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -16,8 +13,6 @@ import java.util.concurrent.TimeUnit;
 
 import android.util.Log;
 
-import com.squareup.otto.Bus;
-
 class BufferedSocket extends Thread {
 
   public static final int Q_SIZE = 100;
@@ -25,16 +20,16 @@ class BufferedSocket extends Thread {
 
   private final String name;
   private final int port;
-  private final Bus bus;
+  private final SocketListener listener;
   private final BlockingQueue<byte[]> inputQ = new ArrayBlockingQueue<byte[]>(100);
   private volatile Socket client = null;
   private volatile boolean running = true;
 
-  public BufferedSocket(String name, int port, Bus bus) {
+  public BufferedSocket(String name, int port, SocketListener listener) {
     super("BufferedSocket:" + name);
     this.name = name;
     this.port = port;
-    this.bus = bus;
+    this.listener = listener;
   }
 
   @Override
@@ -92,7 +87,7 @@ class BufferedSocket extends Thread {
         Log.v(TAG, "Awaiting connection on port " + port);
         client = server.accept();
         Log.i(TAG, "Received connection " + client.getInetAddress() + ":" + port);
-        bus.post(new SocketConnected(name));
+        listener.socketConnected(name);
       } catch (SocketTimeoutException e) {
         // Try again.
       } catch (IOException e) {
@@ -128,7 +123,7 @@ class BufferedSocket extends Thread {
         Log.e(TAG, "IO exception closing client", e);
       } finally {
         client = null;
-        bus.post(new SocketDisconnected(name));
+        listener.socketDisconnected(name);
       }
     }
   }

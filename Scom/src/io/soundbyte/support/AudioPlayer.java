@@ -14,7 +14,7 @@ import android.util.Log;
 
 public class AudioPlayer extends Thread implements ListeningPolicy {
   
-  private static final String TAG = "AudioPlayer";
+  private static final String TAG = "SoundbyteAudioPlayer";
   private static final int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
   // Millis of silence to play after each message.
   private static final int SILENCE_MS = 50;

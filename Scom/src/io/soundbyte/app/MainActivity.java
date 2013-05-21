@@ -1,12 +1,11 @@
 package io.soundbyte.app;
 
-import io.soundbyte.app.Events.SocketConnected;
-import io.soundbyte.app.Events.SocketDisconnected;
 import io.soundbyte.core.Engine;
 import io.soundbyte.core.NativeEngine;
 import io.soundbyte.support.AudioListener;
 import io.soundbyte.support.AudioPlayer;
 import io.soundbyte.support.MessageReceiver;
+import io.soundbyte.tethered.SocketListener;
 
 import java.nio.charset.Charset;
 
@@ -19,15 +18,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.widget.TextView;
 
-import com.squareup.otto.Bus;
-import com.squareup.otto.Subscribe;
-import com.squareup.otto.ThreadEnforcer;
-
-public class MainActivity extends Activity implements MessageReceiver {
+public class MainActivity extends Activity implements MessageReceiver, SocketListener {
   private static final String TAG = "AudioServerMain";
   public static final int DECODER_PORT = 16000;
-
-  private final Bus bus = new Bus(ThreadEnforcer.ANY);
 
   private Engine engine = null;
   private AudioListener listener = null;
@@ -88,9 +81,7 @@ public class MainActivity extends Activity implements MessageReceiver {
       }
     }
     setContentView(R.layout.activity_main);
-    statusLabel = (TextView) findViewById(R.id.statusLabel);
-    bus.register(this);
-    
+    statusLabel = (TextView) findViewById(R.id.statusLabel);    
     statusLabel.setTextColor(Color.WHITE);
   }
 
@@ -105,7 +96,7 @@ public class MainActivity extends Activity implements MessageReceiver {
     super.onStart();
     Log.w(TAG, "Received onStart");
     engine = new NativeEngine();
-//    engine = new TetheredEngine(DECODER_PORT, bus);
+//    engine = new TetheredEngine(DECODER_PORT, this);
     engine.start();
     player = new AudioPlayer(engine);
     player.start();
@@ -220,20 +211,20 @@ public class MainActivity extends Activity implements MessageReceiver {
     }
   }
 
-  @Subscribe
-  public void socketConnected(final SocketConnected e) {
+  @Override
+  public void socketConnected(final String name) {
     statusLabel.post(new Runnable() {
       @Override public void run() {
-        statusLabel.setText("Connected " + e.name + ". Streaming...");
+        statusLabel.setText("Connected " + name + ". Streaming...");
       }
     });
   }
 
-  @Subscribe
-  public void socketDisconnected(final SocketDisconnected e) {
+  @Override
+  public void socketDisconnected(final String name) {
     statusLabel.post(new Runnable() {
       @Override public void run() {
-        statusLabel.setText("Disconnected " + e.name + ". Waiting...");
+        statusLabel.setText("Disconnected " + name + ". Waiting...");
       }
     });
   }

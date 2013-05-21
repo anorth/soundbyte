@@ -7,7 +7,7 @@ import android.util.Log;
 
 public class NativeEngine implements Engine {
 
-  private static final String TAG = "NativeEngine";
+  private static final String TAG = "SoundbyteNativeEngine";
   private static final int MAX_MESSAGE_LENGTH = 250;
   private static final int BUFFER_DURATION_SECONDS = 10;
   

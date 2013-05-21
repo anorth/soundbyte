@@ -7,10 +7,8 @@ import java.nio.ByteBuffer;
 
 import android.util.Log;
 
-import com.squareup.otto.Bus;
-
 public class TetheredEngine implements Engine {
-
+  
   private static final String TAG = "TetheredEngine";
   
   // Sends audio, receives messages.
@@ -18,9 +16,9 @@ public class TetheredEngine implements Engine {
   // Sends messages, receives audio.
   private final BufferedSocket encodingSocket;
   
-  public TetheredEngine(int port, Bus bus) {
-    decodingSocket = new BufferedSocket("decoding", port, bus);
-    encodingSocket = new BufferedSocket("encoding", port + 1, bus);
+  public TetheredEngine(int port, SocketListener listener) {
+    decodingSocket = new BufferedSocket("decoding", port, listener);
+    encodingSocket = new BufferedSocket("encoding", port + 1, listener);
   }
 
   @Override
