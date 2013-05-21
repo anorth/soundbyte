@@ -4,12 +4,14 @@ package io.soundbyte.core;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import android.renderscript.Sampler;
 import android.util.Log;
 
 public class NativeEngine implements Engine {
 
   private static final String TAG = "NativeEngine";
   private static final int MAX_MESSAGE_LENGTH = 250;
+  private static final int BUFFER_DURATION_SECONDS = 10;
   
   private final Jni jni;
   //private final BlockingQueue<ByteBuffer> waveforms = new ArrayBlockingQueue<ByteBuffer>(100);
@@ -43,7 +45,7 @@ public class NativeEngine implements Engine {
 
   @Override
   public void start() {
-    Log.i(TAG, "Native engine starting: " + jni.stringFromJNI());
+    Log.i(TAG, "Native engine starting");
   }
 
   @Override
@@ -127,8 +129,8 @@ public class NativeEngine implements Engine {
     return progress;
   }
 
-  private static ByteBuffer allocateWaveformBuffer() {
-    int nbytes = Constants.SAMPLE_RATE * Constants.BYTES_PER_SAMPLE * 10; // max 10s
+  private ByteBuffer allocateWaveformBuffer() {
+    int nbytes = sampleRate() * bytesPerSample() * BUFFER_DURATION_SECONDS;
     return ByteBuffer.allocateDirect(nbytes);
   }
 }

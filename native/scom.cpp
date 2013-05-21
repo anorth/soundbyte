@@ -18,8 +18,6 @@
 
 using namespace std;
 
-const char *HELLO = "Hello from C++";
-
 static Config cfg;
 static Sync *syncer = 0;
 static Codec *codec = 0;

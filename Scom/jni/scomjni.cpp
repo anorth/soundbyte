@@ -7,8 +7,6 @@
 
 // Export definitions for JNI
 extern "C" {
-  jstring Java_io_soundbyte_core_Jni_stringFromJNI(JNIEnv* env, jobject thiz);
-
   void Java_io_soundbyte_core_Jni_init(JNIEnv* env, jobject thiz,
       jint base, jint subcarriers, jint subcarrierSpacing, jint chipRate);
 
@@ -23,10 +21,6 @@ extern "C" {
 }
 
 // Implementation
-
-jstring Java_io_soundbyte_core_Jni_stringFromJNI(JNIEnv* env, jobject thiz) {
-  return env->NewStringUTF(HELLO);
-}
 
 void Java_io_soundbyte_core_Jni_init(JNIEnv* env, jobject thiz,
     jint base, jint subcarriers, jint subcarrierSpacing, jint chipRate) {

@@ -7,16 +7,14 @@ public class Jni {
   static {
     System.loadLibrary("scomjni");
   }
-
-  public native String stringFromJNI();
   
-  public native void init(int base, int subcarriers, int subcarrierSpacing, int chipRate);
+  public synchronized native void init(int base, int subcarriers, int subcarrierSpacing, int chipRate);
 
-  public native void encodeMessage(byte[] payload, ByteBuffer forWaveform);
+  public synchronized native void encodeMessage(byte[] payload, ByteBuffer forWaveform);
 
-  public native int decodeAudio(ByteBuffer audio);
+  public synchronized native int decodeAudio(ByteBuffer audio);
 
-  public native boolean messageAvailable();
+  public synchronized native boolean messageAvailable();
 
-  public native int takeMessage(byte[] target);
+  public synchronized native int takeMessage(byte[] target);
 }
