@@ -34,14 +34,14 @@ public class TetheredEngine implements Engine {
   }
 
   @Override
-  public void start() {
+  public synchronized void start() {
     Log.i(TAG, "Tethered engine starting");
     decodingSocket.start();
     encodingSocket.start();
   }
   
   @Override
-  public void stop() {
+  public synchronized void stop() {
     decodingSocket.close();
     encodingSocket.close();
   }

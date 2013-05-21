@@ -1,10 +1,8 @@
 package io.soundbyte.core;
 
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import android.renderscript.Sampler;
 import android.util.Log;
 
 public class NativeEngine implements Engine {
@@ -49,12 +47,13 @@ public class NativeEngine implements Engine {
   }
 
   @Override
-  public void stop() {
+  public synchronized void stop() {
     waveform = null;
   }
 
   @Override
-  public void receiveMessage(byte[] payload) {
+  // TODO(alex): Remove synchronization here in favour of JNI.
+  public synchronized void receiveMessage(byte[] payload) {
     if (payload == null) {
       waveform = null;
       return;
@@ -71,7 +70,8 @@ public class NativeEngine implements Engine {
   }
 
   @Override
-  public boolean audioAvailable() {
+  // TODO(alex): Remove synchronization here
+  public synchronized boolean audioAvailable() {
     return waveform != null && millisUntilReady() <= 0; //!waveforms.isEmpty();
   }
   
@@ -85,7 +85,8 @@ public class NativeEngine implements Engine {
   }
 
   @Override
-  public ByteBuffer takeAudio() {
+  // TODO(alex): Remove synchronization here
+  public synchronized ByteBuffer takeAudio() {
     Log.e(TAG, "native.takeAudio()");
     
 //    try {
