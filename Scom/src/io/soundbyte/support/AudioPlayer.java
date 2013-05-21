@@ -45,7 +45,7 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
       tracker = new AudioTrack(AudioManager.STREAM_MUSIC, engine.sampleRate(),
           AudioFormat.CHANNEL_OUT_MONO, AUDIO_ENCODING, bufferSize, AudioTrack.MODE_STREAM);
       if (tracker.getState() == AudioTrack.STATE_INITIALIZED) {
-        Log.i(TAG, "New audio tracker initialised " + tracker.getPlayState());
+        Log.i(TAG, "New audio tracker initialised in state " + tracker.getPlayState());
         tracker.play();
         // This looks like a busy loop but it's not very busy as the thread quickly
         // blocks on playLatch.await() or tracker.write().

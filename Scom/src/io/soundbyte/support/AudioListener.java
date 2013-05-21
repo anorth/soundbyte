@@ -36,46 +36,24 @@ public class AudioListener extends Thread {
   @Override
   public void run() {
     android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-    ByteBuffer[] buffers = new ByteBuffer[N_BUFS];
-    for (int i = 0; i < buffers.length; ++i) {
-      buffers[i] = ByteBuffer.allocateDirect(BUF_SAMPLES * engine.bytesPerSample());
-    }
+    ByteBuffer[] buffers = allocateBuffers();
 
     int bufIndex = 0;
-
     int minArInternalBufferSize = AudioRecord.getMinBufferSize(engine.sampleRate(),
         AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
     Log.d(TAG, "Min AudioRecord internal buffer size = " + minArInternalBufferSize);
     
     AudioRecord recorder = null;
     try {
-      recorder = new AudioRecord(AudioSource.MIC, engine.sampleRate(), 
-          AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minArInternalBufferSize * 10);
+      recorder = new AudioRecord(AudioSource.MIC, engine.sampleRate(), AudioFormat.CHANNEL_IN_MONO, 
+          AudioFormat.ENCODING_PCM_16BIT, minArInternalBufferSize * 10);
       if (recorder.getState() == AudioRecord.STATE_INITIALIZED) {
-        Log.i(TAG, "New audio recorder initialised " + recorder.getRecordingState());
+        Log.d(TAG, "New audio recorder initialised in state " + recorder.getRecordingState());
         recorder.startRecording();
-        Log.i(TAG, "Recording started: " + recorder.getRecordingState());
+        Log.d(TAG, "Recording started, state " + recorder.getRecordingState());
         while (!stopped) {
           ByteBuffer buffer = buffers[bufIndex++ % buffers.length];
-//          Log.v(TAG, "Awaiting buffer, recording state " + recorder.getRecordingState());
-          // Note: bytes represent shorts, little-endian
-          int bytesRead = recorder.read(buffer, buffer.capacity());
-          
-          if (!policy.canListenNow()) {
-            // Replace recorded audio with silence.
-            buffer.rewind();
-            buffer.put(new byte[bytesRead]);
-          }
-              
-          if (bytesRead > 0) {
-//            Log.v(TAG, "Received audio buffer of " + (bytesRead / Constants.BYTES_PER_SAMPLE) + " samples");
-            buffer.rewind();
-            buffer.limit(bytesRead);
-            processBuffer(buffer);
-          } else {
-            Log.e(TAG, "AudioRecord.read returned " + bytesRead);
-            Thread.sleep(1000);
-          }
+          receiveBuffer(recorder, buffer);
         }
       } else {
         Log.e(TAG, "Couldn't initialise audio");
@@ -97,6 +75,40 @@ public class AudioListener extends Thread {
     }
   }
 
+  public void close() {
+    stopped = true;
+  }
+
+  private ByteBuffer[] allocateBuffers() {
+    ByteBuffer[] buffers = new ByteBuffer[N_BUFS];
+    for (int i = 0; i < buffers.length; ++i) {
+      buffers[i] = ByteBuffer.allocateDirect(BUF_SAMPLES * engine.bytesPerSample());
+    }
+    return buffers;
+  }
+
+  private void receiveBuffer(AudioRecord recorder, ByteBuffer buffer) throws InterruptedException {
+    // Log.v(TAG, "Awaiting buffer, recording state " + recorder.getRecordingState());
+    // Note: bytes represent shorts, little-endian
+    int bytesRead = recorder.read(buffer, buffer.capacity());
+    if (!policy.canListenNow()) {
+      // Replace recorded audio with silence.
+      buffer.rewind();
+      buffer.put(new byte[bytesRead]);
+    }
+
+    if (bytesRead > 0) {
+      // Log.v(TAG, "Received audio buffer of " + (bytesRead / Constants.BYTES_PER_SAMPLE)
+      // + " samples");
+      buffer.rewind();
+      buffer.limit(bytesRead);
+      processBuffer(buffer);
+    } else {
+      Log.w(TAG, "AudioRecord.read returned " + bytesRead + " bytes, expected > 0");
+      Thread.sleep(100);
+    }
+  }
+
   private void processBuffer(ByteBuffer buffer) {
     engine.receiveAudio(buffer);
     int progress = engine.messageProgress();
@@ -111,9 +123,5 @@ public class AudioListener extends Thread {
         messageReceiver.receiveMessage(msg);
       }
     }
-  }
-
-  public void close() {
-    stopped = true;
   }
 }
