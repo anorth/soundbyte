@@ -9,15 +9,17 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.util.Log;
 
-public class AudioPlayer extends Thread {
+public class AudioPlayer extends Thread implements ListeningPolicy {
   
-  private static final String TAG = "AudioOut";
+  private static final String TAG = "AudioPlayer";
+  private static final int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
   
   private final Engine engine;
   
   private volatile boolean stopped = false;
-  private volatile boolean isWriting = false;
-  private volatile long sendFinishAt = -1;
+  private volatile boolean isWritingToTracker = false;
+  // NOTE(alex): This might be better achieved with a playback position marker.
+  private volatile long playbackFinishMs = -1;
   
   public AudioPlayer(Engine engine) {
     this.engine = engine;
@@ -30,28 +32,27 @@ public class AudioPlayer extends Thread {
     AudioTrack tracker = null;
     try {
       int bufferSize = AudioTrack.getMinBufferSize(engine.sampleRate(),
-          AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+          AudioFormat.CHANNEL_OUT_MONO, AUDIO_ENCODING);
       tracker = new AudioTrack(AudioManager.STREAM_MUSIC, engine.sampleRate(),
-          AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize,
-          AudioTrack.MODE_STREAM);
+          AudioFormat.CHANNEL_OUT_MONO, AUDIO_ENCODING, bufferSize, AudioTrack.MODE_STREAM);
       if (tracker.getState() == AudioTrack.STATE_INITIALIZED) {
         Log.i(TAG, "New audio tracker initialised " + tracker.getPlayState());
         tracker.play();
+        // TODO(alex): remove this busy loop
         while (!stopped) {
-          //Log.v(TAG, "Awaiting buffer, state " + tracker.getPlayState());
           byte[] buffer = engine.audioAvailable() ? receiveBuffer() : null;
           // Note: bytes represent shorts, little-endian
           if (buffer != null && buffer.length > 0) {
             int samples = buffer.length / engine.bytesPerSample();
             Log.v(TAG, "Received audio buffer of " + samples + " samples");
             int sendMillis = (samples * 1000 / engine.sampleRate());
-            isWriting = true;
+            isWritingToTracker = true;
             try {
               Log.i(TAG, "Sending");
               tracker.write(buffer, 0, buffer.length);
-              sendFinishAt = System.currentTimeMillis() + sendMillis;
+              playbackFinishMs = System.currentTimeMillis() + sendMillis;
             } finally {
-              isWriting = false;
+              isWritingToTracker = false;
             }
           } else {
 //            Log.v(TAG, "receiveBuffer returned empty buffer");
@@ -78,15 +79,15 @@ public class AudioPlayer extends Thread {
     }
   }
   
-  public boolean isSending() {
-    if (isWriting) {
-      return true;
+  @Override
+  public boolean canListenNow() {
+    if (isWritingToTracker) {
+      return false;
     }
     
-    // TODO: get some event when sending actually finished instead?
     long now = System.currentTimeMillis();
-    boolean isSending = sendFinishAt >= now;
-    return isSending;
+    boolean isSending = playbackFinishMs >= now;
+    return !isSending;
   }
 
   private byte[] receiveBuffer() {

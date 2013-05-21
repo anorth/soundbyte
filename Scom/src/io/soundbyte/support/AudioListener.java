@@ -11,25 +11,26 @@ import android.media.MediaRecorder.AudioSource;
 import android.util.Log;
 
 /**
- * Records audio from the Android system and provides it to the Soundbyte engine.
+ * Records audio from the Android system and processes it with the Soundbyte engine,
+ * providing messages when they are received.
  */
 public class AudioListener extends Thread {
 
   private static final int BUF_SAMPLES = 441;
   private static final int N_BUFS = 100;
-  private static final String TAG = "AudioIn";
+  private static final String TAG = "AudioListener";
   
   private final Engine engine;
   private final MessageReceiver messageReceiver;
-  private final AudioPlayer player; // hack
+  private final ListeningPolicy policy;
 
   private int lastProgress = 0;
   private volatile boolean stopped = false;
   
-  public AudioListener(Engine engine, MessageReceiver receiver, AudioPlayer player) {
+  public AudioListener(Engine engine, MessageReceiver receiver, ListeningPolicy policy) {
     this.engine = engine;
     this.messageReceiver = receiver;
-    this.player = player;
+    this.policy = policy;
   }
  
   @Override
@@ -60,11 +61,10 @@ public class AudioListener extends Thread {
           // Note: bytes represent shorts, little-endian
           int bytesRead = recorder.read(buffer, buffer.capacity());
           
-          // hack: silence incoming audio if sending.
-          if (player.isSending()) {
+          if (!policy.canListenNow()) {
+            // Replace recorded audio with silence.
             buffer.rewind();
             buffer.put(new byte[bytesRead]);
-            //Log.d(TAG, "Zeroing receive buffer due to concurrent send");
           }
               
           if (bytesRead > 0) {
@@ -88,7 +88,7 @@ public class AudioListener extends Thread {
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);
     } finally {
-      Log.w(TAG, "AudioIn exiting");
+      Log.w(TAG, "AudioListener exiting");
       if (recorder != null) {
         recorder.stop();        
         recorder.release();
