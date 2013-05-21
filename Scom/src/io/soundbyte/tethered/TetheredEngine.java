@@ -47,21 +47,12 @@ public class TetheredEngine implements Engine {
   }
   
   @Override
-  public void receiveMessage(byte[] payload) {
+  public ByteBuffer encodeMessage(byte[] payload) {
     encodingSocket.send(payload);
-  }
-  
-  @Override
-  public boolean audioAvailable() {
-    return true; // but it might be empty
-  }
-  
-  @Override
-  public ByteBuffer takeAudio() {
     byte[] received = encodingSocket.receive(10000);
     return ByteBuffer.wrap(received);
   }
-  
+    
   @Override
   public void receiveAudio(ByteBuffer audio) {
 //    Log.v(TAG, "Offboarding " + audio.limit() + " bytes of audio");

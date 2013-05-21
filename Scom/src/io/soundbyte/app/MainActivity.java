@@ -126,9 +126,9 @@ public class MainActivity extends Activity implements MessageReceiver {
       String data = defaultText;
       statusLabel.setText("Sending..."); // + data);
       Log.e(TAG, "Will send: " + data);
-      engine.receiveMessage(data.getBytes(UTF8));
+      player.sendMessage(data.getBytes(UTF8));
     } else {
-      engine.receiveMessage(null);
+      engine.encodeMessage(null);
       Log.e(TAG, "Stop sending.");
     }
   }

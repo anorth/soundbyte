@@ -3,6 +3,8 @@ package io.soundbyte.support;
 import io.soundbyte.core.Engine;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -15,11 +17,13 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
   private static final int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
   
   private final Engine engine;
+  // Audio data to play. Bytes represent shorts, little-endian.
+  private final AtomicReference<byte[]> playBuffer = new AtomicReference<byte[]>();
+  private final AtomicLong numSamplesWritten = new AtomicLong();
   
+  private AudioTrack tracker = null;
   private volatile boolean stopped = false;
   private volatile boolean isWritingToTracker = false;
-  // NOTE(alex): This might be better achieved with a playback position marker.
-  private volatile long playbackFinishMs = -1;
   
   public AudioPlayer(Engine engine) {
     this.engine = engine;
@@ -29,7 +33,6 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
   public void run() {
     android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO); 
     
-    AudioTrack tracker = null;
     try {
       int bufferSize = AudioTrack.getMinBufferSize(engine.sampleRate(),
           AudioFormat.CHANNEL_OUT_MONO, AUDIO_ENCODING);
@@ -40,17 +43,17 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
         tracker.play();
         // TODO(alex): remove this busy loop
         while (!stopped) {
-          byte[] buffer = engine.audioAvailable() ? receiveBuffer() : null;
-          // Note: bytes represent shorts, little-endian
+          byte[] buffer = playBuffer.get();
           if (buffer != null && buffer.length > 0) {
-            int samples = buffer.length / engine.bytesPerSample();
-            Log.v(TAG, "Received audio buffer of " + samples + " samples");
-            int sendMillis = (samples * 1000 / engine.sampleRate());
+            // TODO(alex): add a short break between consecutive messages
+            // to minimise interference. Perhaps with a playback head marker?
+            int bufferSamples = buffer.length / engine.bytesPerSample();
+            Log.v(TAG, "Received audio buffer of " + bufferSamples + " samples");
             isWritingToTracker = true;
             try {
               Log.i(TAG, "Sending");
               tracker.write(buffer, 0, buffer.length);
-              playbackFinishMs = System.currentTimeMillis() + sendMillis;
+              numSamplesWritten.addAndGet(bufferSamples);
             } finally {
               isWritingToTracker = false;
             }
@@ -83,20 +86,21 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
   public boolean canListenNow() {
     if (isWritingToTracker) {
       return false;
-    }
-    
-    long now = System.currentTimeMillis();
-    boolean isSending = playbackFinishMs >= now;
-    return !isSending;
+    }    
+    return tracker.getPlaybackHeadPosition() >= numSamplesWritten.get();
   }
 
-  private byte[] receiveBuffer() {
-    ByteBuffer buffer = engine.takeAudio();
+  /**
+   * Schedules a message for sending when the previous message has finished. The message
+   * is sent repeatedly, until replaced or set null.
+   */
+  public void sendMessage(byte[] payload) {
+    ByteBuffer buffer = engine.encodeMessage(payload);
     byte[] data = new byte[buffer.remaining()];
     buffer.get(data);
-    return data;
+    playBuffer.set(data);
   }
-
+  
   public void close() {
     stopped = true;
   }

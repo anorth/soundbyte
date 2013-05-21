@@ -23,17 +23,11 @@ public interface Engine {
   void stop();
   
   /** 
-   * Receives and processes a message payload into audio data. After this method returns,
-   * {@link #audioAvailable()} indicates whether audio data is available for playing (which
-   * it always is if the payload was non-empty}.
+   * Receives and processes a message payload into audio data.
+   * 
+   * @return a buffer containing the complete encoded payload, or null if payload was empty.
    */
-  public void receiveMessage(byte[] payload);
-  
-  /** Whether audio data is available for playing. */
-  public boolean audioAvailable();
-  
-  /** Dequeues encoded audio. */
-  public ByteBuffer takeAudio();
+  public ByteBuffer encodeMessage(byte[] payload);
   
   /** 
    * Receives and processes a segment of audio data. After this method returns,
