@@ -48,10 +48,9 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
             // TODO(alex): add a short break between consecutive messages
             // to minimise interference. Perhaps with a playback head marker?
             int bufferSamples = buffer.length / engine.bytesPerSample();
-            Log.v(TAG, "Received audio buffer of " + bufferSamples + " samples");
             isWritingToTracker = true;
             try {
-              Log.i(TAG, "Sending");
+              Log.i(TAG, "Writing " + bufferSamples + " samples to player");
               tracker.write(buffer, 0, buffer.length);
               numSamplesWritten.addAndGet(bufferSamples);
             } finally {

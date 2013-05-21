@@ -137,9 +137,11 @@ public class MainActivity extends Activity implements MessageReceiver {
   public void onStop() {
     Log.w(TAG, "Received onStop");
     listener.close();
+    player.close();
     engine.stop();
     try {
       listener.join(1000);
+      player.join(1000);
     } catch (InterruptedException e) {
       Log.e(TAG, "Interrupted waiting for threads to close");
     }
