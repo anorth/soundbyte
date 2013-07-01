@@ -10,25 +10,48 @@ import java.nio.charset.Charset;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 public class MainActivity extends Activity implements MessageReceiver {
   private static final String TAG = "MainActivity";
+  private static final Charset UTF8 = Charset.forName("UTF-8");
 
   private Engine engine = null;
   private AudioListener listener = null;
   private AudioPlayer player = null;
   
-  private Charset UTF8 = Charset.forName("UTF-8");
-  private boolean sending;
+  private EditText sendInput;
+  private Button sendButton;
+  private TextView progressText;
+  private TextView messagesText;
+  private ScrollingMovementMethod messagesScroll = new ScrollingMovementMethod();
+  private boolean isSending = false;
     
   @Override
   public void onCreate(Bundle savedInstanceState) {
     Log.d(TAG, "Received onCreate");
     super.onCreate(savedInstanceState);
-
     setContentView(R.layout.activity_main);
+    
+    sendInput = (EditText) findViewById(R.id.sendInput);
+    sendButton = (Button) findViewById(R.id.sendButton);
+    progressText = (TextView) findViewById(R.id.progressText);
+    messagesText = (TextView) findViewById(R.id.receivedMessagesText);
+    messagesText.setMovementMethod(messagesScroll);
+    
+    sendButton.setOnClickListener(new OnClickListener() {      
+      @Override
+      public void onClick(View v) {
+        doSend();
+      }
+    });
   }
 
   @Override
@@ -50,11 +73,19 @@ public class MainActivity extends Activity implements MessageReceiver {
   }
   
   private void doSend() {
-    sending = !sending;
-    if (sending) {
-      String data = "FIXME";
+    String msg = sendInput.getText().toString();
+    if (!msg.isEmpty()) {
+      isSending = !isSending;
+    }
+    if (isSending) {
+      String data = sendInput.getText().toString();
       Log.i(TAG, "Will send: " + data);
-      player.sendMessage(data.getBytes(UTF8));
+      player.sendMessage(data.getBytes(UTF8));      
+      sendButton.setText("Stop");
+    } else {
+      Log.i(TAG, "Stopping");
+      player.sendMessage(null);
+      sendButton.setText("Send");
     }
   }
 
@@ -81,24 +112,30 @@ public class MainActivity extends Activity implements MessageReceiver {
 
   @Override
   public void receiveProgress(final int progress) {
-//    statusLabel.post(new Runnable() {
-//      @Override public void run() {
-//        if (progress == 0) {
-//          statusLabel.setText("Listening");
-//        } else {
-//          StringBuilder s = new StringBuilder();
-//          for (int i = 0; i < progress; i++) {
-//            s.append('-');
-//          }
-//          statusLabel.setText("Receiving " + s);
-//        }
-//      }
-//    });
+    progressText.post(new Runnable() {
+      @Override public void run() {
+        if (progress == 0) {
+          progressText.setText("¥");
+        } else {
+          StringBuilder s = new StringBuilder();
+          for (int i = 0; i < progress; i++) {
+            s.append('-');
+          }
+          progressText.setText("* " + s);
+        }
+      }
+    });
   }
 
   @Override
   public void receiveMessage(byte[] messageBytes) {
-    String msg = new String(messageBytes);
+    final String msg = new String(messageBytes);
     Log.i(TAG, "Received: " + msg);
+    messagesText.post(new Runnable() {
+      @Override
+      public void run() {
+        messagesText.setText(messagesText.getText() + msg + "\n");
+      }
+    });
   }
 }
