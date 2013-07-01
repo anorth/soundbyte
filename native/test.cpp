@@ -12,6 +12,8 @@
 #include "constants.h"
 #include "scom.h"
 
+#include "stream.h"
+
 using namespace std;
 
 static const int CHUNK_SAMPLES = SAMPLE_RATE / 50;
@@ -26,6 +28,23 @@ static struct option longopts[] = {
 };
 
 void doListen(int expectedMessages) {
+  //Buffer<int> test;
+  //test.push_back(5);
+  //test.push_back(6);
+  //cout << "A";
+  //assert(test.raw()[0] == 5);
+  //cout << "B";
+  //test.consume(1);
+  //assert(test.raw()[0] == 6);
+  //test.push_back(7);
+  //test.push_back(8);
+  //test.push_back(1);
+  //test.push_back(2);
+  //test.consume(4);
+  //assert(test.raw()[0] == 2);
+
+  //cout << "DONE";
+  //assert(false);
   char chunkBytes[CHUNK_BYTES];
   char messageBuffer[256];
   int numReceived = 0;

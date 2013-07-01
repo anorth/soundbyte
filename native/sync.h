@@ -6,12 +6,13 @@
 #include <vector>
 
 #include "config.h"
+#include "stream.h"
 
 class Spectrum;
 
 class Sync {
 public:
-  Sync(SyncConfig* cfg);
+  Sync(SyncConfig* cfg, Stream<float>& source);
   ~Sync();
 
   /**
@@ -19,22 +20,9 @@ public:
    */
   void generateSync(std::vector<float> &target);
 
-  /**
-   * Receives the next segment of audio and attempt to synchronise with this and
-   * previous samples.
-   * 
-   * If sync is successful, returns an iterator addressing the first sample after
-   * sync and resets state. If sync fails, returns samples.end() and maintains state
-   * to continue processing with the next contiguous samples.
-   */
-  std::vector<float>::iterator receiveAudioAndSync(std::vector<float> &samples);
-
   int getState();
 
-  /**
-   * Resets internal sync state. 
-   */
-  void reset();
+  bool sync();
 
 private:
   int bufferStart();
@@ -43,6 +31,7 @@ private:
   int getAlignment(Spectrum &spectrum, int bucket, int state, int numChips,
       float *misalignmentOut);
   void createSyncCycles(int chipsPerPulse, int cycles, std::vector<float> &target);
+  void reset(bool consume);
 
   // Parameters
   SyncConfig* cfg;
@@ -58,7 +47,7 @@ private:
   int state;
   int fftSampleIndex;
   int syncOffset; // Sync offset in samples
-  std::vector<float> buffer;
+  Stream<float>& source;
   std::vector<float> shortMetaBuffer;
   std::vector<float> metaBuffer;
 };

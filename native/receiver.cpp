@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "packeter.h"
 #include "sync.h"
+#include "stream.h"
 
 #include <cassert>
 #include <iostream>
@@ -17,60 +18,49 @@ static const int WAITING_SYNC = 0;
 static const int RECEIVING_MESSAGE = 1;
 static const int SUB_PROGRESS_PARTS = 5;
 
-Receiver::Receiver(Config *cfg, Sync *sync, Packeter *packeter) :
+Receiver::Receiver(Config *cfg, Stream<float>& source, Sync *sync, Packeter *packeter) :
     state(WAITING_SYNC),
     cfg(cfg),
+    source(source),
     sync(sync),
     packeter(packeter) {
   progress = 0;
   subProgress = 0;
 }
 
-int Receiver::receiveAudio(vector<float> &samples) {
-  cerr << "Received " << samples.size() << " samples, have " << buffer.size() << " buffered" << endl;
-  buffer.insert(buffer.end(), samples.begin(), samples.end());
-  vector<float>::iterator sampleItr = buffer.begin();
-
+int Receiver::receiveAudio() {
   while (true) {
     cerr << "while true" << endl;
     // If not yet synced, try
     if (state == WAITING_SYNC) {
       //cerr << "waiting sync" << endl;
-      sampleItr = sync->receiveAudioAndSync(buffer);
-      assert(sampleItr >= buffer.begin());
-      assert(sampleItr <= buffer.end());
+      bool synced = sync->sync();
 
-      if (sampleItr != buffer.end()) { // synced
-        cerr << "synced at " << (sampleItr - buffer.begin()) << endl;
+      if (synced) {
+        cerr << "synced " << endl;
         state = RECEIVING_MESSAGE;
         progress = 1;
         assert(partialMessage.size() == 0);
       } else {
         //cerr << "didn't sync" << endl;
-        // Consumed all buffer
-        buffer.clear();
-        sampleItr = buffer.begin();
         break;
       }
     }
 
-    assert(sampleItr <= buffer.end());
     // If synced, start/continue decoding message
     if (state == RECEIVING_MESSAGE) {
-      cerr << "Receving message with " << (buffer.end() - sampleItr) << " samples" << endl;
+      cerr << "Receving message with " << source.size() << " samples" << endl;
       int chunkChips = packeter->chunkChips();
       int chunkSamples = chunkChips * cfg->chipSamples;
       bool messageDone = false;
-      int bufferedSamples = (buffer.end() - sampleItr);
+      int bufferedSamples = source.size();
       subProgress = bufferedSamples * SUB_PROGRESS_PARTS / chunkSamples;
       if (bufferedSamples >= chunkSamples) {
         progress += SUB_PROGRESS_PARTS;
         subProgress = 0;
         vector<vector<float> > chips;
-        sampleItr = receiveChips(buffer, sampleItr, chunkChips, chips);
-        cerr << "Recieved " << chunkChips << " chips, sample " << (sampleItr - buffer.begin()) << endl;
-        assert(sampleItr <= buffer.end());
-        assert(sampleItr > buffer.begin());
+        receiveChips(chunkChips, chips);
+        cerr << "Recieved " << chunkChips << " chips, remaining samples " << source.size() << endl;
         int result = packeter->decodePartial(chips, partialMessage);
         if (result < 0) { // Failed
           messageDone = true;
@@ -87,19 +77,11 @@ int Receiver::receiveAudio(vector<float> &samples) {
           progress = 0;
         }
       } else {
-        cerr << "Need more samples than " << (buffer.end() - sampleItr) << endl;
-        buffer.erase(buffer.begin(), sampleItr);
-        sampleItr = buffer.begin();
+        cerr << "Need more samples than " << source.size() << endl;
         break;
       }
     }
-
-    assert(sampleItr <= buffer.end());
-    buffer.erase(buffer.begin(), sampleItr);
-    sampleItr = buffer.begin();
-    //cerr << "wend" << endl;
   }
-  //cerr << "exiting" << endl;
 
   return progress + subProgress;
 }
@@ -125,15 +107,14 @@ int Receiver::takeMessage(char *buffer, int bufferCapacity) {
 
 // Private
 
-vector<float>::iterator Receiver::receiveChips(vector<float> &samples, 
-    vector<float>::iterator firstSample, int numChips, vector<vector<float> > &target) {
-  assert(samples.end() - firstSample >= cfg->chipSamples * numChips);
+void Receiver::receiveChips(int numChips, vector<vector<float> > &target) {
+  assert(source.size() >= cfg->chipSamples * numChips);
   target.reserve(target.size() + numChips);
-  vector<float>::iterator sampleItr = firstSample;
+  vector<float>::iterator sampleItr = source.begin();
 
   for (int c = 0; c < numChips; ++c) {
     // Fouriate
-    float *firstSample = samples.data() + (sampleItr - samples.begin());
+    float *firstSample = source.raw() + (sampleItr - source.begin());
     Spectrum spec(firstSample, SAMPLE_RATE, cfg->chipSamples);
 
     // Process amplitudes
@@ -146,6 +127,6 @@ vector<float>::iterator Receiver::receiveChips(vector<float> &samples,
 
     sampleItr += cfg->chipSamples;
   }
-  return sampleItr;
+  source.consumeUntil(sampleItr);
 }
 

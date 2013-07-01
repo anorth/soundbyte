@@ -29,7 +29,7 @@ bin/stuff: $(OBJS2) $(THIRDS)
 	$(CC) -o $(BIN)/stuff $(OBJS2) $(THIRDS) $(LIBS) $(INC)
 
 # TODO: header files...
-$(ODIR)/%.o: %.cpp Makefile
+$(ODIR)/%.o: %.cpp *.h Makefile
 	$(CC) -c $< -o $@ $(INC) 
 
 

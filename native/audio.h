@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "stream.h"
+
 /** Fills a vector with nsamples of silence. */
 void silence(int nsamples, std::vector<float> &target);
 
@@ -39,5 +41,14 @@ void decodePcm16(char *buffer, int buflen, std::vector<float> &target);
 
 /** Encodes amplitudes into little-endian PCM-16 in buffer. */
 void encodePcm16(std::vector<float> &samples, char *buffer);
+
+class PcmDecoder : public ChainedStream<float, char> {
+public:
+  PcmDecoder(Stream<char>& source) : ChainedStream<float, char>(source) {}
+
+  virtual void doPull();
+};
+
+
 
 #endif

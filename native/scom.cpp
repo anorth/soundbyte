@@ -26,6 +26,8 @@ static Packeter *packeter = 0;
 static Sender *sender = 0;
 static Receiver *receiver = 0;
 
+static PcmDecoder *pcmDecoder = 0;
+static Stream<char> *audioInput = 0;
 
 void scomInit() {
   scomInit(
@@ -73,7 +75,9 @@ void scomInit(int base, int chipRate, int channelSpacing, int numChans) {
   ll(LOG_INFO, "SCOM", "Sync spacing %d", cfg.sync.channelSpacing);
   ll(LOG_INFO, "SCOM", "----");
 
-  syncer = new Sync(&cfg.sync);
+  audioInput = new Stream<char>();
+  pcmDecoder = new PcmDecoder(*audioInput);
+  syncer = new Sync(&cfg.sync, *pcmDecoder);
   //codec = new IdentityCodec(7); // some number, can be 1, can be 50.
   codec = new RsCodec(
     20, // encoded size (symbols)
@@ -83,7 +87,8 @@ void scomInit(int base, int chipRate, int channelSpacing, int numChans) {
   assigner = new CombinadicAssigner(cfg.numChannels);
   packeter = new Packeter(&cfg, codec, assigner);
   sender = new Sender(&cfg, syncer, packeter);
-  receiver = new Receiver(&cfg, syncer, packeter);
+
+  receiver = new Receiver(&cfg, *pcmDecoder, syncer, packeter);
 }
 
 int encodeMessage(char* payload, int payloadLength, char *waveform, int waveformCapacity) {
@@ -115,19 +120,15 @@ int encodeMessage(char* payload, int payloadLength, char *waveform, int waveform
 }
 
 int decodeAudio(char *buffer, int buflen) {
-  std::vector<float> samples;
-  decodePcm16(buffer, buflen, samples);
-  //cerr << "Decoded PCM" << endl;
-  //for (int i = 0; i < 10; ++i) {
-  //  cerr << int(buffer[i]) << ", ";
-  //}
-  //cerr << endl;
-  //for (int i = 0; i < 10; ++i) {
-  //  cerr << samples[i] << ", ";
-  //}
-  //cerr << endl;
+  audioInput->append(buffer, buffer + buflen);
+  assert (audioInput->size() < 4000);
 
-  return receiver->receiveAudio(samples);
+  pcmDecoder->pull();
+
+//  std::vector<float> samples;
+//  decodePcm16(buffer, buflen, samples);
+
+  return receiver->receiveAudio();
 }
 
 bool messageAvailable() {
