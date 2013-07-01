@@ -23,7 +23,7 @@ static struct option longopts[] = {
   { NULL,                 0,                    NULL,           0 }
 };
 
-void doListen() {
+void doListen(int expectedMessages) {
   char chunkBytes[CHUNK_BYTES];
   char messageBuffer[256];
   int numReceived = 0;
@@ -37,6 +37,9 @@ void doListen() {
         cerr << "MESSAGE: ";
         cerr.write(messageBuffer, bytes);
         cerr << endl;
+
+        cout.write(messageBuffer, bytes);
+        cout << endl;
         if (strncmp(messageBuffer, MESSAGE, strlen(MESSAGE))) {
           cout << "Received " << numReceived << " messages ok, then" << endl;
           cout << "GOT BAD MESSAGE: ";
@@ -47,6 +50,10 @@ void doListen() {
         numReceived++;
       }
     }
+  }
+  if (numReceived != expectedMessages) {
+    cout << "Received " << numReceived << " messages but expected " << expectedMessages << endl;
+    assert(false);
   }
   cout << "OK" << endl;
 }
@@ -95,7 +102,7 @@ int main(int argc, char **argv) {
   int iters = 30;
 
   if (optListen) {
-    doListen();
+    doListen(iters);
   } else if (optSend) {
     doSend(iters);
   }
