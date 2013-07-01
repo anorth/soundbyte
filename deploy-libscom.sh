@@ -1,43 +1,25 @@
 #!/bin/sh
-SCOMJAR="Scom/bin/scom.jar"
-SCOMLIB="Scom/obj/local/armeabi/libscomjni.so"
+#
+# Packages Scom distribution and unzips it into a target directory, which should be an
+# Android project root.
 
-SCOMJAR_DST="SoundbyteListener/libs/"
-SCOMLIB_DST="SoundbyteListener/libs/armeabi/"
-ANDROIDMK_DST="SoundbyteListener/jni/"
+# Halt on error
+set -e
 
-set -x
-
-if [ ! -f ${SCOMJAR} ]
+TARGET=$1
+if [ ! -d "${TARGET}" ]
 then
-  echo "Can't find ${SCOMJAR}. Rebuild the Scom project"
+  echo "Usage: $0 app-directory"
   exit 1
 fi
 
-if [ ! -d ${SCOMJAR_DST} ]
-then
-  mkdir ${SCOMJAR_DST}
-fi
+cd Scom
+./dist.sh
+sdk="`pwd`/soundbyte-android.zip"
+cd -
 
-if [ ! -d ${SCOMLIB_DST} ]
-then
-  mkdir ${SCOMLIB_DST}
-fi
-
-if [ ! -d ${ANDROIDMK_DST} ]
-then
-  mkdir ${ANDROIDMK_DST}
-fi
-
-cp ${SCOMJAR} ${SCOMJAR_DST}
-cp ${SCOMLIB} ${SCOMLIB_DST}
-
-cat > ${ANDROIDMK_DST}/Android.mk <<EOF
-LOCAL_PATH := \$(call my-dir)
-include \$(CLEAR_VARS)
-LOCAL_SHARED_LIBRARIES += scomjni
-\$(call import-module,native)
-EOF
+cd ${TARGET}
+unzip -o ${sdk}
 
 echo "Done"
 

@@ -1,8 +1,20 @@
 #!/bin/sh
+#
+# Builds distribution zip file for Android.
+# Requires that the project has been built in Eclipse first.
+
+# Halt on error
+set -e
 
 JAR="bin/scom.jar"
+JARDST="libs"
+
 LIB="obj/local/armeabi/libscomjni.so"
+LIBDST="libs/armeabi"
+
 MK="Android.mk.example"
+MKDST="jni"
+
 TARGET="`pwd`/soundbyte-android.zip"
 
 tmpdir=`mktemp -d /tmp/scomdist-XXXX`
@@ -13,14 +25,14 @@ then
 fi
 rm -f ${TARGET}
 
-mkdir -p `dirname ${tmpdir}/${JAR}`
-cp ${JAR} ${tmpdir}/${JAR}
+mkdir -p ${tmpdir}/${JARDST}
+cp ${JAR} ${tmpdir}/${JARDST}
 
-mkdir -p `dirname ${tmpdir}/${LIB}`
-cp ${LIB} ${tmpdir}/${LIB}
+mkdir -p ${tmpdir}/${LIBDST}
+cp ${LIB} ${tmpdir}/${LIBDST}
 
-mkdir -p ${tmpdir}/jni
-cp ${MK} ${tmpdir}/jni/Android.mk
+mkdir -p ${tmpdir}/${MKDST}
+cp ${MK} ${tmpdir}/${MKDST}/Android.mk
 
 cd ${tmpdir}
 zip -r --no-dir-entries ${TARGET} *
