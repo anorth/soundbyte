@@ -26,30 +26,35 @@ static struct option longopts[] = {
 void doListen() {
   char chunkBytes[CHUNK_BYTES];
   char messageBuffer[256];
+  int numReceived = 0;
   while (cin.good()) {
     cin.read(chunkBytes, CHUNK_BYTES);
     if (cin.good()) {
       decodeAudio(chunkBytes, sizeof(chunkBytes));
       while (messageAvailable()) {
         int bytes = takeMessage(messageBuffer, sizeof(messageBuffer));
-        cout.write(messageBuffer, bytes);
-        cout << endl;
 
         cerr << "MESSAGE: ";
         cerr.write(messageBuffer, bytes);
         cerr << endl;
         if (strncmp(messageBuffer, MESSAGE, strlen(MESSAGE))) {
+          cout << "Received " << numReceived << " messages ok, then" << endl;
+          cout << "GOT BAD MESSAGE: ";
+          cout.write(messageBuffer, bytes);
+          cout << endl;
           assert(false);
         } 
+        numReceived++;
       }
     }
   }
+  cout << "OK" << endl;
 }
 
-void doSend() {
+void doSend(int iters) {
   int bufSize = SAMPLE_RATE * 10;
   char *waveform = new char[bufSize];
-  while (true) {
+  while (iters-- > 0) {
     int waveformBytes = encodeMessage(MESSAGE, strlen(MESSAGE), waveform, bufSize);
     assert(waveformBytes <= bufSize);
     //cerr << "Message '" << MESSAGE << "', waveform " << waveformBytes << " bytes" << endl;
@@ -87,11 +92,12 @@ int main(int argc, char **argv) {
   argv += optind;
   
   scomInit();
+  int iters = 30;
 
   if (optListen) {
     doListen();
   } else if (optSend) {
-    doSend();
+    doSend(iters);
   }
 
   return 0;
