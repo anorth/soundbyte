@@ -41,6 +41,10 @@ public class AudioListener extends Thread {
     int bufIndex = 0;
     int minArInternalBufferSize = AudioRecord.getMinBufferSize(engine.sampleRate(),
         AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+    if (minArInternalBufferSize == AudioRecord.ERROR_BAD_VALUE) {
+      Log.e(TAG, "Couldn't get AudioRecord buffer size. Bailing out");
+      return;
+    }
     Log.d(TAG, "Min AudioRecord internal buffer size = " + minArInternalBufferSize);
     
     AudioRecord recorder = null;
@@ -59,10 +63,10 @@ public class AudioListener extends Thread {
         Log.e(TAG, "Couldn't initialise audio");
       }
     } catch (RuntimeException e) {
-      Log.e(TAG, "Failed", e);
+      Log.e(TAG, "Failed to initialise audio recording", e);
       throw e;
     } catch (InterruptedException e) {
-      Log.e(TAG, "Interrupted", e);
+      Log.e(TAG, "Interrupted initialising audio recording", e);
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);
     } finally {
