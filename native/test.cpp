@@ -3,9 +3,11 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <csignal>
 #include "getopt.h"
 #include "kiss_fftr.h"
 
+#include "debug.h"
 #include "audio.h"
 #include "constants.h"
 #include "scom.h"
@@ -14,7 +16,7 @@ using namespace std;
 
 static const int CHUNK_SAMPLES = SAMPLE_RATE / 50;
 static const int CHUNK_BYTES = CHUNK_SAMPLES * 2;
-static char *MESSAGE = "http://www.helixta.com.au/";
+static char* MESSAGE = "http://www.helixta.com.au/";
 char blank_chunk[CHUNK_BYTES];
 
 static struct option longopts[] = {
@@ -76,6 +78,10 @@ void doSend(int iters) {
 }
 
 int main(int argc, char **argv) {
+  signal(SIGSEGV, signal_handler);
+  signal(SIGKILL, signal_handler);
+  signal(6, signal_handler); // TODO: figure out what the constant is for assert
+
   bool optListen = false, optSend = false;
   for (int i = 0; i < CHUNK_BYTES; i++) {
     blank_chunk[i] = 0;

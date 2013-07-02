@@ -1,6 +1,6 @@
 # TODO: figure out how to use -Wshadow without getting warnings
 #       for ctor args
-CC=g++ -g
+CC=g++ -g -rdynamic
 #CC=g++ -Ofast
 
 ODIR=obj
@@ -15,7 +15,7 @@ BIN=bin
 #OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 OBJS=assigners.o audio.o codecs.o log.o packeter.o receiver.o scom.o \
-     sender.o spectrum.o sync.o test.o util.o
+     sender.o spectrum.o sync.o test.o util.o debug.o
 THIRDS=$(ODIR)/kiss_fftr.o $(ODIR)/kiss_fft.o \
      $(ODIR)/init_rs_int.o $(ODIR)/encode_rs_int.o $(ODIR)/decode_rs_int.o
 
