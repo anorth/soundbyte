@@ -12,6 +12,11 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.util.Log;
 
+/**
+ * Encodes and transmits messages via the Android audio hardware.
+ * 
+ * A message is sent repeatedly until replaced.
+ */
 public class AudioPlayer extends Thread implements ListeningPolicy {
   
   private static final String TAG = "SoundbyteAudioPlayer";
@@ -30,6 +35,11 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
   private volatile boolean stopped = false;
   private volatile boolean isWritingToTracker = false;
   
+  /**
+   * Creates a new player.
+   * 
+   * @param engine engine with which to encode messages
+   */
   public AudioPlayer(Engine engine) {
     this.engine = engine;
   }
@@ -86,6 +96,12 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
     }
   }
   
+  /**
+   * {@inheritDoc}
+   * 
+   * Returns false if audio is currently being written to the tracker, or the tracker 
+   * is currently playing audio. This prevents the local device receiving its own messages.
+   */
   @Override
   public boolean canListenNow() {
     if (isWritingToTracker) {
@@ -97,6 +113,8 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
   /**
    * Schedules a message for sending when the previous message has finished. The message
    * is sent repeatedly, until replaced or set null/empty.
+   * 
+   * @param payload the message payload to send, or null.
    */
   public void sendMessage(byte[] payload) {
     byte[] data = null;
@@ -113,6 +131,9 @@ public class AudioPlayer extends Thread implements ListeningPolicy {
     }
   }
   
+  /**
+   * Signals this thread to stop after playing the current message.
+   */
   public void close() {
     stopped = true;
   }

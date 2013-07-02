@@ -2,7 +2,10 @@ package io.soundbyte.core;
 
 import java.nio.ByteBuffer;
 
-public class Jni {
+/**
+ * Interface to internal native engine.
+ */
+class Jni {
 
   static {
     System.loadLibrary("scomjni");

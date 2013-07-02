@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 
-public class Util {
+class Util {
   
   /** Reads an input stream to completion */
   public static String slurp(InputStream is) throws IOException {

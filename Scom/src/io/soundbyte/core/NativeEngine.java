@@ -1,8 +1,6 @@
 package io.soundbyte.core;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -11,7 +9,6 @@ import java.util.Arrays;
 
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.Toast;
 
 public class NativeEngine implements Engine {
 
@@ -23,6 +20,7 @@ public class NativeEngine implements Engine {
   private final String apiKey;
   private final Jni jni;
   private volatile int receiveProgress;
+  private boolean started = false;
 
   public static EngineConfiguration defaultConfiguration() {
     return new EngineConfiguration(18000, 8, 2, 50);
@@ -53,14 +51,17 @@ public class NativeEngine implements Engine {
   public void start() {
     Log.i(TAG, "Native engine starting");
     checkLicense();
+    started = true;
   }
 
   @Override
   public synchronized void stop() {
+    started = false;
   }
 
   @Override
   public ByteBuffer encodeMessage(byte[] payload) {
+    checkStarted();
     if (payload == null) {
       return null;
     }
@@ -74,11 +75,13 @@ public class NativeEngine implements Engine {
 
   @Override
   public void receiveAudio(ByteBuffer audio) {
+    checkStarted();
     receiveProgress = jni.decodeAudio(audio);
   }
 
   @Override
   public boolean messageAvailable() {
+    checkStarted();
     return jni.messageAvailable();
   }
 
@@ -98,6 +101,10 @@ public class NativeEngine implements Engine {
   @Override
   public int messageProgress() {
     return receiveProgress;
+  }
+
+  private void checkStarted() {
+    if (!started) { throw new IllegalStateException("Engine not started"); }
   }
 
   private ByteBuffer allocateWaveformBuffer() {

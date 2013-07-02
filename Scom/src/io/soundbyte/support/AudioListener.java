@@ -12,7 +12,7 @@ import android.util.Log;
 
 /**
  * Records audio from the Android system and processes it with the Soundbyte engine,
- * providing messages when they are received.
+ * emitting messages to a {@link MessageReceiver} as they are received.
  */
 public class AudioListener extends Thread {
 
@@ -27,6 +27,13 @@ public class AudioListener extends Thread {
   private int lastProgress = 0;
   private volatile boolean stopped = false;
   
+  /**
+   * Creates a new audio listener.
+   * 
+   * @param engine engine with which to process audio
+   * @param receiver receives decoded messages
+   * @param policy determines when audio data is valid for decoding
+   */
   public AudioListener(Engine engine, MessageReceiver receiver, ListeningPolicy policy) {
     this.engine = engine;
     this.messageReceiver = receiver;
@@ -79,6 +86,9 @@ public class AudioListener extends Thread {
     }
   }
 
+  /**
+   * Signals this thread to stop after processing already-received audio.
+   */
   public void close() {
     stopped = true;
   }
