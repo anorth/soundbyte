@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 /**
  * Encodes and decodes data to/from audio buffers.
  * 
- * An engine must be thread-safe, though this may be acheived by synchronizing
+ * An engine must be thread-safe, though this may be achieved by synchronizing
  * method implementations.
  */
 public interface Engine {

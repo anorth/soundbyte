@@ -96,7 +96,7 @@ public class MainActivity extends Activity implements MessageReceiver, SocketLis
   public void onStart() {
     super.onStart();
     Log.w(TAG, "Received onStart");
-    engine = new NativeEngine();
+    engine = new NativeEngine("de8a95e0-e20e-11e2-a28f-0800200c9a66");
 //    engine = new TetheredEngine(DECODER_PORT, this);
     engine.start();
     player = new AudioPlayer(engine);
