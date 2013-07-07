@@ -11,6 +11,7 @@
 #include "audio.h"
 #include "constants.h"
 #include "scom.h"
+#include "util.h"
 
 #include "stream.h"
 
@@ -24,27 +25,73 @@ char blank_chunk[CHUNK_BYTES];
 static struct option longopts[] = {
   { "listen",             no_argument,          NULL,          'l' },
   { "send",               no_argument,          NULL,          's' },
+  { "tests",              no_argument,          NULL,          't' },
   { NULL,                 0,                    NULL,           0 }
 };
 
-void doListen(int expectedMessages) {
-  //Buffer<int> test;
-  //test.push_back(5);
-  //test.push_back(6);
-  //cout << "A";
-  //assert(test.raw()[0] == 5);
-  //cout << "B";
-  //test.consume(1);
-  //assert(test.raw()[0] == 6);
-  //test.push_back(7);
-  //test.push_back(8);
-  //test.push_back(1);
-  //test.push_back(2);
-  //test.consume(4);
-  //assert(test.raw()[0] == 2);
+// TODO: use macro instead. or an actual unit test framework.
+template<typename T>
+void assertEquals(T expected, T actual) {
+  if (expected != actual) {
+    cout << "Expected: " << expected << " but got: " << actual << endl;
+    assert(false);
+  }
+}
 
-  //cout << "DONE";
-  //assert(false);
+int doTests() {
+  Buffer<int> test;
+  test.push_back(5);
+  test.push_back(6);
+  assert(test.raw()[0] == 5);
+  test.consume(1);
+  assert(test.raw()[0] == 6);
+  test.push_back(7);
+  test.push_back(8);
+  test.push_back(1);
+  test.push_back(2);
+  test.consume(4);
+  assert(test.raw()[0] == 2);
+
+  unsigned int val = 06712534;
+  unsigned char *ptr = (unsigned char *) &val;
+  assertEquals(04u, unpackBits(ptr, 0, 3));
+  assertEquals(03u, unpackBits(ptr, 3, 3));
+  assertEquals(01u, unpackBits(ptr, 6, 2));
+  assertEquals(05u, unpackBits(ptr, 6, 3));
+  assertEquals(02u, unpackBits(ptr, 9, 3));
+  assertEquals(01u, unpackBits(ptr, 12, 3));
+  assertEquals(07u, unpackBits(ptr, 15, 3));
+  assertEquals(06u, unpackBits(ptr, 18, 3));
+  assertEquals(06712534u, unpackBits(ptr, 0, 21));
+  assertEquals(0125u, unpackBits(ptr, 6, 9));
+  assertEquals(0125u>>1, unpackBits(ptr, 7, 8));
+  assertEquals(031253u, unpackBits(ptr, 3, 14));
+
+  val = 0;
+  packBits(ptr, 0, 3, 02u);
+  assertEquals(02u, val);
+  packBits(ptr, 3, 3, 06u);
+  assertEquals(062u, val);
+  packBits(ptr, 6, 3, 07u);
+  assertEquals(0762u, val);
+  packBits(ptr, 3, 3, 05u);
+  assertEquals(0752u, val);
+  packBits(ptr, 0, 1, 01u);
+  assertEquals(0753u, val);
+  packBits(ptr, 1, 6, 00u);
+  assertEquals(0601u, val);
+  packBits(ptr, 6, 12, 05403u);
+  assertEquals(0540301u, val);
+  packBits(ptr, 6, 11, 0u);
+  assertEquals(0400001u, val);
+  packBits(ptr, 18, 1, 1u);
+  assertEquals(01400001u, val);
+
+  cout << "TESTS PASSED" << endl;
+  return 0;
+}
+
+void doListen(int expectedMessages) {
   char chunkBytes[CHUNK_BYTES];
   char messageBuffer[256];
   int numReceived = 0;
@@ -107,7 +154,7 @@ int main(int argc, char **argv) {
   }
 
   int ch;
-  while ((ch = getopt_long(argc, argv, "ls", longopts, NULL)) != -1) {
+  while ((ch = getopt_long(argc, argv, "lst", longopts, NULL)) != -1) {
     switch (ch) {
       case 'l':
         optListen = true;
@@ -115,6 +162,8 @@ int main(int argc, char **argv) {
       case 's':
         optSend = true;
         break;
+      case 't':
+        return doTests();
       default:
         assert(false);
         //usage();

@@ -159,3 +159,57 @@ void toBits(int integer, int nbits, vector<float> &target) {
   }
 }
 
+unsigned int unpackBits(unsigned char *ptr, int offset, int nbits) {
+  assert(sizeof(unsigned char) == 1);
+
+  int index = offset >> 3;
+  int bitOffset = offset & 7;
+  int result = 0;
+  int shift = 0;
+  //cout << "START " << endl;
+  while (nbits > 0) {
+    // TODO: word at a time, not byte at a time
+    int maxChunk = 8 - bitOffset;
+    int chunkBits = (nbits > maxChunk ? maxChunk : nbits) ;
+    int mask = (1<<chunkBits) - 1;
+
+    int chunk = (ptr[index] >> bitOffset) & mask;
+    //cout << "cb:" << chunkBits << " bo:" << bitOffset << " sh:" << shift << " ch:" << chunk;
+    
+    result |= chunk << shift;
+
+    //cout << " r:" << result << endl;
+
+    nbits -= chunkBits;
+    shift += chunkBits;
+    index++;
+    bitOffset = 0;
+  }
+
+  return result;
+}
+
+void packBits(unsigned char *ptr, int offset, int nbits, unsigned int value) {
+  assert(value < (1<<nbits));
+  int index = offset >> 3;
+  int bitOffset = offset & 7;
+  int shift = 0;
+  //cout << "START " << endl;
+  while (nbits > 0) {
+    int maxChunk = 8 - bitOffset;
+    int chunkBits = (nbits > maxChunk ? maxChunk : nbits) ;
+    int mask = (1<<chunkBits) - 1;
+
+    int chunk = (value >> shift) & mask;
+    //cout << "cb:" << chunkBits << " bo:" << bitOffset << " sh:" << shift << " ch:" << chunk
+    //  << " mask:" << mask << " ~m:" << (~mask) << " cur:" << (int) ptr[index] << endl;
+    ptr[index] = (ptr[index] & ~(mask << bitOffset)) | (chunk << bitOffset);
+
+    //cout << "cb:" << chunkBits << " bo:" << bitOffset << " sh:" << shift << " ch:" << chunk;
+
+    nbits -= chunkBits;
+    shift += chunkBits;
+    index++;
+    bitOffset = 0;
+  }
+}

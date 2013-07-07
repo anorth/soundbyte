@@ -81,5 +81,7 @@ std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>&
   return os;
 }
 
+unsigned int unpackBits(unsigned char *ptr, int offset, int nbits);
+void packBits(unsigned char *ptr, int offset, int nbits, unsigned int value);
 
 #endif
