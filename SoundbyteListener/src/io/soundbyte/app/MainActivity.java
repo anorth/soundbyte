@@ -31,7 +31,6 @@ public class MainActivity extends Activity implements MessageReceiver, SocketLis
   private TextView statusLabel = null;  
 
   private String TWITTER = "com.twitter.android";
-
   
   private Charset UTF8 = Charset.forName("UTF-8");
   private String defaultText = "";
@@ -96,7 +95,7 @@ public class MainActivity extends Activity implements MessageReceiver, SocketLis
   public void onStart() {
     super.onStart();
     Log.w(TAG, "Received onStart");
-    engine = new NativeEngine("de8a95e0-e20e-11e2-a28f-0800200c9a66");
+    engine = new NativeEngine(this, "de8a95e0-e20e-11e2-a28f-0800200c9a66");
 //    engine = new TetheredEngine(DECODER_PORT, this);
     engine.start();
     player = new AudioPlayer(engine);
@@ -130,7 +129,6 @@ public class MainActivity extends Activity implements MessageReceiver, SocketLis
     Log.w(TAG, "Received onStop");
     listener.close();
     player.close();
-    engine.stop();
     try {
       listener.join(1000);
       player.join(5000);
@@ -138,6 +136,7 @@ public class MainActivity extends Activity implements MessageReceiver, SocketLis
       Log.e(TAG, "Interrupted waiting for threads to close");
     }
     isForeground = false;
+    engine.stop();
     super.onStop();
   }
 

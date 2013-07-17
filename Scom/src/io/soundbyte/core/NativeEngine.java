@@ -1,5 +1,7 @@
 package io.soundbyte.core;
 
+import io.soundbyte.thirdparty.com.mixpanel.android.mpmetrics.MixpanelAPI;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -7,6 +9,10 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -16,9 +22,12 @@ public class NativeEngine implements Engine {
   private static final int MAX_MESSAGE_LENGTH = 250;
   private static final int BUFFER_DURATION_SECONDS = 10;
   private static final String LICENSE_URL_PREFIX = "http://license.soundbyte.io/key";
+  private static final String MP_KEY = "f739c4a2d7db9c4c38dc0bf1a83072cc";
   
   private final String apiKey;
   private final Jni jni;
+  private final MixpanelAPI mp;
+  private final String installationId;
   private volatile int receiveProgress;
   private boolean started = false;
 
@@ -26,17 +35,20 @@ public class NativeEngine implements Engine {
     return new EngineConfiguration(18000, 8, 2, 50);
   }
   
-  public NativeEngine(String apiKey) {
-    this(apiKey, defaultConfiguration());
+  public NativeEngine(Context context, String apiKey) {
+    this(context, apiKey, defaultConfiguration());
   }
   
-  public NativeEngine(String apiKey, EngineConfiguration config) {
+  public NativeEngine(Context context, String apiKey, EngineConfiguration config) {
     this.apiKey = apiKey;
     this.jni = new Jni();
+    this.installationId = Installation.id(context);
+    this.mp = MixpanelAPI.getInstance(context, MP_KEY);
     jni.init(config.baseFrequency, config.subcarriers, config.subcarrierSpacing, 
         config.chipRate);
+    initAnalytics(apiKey);
   }
-  
+
   @Override
   public int bytesPerSample() {
     return Constants.BYTES_PER_SAMPLE;
@@ -48,14 +60,26 @@ public class NativeEngine implements Engine {
   }
 
   @Override
-  public void start() {
-    Log.i(TAG, "Native engine starting");
-    checkLicense();
-    started = true;
+  public synchronized void start() {
+    if (!started) {
+      Log.i(TAG, "Native engine starting");
+      checkLicense();
+      JSONObject params = new JSONObject();
+      try {
+        params.put("installation-id", installationId);
+        params.put("new-installation", Installation.wasNewInstallation());
+      } catch (JSONException e) {
+        Log.e(TAG, "Soundbyte instrumentation failure", e);
+      }
+      mp.track("engine-started", params);
+      mp.flush();
+      started = true;
+    }
   }
 
   @Override
   public synchronized void stop() {
+    mp.flush();
     started = false;
   }
 
@@ -112,6 +136,20 @@ public class NativeEngine implements Engine {
     return ByteBuffer.allocateDirect(nbytes);
   }
   
+  private void initAnalytics(String apiKey) {
+    JSONObject superProperties = new JSONObject();
+    try {
+      superProperties.put("installation-id", installationId);
+      superProperties.put("new-installation", Installation.wasNewInstallation());
+      superProperties.put("api-key", apiKey);
+    } catch (JSONException e) {
+      Log.e(TAG, "Soundbyte instrumentation failure", e);
+    }
+    mp.registerSuperProperties(superProperties);
+    mp.identify(apiKey);
+    mp.getPeople().identify(apiKey);
+  }
+
   private void checkLicense() {
     AsyncTask<Void, Void, Boolean> t = new AsyncTask<Void, Void, Boolean>() {
       @Override

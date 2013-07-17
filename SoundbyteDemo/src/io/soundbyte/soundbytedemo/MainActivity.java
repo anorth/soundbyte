@@ -64,7 +64,7 @@ public class MainActivity extends Activity implements MessageReceiver {
   public void onStart() {
     super.onStart();
     Log.d(TAG, "Received onStart");
-    engine = new NativeEngine("fb590170-e20e-11e2-a28f-0800200c9a66");
+    engine = new NativeEngine(this, "fb590170-e20e-11e2-a28f-0800200c9a66");
     engine.start();
     player = new AudioPlayer(engine);
     player.start();
@@ -94,13 +94,13 @@ public class MainActivity extends Activity implements MessageReceiver {
     Log.d(TAG, "Received onStop");
     listener.close();
     player.close();
-    engine.stop();
     try {
       listener.join(1000);
       player.join(5000);
     } catch (InterruptedException e) {
       Log.e(TAG, "Interrupted waiting for threads to close");
     }
+    engine.stop();
     super.onStop();
   }
 
