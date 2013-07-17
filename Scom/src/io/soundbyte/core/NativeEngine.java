@@ -31,15 +31,35 @@ public class NativeEngine implements Engine {
   private volatile int receiveProgress;
   private boolean started = false;
 
+  /**
+   * A configuration that generally works well: 18KHz, 8 subcarriers with 
+   * spacing of two, 50 chips / second.
+   */
   public static EngineConfiguration defaultConfiguration() {
     return new EngineConfiguration(18000, 8, 2, 50);
   }
   
+  /**
+   * Constructs an engine with default configuration.
+   * 
+   * @param context application context
+   * @param apiKey your API key
+   */
   public NativeEngine(Context context, String apiKey) {
     this(context, apiKey, defaultConfiguration());
   }
   
+  /**
+   * Constructs an engine.
+   * 
+   * @param context application context
+   * @param apiKey your API key
+   * @param config engine configuration
+   */
   public NativeEngine(Context context, String apiKey, EngineConfiguration config) {
+    if (apiKey == null || apiKey.isEmpty()) {
+      throw new IllegalArgumentException("Invalid API key: " + apiKey);
+    }
     this.apiKey = apiKey;
     this.jni = new Jni();
     this.installationId = Installation.id(context);
