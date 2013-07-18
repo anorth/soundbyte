@@ -10,7 +10,6 @@
 		FA49106816ED573A005477E3 /* assigners.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49104E16ED573A005477E3 /* assigners.cpp */; };
 		FA49106916ED573A005477E3 /* audio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49105016ED573A005477E3 /* audio.cpp */; };
 		FA49106A16ED573A005477E3 /* codecs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49105316ED573A005477E3 /* codecs.cpp */; };
-		FA49106B16ED573A005477E3 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49105716ED573A005477E3 /* log.cpp */; };
 		FA49106C16ED573A005477E3 /* packeter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49105916ED573A005477E3 /* packeter.cpp */; };
 		FA49106D16ED573A005477E3 /* receiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49105B16ED573A005477E3 /* receiver.cpp */; };
 		FA49106E16ED573A005477E3 /* scom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA49105D16ED573A005477E3 /* scom.cpp */; };
@@ -28,6 +27,7 @@
 		FA49109916ED5C3A005477E3 /* kiss_fftndr.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49109116ED5C3A005477E3 /* kiss_fftndr.c */; };
 		FA49109A16ED5C3A005477E3 /* kiss_fftr.c in Sources */ = {isa = PBXBuildFile; fileRef = FA49109316ED5C3A005477E3 /* kiss_fftr.c */; };
 		FA77B64E170F8394003EFF19 /* scom.h in Headers */ = {isa = PBXBuildFile; fileRef = FA49105E16ED573A005477E3 /* scom.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		FAA2D84F1797AAD000DEF1B0 /* log.h in Headers */ = {isa = PBXBuildFile; fileRef = FA49105816ED573A005477E3 /* log.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -54,7 +54,6 @@
 		FA49105416ED573A005477E3 /* codecs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codecs.h; sourceTree = "<group>"; };
 		FA49105516ED573A005477E3 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		FA49105616ED573A005477E3 /* constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = constants.h; sourceTree = "<group>"; };
-		FA49105716ED573A005477E3 /* log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = log.cpp; sourceTree = "<group>"; };
 		FA49105816ED573A005477E3 /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = log.h; sourceTree = "<group>"; };
 		FA49105916ED573A005477E3 /* packeter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = packeter.cpp; sourceTree = "<group>"; };
 		FA49105A16ED573A005477E3 /* packeter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = packeter.h; sourceTree = "<group>"; };
@@ -131,7 +130,6 @@
 				FA49105416ED573A005477E3 /* codecs.h */,
 				FA49105516ED573A005477E3 /* config.h */,
 				FA49105616ED573A005477E3 /* constants.h */,
-				FA49105716ED573A005477E3 /* log.cpp */,
 				FA49105816ED573A005477E3 /* log.h */,
 				FA49105916ED573A005477E3 /* packeter.cpp */,
 				FA49105A16ED573A005477E3 /* packeter.h */,
@@ -199,6 +197,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FA77B64E170F8394003EFF19 /* scom.h in Headers */,
+				FAA2D84F1797AAD000DEF1B0 /* log.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -257,7 +256,6 @@
 				FA49106816ED573A005477E3 /* assigners.cpp in Sources */,
 				FA49106916ED573A005477E3 /* audio.cpp in Sources */,
 				FA49106A16ED573A005477E3 /* codecs.cpp in Sources */,
-				FA49106B16ED573A005477E3 /* log.cpp in Sources */,
 				FA49106C16ED573A005477E3 /* packeter.cpp in Sources */,
 				FA49106D16ED573A005477E3 /* receiver.cpp in Sources */,
 				FA49106E16ED573A005477E3 /* scom.cpp in Sources */,

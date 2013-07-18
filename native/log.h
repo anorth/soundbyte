@@ -1,7 +1,9 @@
 #ifndef _LOG_H_
 #define _LOG_H_
 
+#ifndef __OBJC__
 #include <cstdarg>
+#endif
 
 typedef enum {
   // See android/log.h

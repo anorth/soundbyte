@@ -9,13 +9,15 @@
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioToolbox/AudioSession.h>
 #import <AudioUnit/AudioUnit.h>
-#import <Scom/scom.h>
 
 #import "CADebugMacros.h"
 #import "CAStreamBasicDescription.h"
 #import "CAXException.h"
 
 #import "SBTAppDelegate.h"
+#import "SBTEngine.h"
+#import "SBTNativeEngine.h"
+#import "SBTTetheredEngine.h"
 
 static void rioInterruptionListener(void *inClientData, UInt32 inInterruption);
 static int setupRemoteIO(AudioUnit& inRemoteIOUnit, AURenderCallbackStruct inRenderProc,
@@ -25,6 +27,8 @@ static OSStatus performThru(void *inRefCon, AudioUnitRenderActionFlags *ioAction
                             AudioBufferList *ioData);
 static void silenceData(AudioBufferList *inData);
 
+static id<SBTEngine> engine;
+
 static const float SAMPLE_RATE = 44100;
 
 @implementation SBTAppDelegate
@@ -32,20 +36,11 @@ static const float SAMPLE_RATE = 44100;
 @synthesize rioUnit;
 @synthesize inputProc;
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
-{
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
 
   inputProc.inputProc = performThru;
   inputProc.inputProcRefCon = (__bridge void *)self;
-
-//  try {
-//
-//  }
-//  catch (CAXException &e) {
-//    char buf[256];
-//    fprintf(stderr, "Error: %s (%s)\n", e.mOperation, e.FormatError(buf));
-//  }
-
+  
   // Initialize and configure the audio session
   NSLog(@"Initialising audio session");
   XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, (__bridge void *)self), "couldn't initialize audio session");
@@ -74,9 +69,10 @@ static const float SAMPLE_RATE = 44100;
 
   XThrowIfError(AudioOutputUnitStart(rioUnit), "couldn't start remote i/o unit");
 
-  scomInit();
-  NSLog(@"Scom initialised");
-  
+//  engine = [[SBTTetheredEngine alloc] init];
+  engine = [[SBTNativeEngine alloc] init];
+  [engine start];
+
   return YES;
 }
 							
@@ -172,18 +168,23 @@ OSStatus performThru(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
   OSStatus err = AudioUnitRender(THIS->rioUnit, ioActionFlags, inTimeStamp, 1, inNumberFrames, ioData);
   if (err) { printf("PerformThru: error %d\n", (int)err); return err; }
 
-  //NSLog(@"Received %d frames in %d buffers, bus %d", (unsigned)inNumberFrames,
-  //      (unsigned) ioData->mNumberBuffers, (unsigned)inBusNumber);
+  NSLog(@"Received %d frames in %d buffers, bus %d", (unsigned)inNumberFrames,
+        (unsigned) ioData->mNumberBuffers, (unsigned)inBusNumber);
   for (int i = 0; i < ioData->mNumberBuffers; ++i) {
-    int progress = decodeAudio((char *)ioData->mBuffers[i].mData, ioData->mBuffers[i].mDataByteSize);
+    // FIXME avoid this copy
+    NSData *data = [NSData dataWithBytes:ioData->mBuffers[i].mData length:ioData->mBuffers[i].mDataByteSize];
+    [engine receiveAudio:data];
   }
 
-  if (messageAvailable()) {
+
+  
+  if ([engine messageAvailable]) {
     NSLog(@"Holy shit, got a message!");
-    char buffer[1000];
-    int messageBytes = takeMessage(buffer, sizeof(buffer) - 1);
-    buffer[messageBytes] = '\0';
-    NSLog(@"%s", buffer);
+    NSData *msg = [engine takeMessage];
+//    char buffer[1000];
+//    int messageBytes = takeMessage(buffer, sizeof(buffer) - 1);
+//    buffer[messageBytes] = '\0';
+//    NSLog(@"%s", buffer);
   }
 
   silenceData(ioData);

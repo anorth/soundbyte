@@ -22,6 +22,9 @@
 		FA77B653170FF768003EFF19 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B652170FF767003EFF19 /* AudioToolbox.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		FA77B657171004A5003EFF19 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B656171004A5003EFF19 /* CoreAudio.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		FA77B66117126026003EFF19 /* CAStreamBasicDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA77B65F17126026003EFF19 /* CAStreamBasicDescription.cpp */; };
+		FAA2D8491797A4EA00DEF1B0 /* SBTTetheredEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = FAA2D8481797A4EA00DEF1B0 /* SBTTetheredEngine.m */; };
+		FAA2D84C1797A64100DEF1B0 /* SBTNativeEngine.mm in Sources */ = {isa = PBXBuildFile; fileRef = FAA2D84B1797A64100DEF1B0 /* SBTNativeEngine.mm */; };
+		FAA2D84E1797AA4E00DEF1B0 /* SBTLog.mm in Sources */ = {isa = PBXBuildFile; fileRef = FAA2D84D1797AA4E00DEF1B0 /* SBTLog.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +74,12 @@
 		FA77B66317126068003EFF19 /* CADebugPrintf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CADebugPrintf.h; path = CoreAudioUtility/PublicUtility/CADebugPrintf.h; sourceTree = SOURCE_ROOT; };
 		FA77B664171261AB003EFF19 /* CAXException.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = CAXException.cpp; path = CoreAudioUtility/PublicUtility/CAXException.cpp; sourceTree = SOURCE_ROOT; };
 		FA77B665171261AB003EFF19 /* CAXException.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CAXException.h; path = CoreAudioUtility/PublicUtility/CAXException.h; sourceTree = SOURCE_ROOT; };
+		FAA2D8461797A40800DEF1B0 /* SBTEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SBTEngine.h; sourceTree = "<group>"; };
+		FAA2D8471797A4EA00DEF1B0 /* SBTTetheredEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBTTetheredEngine.h; sourceTree = "<group>"; };
+		FAA2D8481797A4EA00DEF1B0 /* SBTTetheredEngine.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SBTTetheredEngine.m; sourceTree = "<group>"; };
+		FAA2D84A1797A64100DEF1B0 /* SBTNativeEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBTNativeEngine.h; sourceTree = "<group>"; };
+		FAA2D84B1797A64100DEF1B0 /* SBTNativeEngine.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = SBTNativeEngine.mm; sourceTree = "<group>"; };
+		FAA2D84D1797AA4E00DEF1B0 /* SBTLog.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = SBTLog.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,6 +141,12 @@
 				FA77B62C170F77A6003EFF19 /* SBTViewController.h */,
 				FA77B62D170F77A6003EFF19 /* SBTViewController.m */,
 				FA77B629170F77A6003EFF19 /* MainStoryboard.storyboard */,
+				FAA2D8461797A40800DEF1B0 /* SBTEngine.h */,
+				FAA2D8471797A4EA00DEF1B0 /* SBTTetheredEngine.h */,
+				FAA2D8481797A4EA00DEF1B0 /* SBTTetheredEngine.m */,
+				FAA2D84A1797A64100DEF1B0 /* SBTNativeEngine.h */,
+				FAA2D84B1797A64100DEF1B0 /* SBTNativeEngine.mm */,
+				FAA2D84D1797AA4E00DEF1B0 /* SBTLog.mm */,
 			);
 			path = Soundbyte;
 			sourceTree = "<group>";
@@ -269,6 +284,9 @@
 				FA77B622170F77A6003EFF19 /* SBTAppDelegate.mm in Sources */,
 				FA77B62E170F77A6003EFF19 /* SBTViewController.m in Sources */,
 				FA77B66117126026003EFF19 /* CAStreamBasicDescription.cpp in Sources */,
+				FAA2D8491797A4EA00DEF1B0 /* SBTTetheredEngine.m in Sources */,
+				FAA2D84C1797A64100DEF1B0 /* SBTNativeEngine.mm in Sources */,
+				FAA2D84E1797AA4E00DEF1B0 /* SBTLog.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
