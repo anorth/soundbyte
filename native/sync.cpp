@@ -23,7 +23,7 @@ static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 10; // num in seconds
 //  cerr << "]\n";
 //}
 
-Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
+Sync::Sync(SyncConfig* cfg, Stream<float>& source) : source(source), cfg(cfg) {
   samplesPerMetaSample = (float) cfg->chipSize / cfg->detectionSamplesPerChip;
 
   assert(cfg->numChannels % 2 == 0);
@@ -45,7 +45,7 @@ Sync::Sync(SyncConfig* cfg) : cfg(cfg) {
     }
   }
 
-  reset();
+  reset(false);
 
   //cerr << "VALS " << cfg->baseBucket << ' '
       //<< cfg->numChannels << ' ' << cfg->channelSpacing << '\n';
@@ -87,45 +87,46 @@ void Sync::generateSync(vector<float> &target) {
   createSyncCycles(1, cfg->chipsPerSyncPulse * 2, target);
 }
 
-void Sync::reset() {
+void Sync::reset(bool consume) {
   fftSampleIndex = 0;
   syncOffset = 0;
   state = -1;
-  buffer.clear();
-  buffer.reserve(MAX_BUFFER_SAMPLES);
+  // TODO: reserve certain size in buffers.
   shortMetaBuffer.clear();
   metaBuffer.clear();
-  // TODO: reserve certain size in buffers.
+
+  if (consume) {
+    source.consumeAll();
+  }
 }
 
-vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
-  if (state == -1 && samples.size() > MAX_BUFFER_SAMPLES) {
-    // TODO: use fixed size float arrays, no need for growing vectors
-    reset();
+bool Sync::sync() {
+  if (state == -1 && source.size() > MAX_BUFFER_SAMPLES) {
+    source.consumeAll();
   }
+
+  source.pull();
 
   //cerr << "do ";
   //cerr << "\n\n\n===========\nCALLED with " << samples.size() << " samples\n";
   // Append samples to buffer
   // TODO: just use a rotating buffer of a fixed float array
-  buffer.insert(buffer.end(), samples.begin(), samples.end());
 
   // need extra chipSize at the end for possible alignment signal,
   // which is 1 long cycle + 1 chip in size (sync signals need to
   // have an odd number of pulses).
 
-  while (buffer.size() >= bufferStart() + pulseSamples + cfg->chipSize) {
+  while (source.size() >= bufferStart() + pulseSamples + cfg->chipSize) {
    //// Direct version, faster for numChannels less than about 24ish
     int numChans = cfg->numChannels;
     vector<complex<float> > bucketVals(numChans);
-    assert (buffer.size() > bufferStart() + cfg->chipSize);
+    assert (source.size() > bufferStart() + cfg->chipSize);
     for (int c = 0; c < numChans; c++) {
       bucketVals[c] = 0;
-      float *b, *bEnd = buffer.data() + bufferStart() + cfg->chipSize;
+      float *b, *bEnd = source.raw() + bufferStart() + cfg->chipSize;
       complex<float> *p, *pEnd = precomp[c] + cfg->chipSize;
-      for (b = buffer.data() + bufferStart(), p = precomp[c];
+      for (b = source.raw() + bufferStart(), p = precomp[c];
           b < bEnd && p < pEnd; b++, p++) {
-        //bucketVals[c] += buffer[i] * precomp[c][i - bufferStart()];
         bucketVals[c] += (*b) * (*p);
       }
     }
@@ -165,7 +166,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
 
     if (metaBuffer.size() < metaBufferStart + longMetaSpectrumLength) {
       // No sync yet
-      return samples.end();
+      return false;
     }
 
     
@@ -197,7 +198,7 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
       for (int i = 0; i < shortMetaSpectrumLength; i++) {
         //buffer.size() >= bufferStart() + cfg->chipSize) {
         Spectrum spectrum(
-          buffer.data() + readySignalStart + (int)(samplesPerMetaSample*i),
+          source.raw() + readySignalStart + (int)(samplesPerMetaSample*i),
           SAMPLE_RATE, cfg->chipSize);
         vector<complex<float> > bucketVals(cfg->numChannels);
 
@@ -216,21 +217,21 @@ vector<float>::iterator Sync::receiveAudioAndSync(vector<float> &samples) {
           //logging.debug('state 2 ALIGNED')
           // XXX return actual alignment
           int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength) + cfg->chipSize;
-          int inputOffset = samples.size() - (buffer.size() - offset);
-          if (inputOffset < 0) {
+          if (offset < 0) {
             ll(LOG_WARN, "SCOM", "input offset before sample start, probably bad sync");
-            reset();
-            return samples.end();
+            reset(true);
+            return false;
           }
-          if (inputOffset > samples.size()) {
+          if (offset > source.size()) {
             ll(LOG_WARN, "SCOM", "input offset after sample end, probably bad sync");
-            reset();
-            return samples.end();
+            reset(true);
+            return false;
           }
-          cerr << "\n\nSUCCESS " << offset << ' ' <<  inputOffset << "\n\n";
-          ll(LOG_INFO, "SCOM", "SUCCESS %d %d", offset, inputOffset);
-          reset();
-          return samples.begin() + inputOffset;
+          cerr << "\n\nSUCCESS " << offset << "\n\n";
+          ll(LOG_INFO, "SCOM", "SUCCESS %d", offset);
+          reset(false);
+          source.consume(offset);
+          return true;
         } else {
           state = -1;
         }

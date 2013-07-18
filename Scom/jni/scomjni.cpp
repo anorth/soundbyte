@@ -7,28 +7,27 @@
 
 // Export definitions for JNI
 extern "C" {
-  jstring Java_com_example_scom_nativ_Jni_stringFromJNI(JNIEnv* env, jobject thiz);
-  void Java_com_example_scom_nativ_Jni_init(JNIEnv* env, jobject thiz,
-      jint base, jint chipRate, jint channelSpacing, jint numChannels);
-  void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
+  void Java_io_soundbyte_core_Jni_init(JNIEnv* env, jobject thiz,
+      jint base, jint subcarriers, jint subcarrierSpacing, jint chipRate);
+
+  void Java_io_soundbyte_core_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
       jobject forWaveform);
-  jint Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject buffer);
-  jboolean Java_com_example_scom_nativ_Jni_messageAvailable(JNIEnv *env, jobject thiz);
-  jint Java_com_example_scom_nativ_Jni_takeMessage(JNIEnv *env, jobject thiz, jbyteArray target);
+
+  jint Java_io_soundbyte_core_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject buffer);
+
+  jboolean Java_io_soundbyte_core_Jni_messageAvailable(JNIEnv *env, jobject thiz);
+
+  jint Java_io_soundbyte_core_Jni_takeMessage(JNIEnv *env, jobject thiz, jbyteArray target);
 }
 
 // Implementation
 
-jstring Java_com_example_scom_nativ_Jni_stringFromJNI(JNIEnv* env, jobject thiz) {
-  return env->NewStringUTF(HELLO);
+void Java_io_soundbyte_core_Jni_init(JNIEnv* env, jobject thiz,
+    jint base, jint subcarriers, jint subcarrierSpacing, jint chipRate) {
+  scomInit(base, chipRate, subcarrierSpacing, subcarriers);
 }
 
-void Java_com_example_scom_nativ_Jni_init(JNIEnv* env, jobject thiz,
-    jint base, jint chipRate, jint channelSpacing, jint numChannels) {
-  scomInit(base, chipRate, channelSpacing, numChannels);
-}
-
-void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
+void Java_io_soundbyte_core_Jni_encodeMessage(JNIEnv *env, jobject thiz, jbyteArray payload,
     jobject forWaveform) {
   // Marshal parameters
   jbyte *payloadBytes = env->GetByteArrayElements(payload, 0);
@@ -50,7 +49,7 @@ void Java_com_example_scom_nativ_Jni_encodeMessage(JNIEnv *env, jobject thiz, jb
   ll(LOG_INFO, "SCOM", "Buffer size written %d", bytesWritten);
 }
 
-jint Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject waveform) {
+jint Java_io_soundbyte_core_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobject waveform) {
   char *waveformBuffer = (char *)env->GetDirectBufferAddress(waveform);
   jclass cls = env->GetObjectClass(waveform);
   jmethodID limitMethod = env->GetMethodID(cls, "limit", "()I");
@@ -59,11 +58,11 @@ jint Java_com_example_scom_nativ_Jni_decodeAudio(JNIEnv *env, jobject thiz, jobj
   return decodeAudio(waveformBuffer, waveformBytes);
 }
 
-jboolean Java_com_example_scom_nativ_Jni_messageAvailable(JNIEnv *env, jobject thiz) {
+jboolean Java_io_soundbyte_core_Jni_messageAvailable(JNIEnv *env, jobject thiz) {
   return messageAvailable();
 }
 
-jint Java_com_example_scom_nativ_Jni_takeMessage(JNIEnv *env, jobject thiz, jbyteArray target) {
+jint Java_io_soundbyte_core_Jni_takeMessage(JNIEnv *env, jobject thiz, jbyteArray target) {
   jbyte *targetBytes = env->GetByteArrayElements(target, 0);
   int targetLen = env->GetArrayLength(target);
 

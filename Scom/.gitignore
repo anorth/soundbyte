@@ -1,3 +1,6 @@
 bin/
-libs/
+doc/
+gen/
+libs/armeabi/
 obj/
+soundbyte-android.zip

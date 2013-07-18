@@ -1,0 +1,10 @@
+<resources>
+
+    <string name="app_name">Soundbyte</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_main">Soundbyte</string>
+    <string name="listening">Audio/data on port 16000/1</string>
+    <string name="adb">adb forward tcp:NNN tcp:NNN</string>
+    <string name="instruction">Forward local port with</string>
+
+</resources>

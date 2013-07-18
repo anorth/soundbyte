@@ -1,0 +1,6 @@
+bin/
+gen/
+jni/
+libs/armeabi/
+libs/scom.jar
+obj/

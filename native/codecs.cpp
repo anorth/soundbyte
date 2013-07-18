@@ -18,21 +18,22 @@ using namespace std;
 
 IdentityCodec::IdentityCodec(int blockSize) : blockSize(blockSize) {}
 
-void IdentityCodec::encode(vector<char> &message, vector<bool> &target) {
-  toBitSequence(message, target);
+void IdentityCodec::encode(const vector<bool> &message, vector<bool> &target) const {
+  target.insert(target.end(), message.begin(), message.end());
 }
 
-int IdentityCodec::decode(vector<float> &bits, vector<char> &target) {
-  toByteSequence(bits, target);
+int IdentityCodec::decode(const vector<float> &bits, vector<bool> &target) const {
+  assert(0); // TODO: implement
+  // like this, but with right type target.insert(target.end(), bits.begin(), bits.end());
   return 0;
 }
 
-int IdentityCodec::blockMessageBytes() {
-  return blockSize;
+int IdentityCodec::blockMessageBits() const {
+  return blockSize * 8;
 }
 
-int IdentityCodec::blockEncodedBytes() {
-  return blockSize;
+int IdentityCodec::blockEncodedBits() const {
+  return blockSize * 8;
 }
 
 
@@ -70,6 +71,7 @@ ParamInputs defaultInputs[] = {
 
 RsCodec::RsCodec(int n, int k, int symsize) : blockSize(k), symsize(symsize) {
   assert(symsize >= 2 && symsize <= 16);
+  assert(n < (1<<symsize) );
   ParamInputs inputs = defaultInputs[symsize];
 
   nroots = n - k;
@@ -87,23 +89,30 @@ RsCodec::~RsCodec() {
   free_rs_int(params);
 }
 
-void RsCodec::encode(vector<char> &message, vector<bool> &target) {
+void RsCodec::encode(const vector<bool> &message, vector<bool> &target) const {
   // TODO: symsize other than 8.
-  assert(symsize == 8);
-  assert(message.size() % blockSize == 0);
+  assert(symsize > 1);
+  //assert(message.size() % blockSize == 0);
 
-  for (int block = 0; block < message.size(); block += blockSize) {
+  int blockBits = blockMessageBits();
+
+  vector<bool>::const_iterator it = message.begin();
+  for (int block = 0; block < message.size(); block += blockBits) {
     int parity[nroots];
     int data[blockSize];
     for (int i = 0; i < blockSize; i++) {
-      data[i] = (unsigned char) message[block + i];
+      //data[i] = unpackBits(&message[block], i * symsize, chunkBits);
+      // TODO: use proper iterator
+      data[i] = nextInt(message, it, symsize);
     }
 
     encode_rs_int(params, data, parity);
 
-    vector<char> encoded;
     for (int i = 0; i < blockSize; i++) {
-      encoded.push_back((char) data[i]);
+      toBits(symsize, data[i], target);
+    }
+    for (int i = 0; i < nroots; i++) {
+      toBits(symsize, parity[i], target);
     }
 
     // test errors
@@ -112,28 +121,25 @@ void RsCodec::encode(vector<char> &message, vector<bool> &target) {
     // encoded[4] = '.';
     // encoded[5] = '.';
     // encoded[6] = '.';
-
-    for (int i = 0; i < nroots; i++) {
-      encoded.push_back((char) parity[i]);
-    }
-    toBitSequence(encoded, target);
   }
 }
 
-int RsCodec::decode(vector<float> &bits, vector<char> &target) {
-  assert(symsize == 8); // update implementation if assert fails
+int RsCodec::decode(const vector<float> &floatBits, vector<bool> &target) const {
+  assert(symsize > 1);
+  assert(floatBits.size() == blockEncodedBits());
 
-  vector<char> rawBytes;
-  toByteSequence(bits, rawBytes);
-  int data[rawBytes.size()];
-  for (int i = 0; i < rawBytes.size(); i++) {
-    data[i] = (unsigned char) rawBytes[i];
+  vector<bool> bits;
+   int i = 0;
+  for (vector<float>::const_iterator it = floatBits.begin(); it != floatBits.end(); it++) {
+    bits.push_back( (*it) > 0.0f );
   }
-  //cerr << rawBytes << " <--- raw bytes\n";
+
+  vector<int> rawSymbols;
+  toSymbolSequence(symsize, bits, rawSymbols);
 
   int errors = 0;
   int erasures[nroots];
-  int count = decode_rs_int(params, data, erasures, 0);
+  int count = decode_rs_int(params, rawSymbols.data(), erasures, 0);
 
   if (count < 0) {
     cerr << "Too many errors " << count << endl;
@@ -152,21 +158,19 @@ int RsCodec::decode(vector<float> &bits, vector<char> &target) {
 
   errors += count;
 
-  for (int i = 0; i < blockMessageBytes(); i++) {
-    target.push_back((char) data[i]);
+  for (int i = 0; i < blockSize; i++) {
+    toBits(symsize, rawSymbols.data()[i], target);
   }
 
   return 0;
 }
 
-int RsCodec::blockMessageBytes() {
-  assert(symsize == 8); // update implementation if assert fails
-  return blockSize;
+int RsCodec::blockMessageBits() const {
+  return blockSize * symsize;
 }
 
-int RsCodec::blockEncodedBytes() {
-  assert(symsize == 8); // update implementation if assert fails
-  return blockSize + nroots;
+int RsCodec::blockEncodedBits() const {
+  return (blockSize + nroots) * symsize;
 }
 
 ///// Utils

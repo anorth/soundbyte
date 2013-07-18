@@ -11,6 +11,8 @@
 #include "log.h"
 #include "kiss_fftr.h"
 
+#include "stream.h"
+
 using namespace std;
 
 static const float PCM_QUANT = 32767.5;
@@ -136,10 +138,19 @@ void decodePcm16(char *buffer, int buflen, vector<float> &target) {
 }
 
 void encodePcm16(vector<float> &samples, char *buffer) {
-    ll(LOG_INFO, "SCOM", "  buffer %d", buffer);
   for (int i = 0; i < samples.size(); ++i) {
     short s = floor(PCM_QUANT * samples[i]);
     ((short *)buffer)[i] = s;
   }
 }
 
+void PcmDecoder::doPull() {
+  assert(source.size() % 2 == 0);
+
+  for (int i = 0; i < source.size(); i += 2) {
+    short *ps = (short *)(source.raw() + i);
+    push_back(((float)*ps + 0.5f) / PCM_QUANT);
+  }
+
+  source.consume(source.size());
+}
