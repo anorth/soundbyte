@@ -84,7 +84,6 @@ int Packeter::decodePartial(vector<vector<float> > &chips, vector<bool> &target)
   int error =  codec->decode(encodedBits, decoded);
   if (error) {
     ll(LOG_INFO, "SCOM", "Packet Dropped\n");
-    assert(false);
     return -1;
   }
   ll(LOG_INFO, "SCOM", "Chunk received\n");
