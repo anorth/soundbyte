@@ -99,9 +99,9 @@ int maxCombElement(int k, int m, int *cnk) {
   return n - 1;
 }
 
-int toBitSequence(vector<char> &message, vector<bool> &target) {
+int toBitSequence(const vector<char> &message, vector<bool> &target) {
   target.reserve(target.size() + message.size() * 8);
-  for (vector<char>::iterator it = message.begin(); it != message.end(); ++it) {
+  for (vector<char>::const_iterator it = message.begin(); it != message.end(); ++it) {
     char b = *it;
     for (int i = 0; i < 8; ++i) {
       target.push_back((b & (1 << i)) >> i);
@@ -110,7 +110,7 @@ int toBitSequence(vector<char> &message, vector<bool> &target) {
   return message.size() * 8;
 }
 
-int toBitSequence(vector<char> &message, vector<bool> &target, int symbolWidth) {
+int toBitSequence(const vector<char> &message, vector<bool> &target, int symbolWidth) {
   int bits = toBitSequence(message, target);
   int overflow = bits % symbolWidth;
   if (overflow) {
@@ -120,36 +120,59 @@ int toBitSequence(vector<char> &message, vector<bool> &target, int symbolWidth) 
   return bits + (symbolWidth - overflow);
 }
 
-int toByteSequence(vector<float> &bits, vector<char> &target) {
+// Reads n bit-likelihoods from it and returns a symbol
+int nextInt(const vector<bool> &bits, vector<bool>::const_iterator &it, int nbits) {
+  int v = 0;
+  for (int i = 0; i < nbits && it != bits.end(); ++i, ++it) {
+    if (*it) { 
+      v |= 1 << i;
+    }
+  }
+  return v;
+}
+
+
+char nextByte(const vector<bool> &bits, vector<bool>::const_iterator &it) {
+  char v = 0;
+  for (int i = 0; i < 8 && it != bits.end(); ++i, ++it) {
+    if (*it) { 
+      v |= 1 << i;
+    }
+  }
+  return v;
+}
+
+
+int toSymbolSequence(int symbolBits, const vector<bool> &bits, vector<int> &target) {
+  int overflow = bits.size() % symbolBits;
+  vector<bool>::const_iterator end = bits.end() - overflow;
+  vector<bool>::const_iterator it = bits.begin();
+  while (it != end) {
+    target.push_back(nextInt(bits, it, symbolBits));
+  }
+}
+
+int toByteSequence(const vector<bool> &bits, vector<char> &target) {
   int overflow = bits.size() % 8;
-  vector<float>::iterator end = bits.end() - overflow;
-  vector<float>::iterator it = bits.begin();
+  vector<bool>::const_iterator end = bits.end() - overflow;
+  vector<bool>::const_iterator it = bits.begin();
   while (it != end) {
     target.push_back(nextByte(bits, it));
   }
 }
 
-char nextByte(vector<float> &bits, vector<float>::iterator &it) {
-  char v = 0;
-  for (char i = 0; i < 8 && it != bits.end(); ++i, ++it) {
-    if (*it > 0.0f) { 
-      v |= 1 << i;
-    }
+
+void toBits(unsigned char numbits, int val, vector<bool> &target) {
+  assert(numbits < 32);
+
+  for (int i = 0; i < numbits; ++i) {
+    target.push_back((val & (1 << i)) >> i);
   }
-  return v;
 }
 
-int nextInt(vector<bool> &bits, vector<bool>::iterator &it, int nbits) {
-  int v = 0;
-  for (int i = 0; i < nbits && it != bits.end(); ++i, ++it) {
-    if (*it > 0.0f) { 
-      v |= 1 << i;
-    }
-  }
-  return v;
-}
 
-void toBits(int integer, int nbits, vector<float> &target) {
+
+void toFloatBits(int integer, int nbits, vector<float> &target) {
   for (int i = 0; i < nbits; ++i) {
     if ((integer & (1 << i)) >> i) {
       target.push_back(1.0f);

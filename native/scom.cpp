@@ -79,12 +79,12 @@ void scomInit(int base, int chipRate, int channelSpacing, int numChans) {
   pcmDecoder = new PcmDecoder(*audioInput);
   syncer = new Sync(&cfg.sync, *pcmDecoder);
   //codec = new IdentityCodec(7); // some number, can be 1, can be 50.
+  assigner = new CombinadicAssigner(cfg.numChannels);
   codec = new RsCodec(
     20, // encoded size (symbols)
     10, // message size (symbols)
-    8   // symbols size (bits)
+    assigner->bitsPerSymbol()   // symbols size (bits)
     );
-  assigner = new CombinadicAssigner(cfg.numChannels);
   packeter = new Packeter(&cfg, codec, assigner);
   sender = new Sender(&cfg, syncer, packeter);
 

@@ -24,7 +24,7 @@ CombinadicAssigner::CombinadicAssigner(int nchans) :
 void CombinadicAssigner::chipify(vector<bool> &bits, vector<vector<bool> > &chips) {
   //cerr << "bits: " << bits << endl;
   int k = nchans / 2;
-  vector<bool>::iterator it = bits.begin();
+  vector<bool>::const_iterator it = bits.begin();
   while (it != bits.end()) {
     int i = nextInt(bits, it, width);
     vector<int> signalIndexes;
@@ -68,7 +68,7 @@ void CombinadicAssigner::unchipify(vector<vector<float> > &chips, vector<float> 
     int n = inverseCombinadic(k, highIndexes);
     //cerr << "high indexes " << highIndexes << " -> " << n << endl;
     vector<float> chipBits;
-    toBits(n, width, chipBits);
+    toFloatBits(n, width, chipBits);
     bits.insert(bits.end(), chipBits.begin(), chipBits.end());
   }
 }
@@ -77,3 +77,6 @@ int CombinadicAssigner::numSymbolsForBits(int nbits) {
   return int(ceil(1.0 * nbits / width));
 }
 
+int CombinadicAssigner::bitsPerSymbol() {
+  return width;
+}

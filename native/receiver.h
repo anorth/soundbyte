@@ -28,7 +28,7 @@ private:
   int state; // actual state
   int progress; // progress indicator based on state and other factors
   int subProgress;
-  std::vector<char> partialMessage;
+  std::vector<bool> partialMessageBits;
   std::queue<std::vector<char> > messages;
 
   Stream<float>& source;

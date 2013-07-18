@@ -43,20 +43,19 @@ int inverseCombinadic(int k, std::vector<int> elts);
 int maxCombElement(int k, int m, int *cnk);
 
 // Converts message data to bits, optionally padding up to a multiple of symbolWidth.
-int toBitSequence(std::vector<char> &message, std::vector<bool> &target);
-int toBitSequence(std::vector<char> &message, std::vector<bool> &target, int symbolWidth);
+int toBitSequence(const std::vector<char> &message, std::vector<bool> &target);
+int toBitSequence(const std::vector<char> &message, std::vector<bool> &target, int symbolWidth);
 
 // Converts bits to message data. Trailing non-byte bits are ignored.
-int toByteSequence(std::vector<float> &bits, std::vector<char> &target);
-
-// Reads 8 bit-likelihoods from it and returns a byte
-char nextByte(std::vector<float> &bits, std::vector<float>::iterator &it);
+int toByteSequence(const std::vector<bool> &bits, std::vector<char> &target);
+int toSymbolSequence(int symbolBits, const std::vector<bool> &bits, std::vector<int> &target);
 
 // Reads nbits bits from it and returns an int
-int nextInt(std::vector<bool> &bits, std::vector<bool>::iterator &it, int nbits);
+int nextInt(const std::vector<bool> &bits, std::vector<bool>::const_iterator &it, int nbits);
 
 // Writes nbits bit likelihoods from integer to target
-void toBits(int integer, int nbits, std::vector<float> &target);
+void toBits(unsigned char integer, int nbits, std::vector<bool> &target);
+void toFloatBits(int integer, int nbits, std::vector<float> &target);
 
 template <class CharT, class Traits>
 std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, 

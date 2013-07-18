@@ -12,6 +12,7 @@
 #include "constants.h"
 #include "scom.h"
 #include "util.h"
+#include "codecs.h"
 
 #include "stream.h"
 
@@ -38,7 +39,7 @@ void assertEquals(T expected, T actual) {
   }
 }
 
-int doTests() {
+void testBuffer() {
   Buffer<int> test;
   test.push_back(5);
   test.push_back(6);
@@ -51,7 +52,9 @@ int doTests() {
   test.push_back(2);
   test.consume(4);
   assert(test.raw()[0] == 2);
+}
 
+void testBitPacking() {
   unsigned int val = 06712534;
   unsigned char *ptr = (unsigned char *) &val;
   assertEquals(04u, unpackBits(ptr, 0, 3));
@@ -86,6 +89,111 @@ int doTests() {
   assertEquals(0400001u, val);
   packBits(ptr, 18, 1, 1u);
   assertEquals(01400001u, val);
+}
+
+vector<char> fromString(char *str) {
+  vector<char> ret;
+  while (*str) {
+    ret.push_back(*str);
+    str++;
+  }
+  return ret;
+}
+
+vector<bool> strToBits(string& str) {
+  vector<char> data(str.begin(), str.end());
+  vector<bool> bits;
+  toBitSequence(data, bits);
+  return bits;
+}
+
+string bitsToStr(vector<bool> bits) {
+  vector<char> chars;
+  toByteSequence(bits, chars);
+  string str(chars.begin(), chars.end());
+  return str;
+}
+
+vector<float> toFloatBits(vector<bool> bits) {
+  vector<float> floats;
+  cout << "tfb 1" << endl;
+  for (vector<bool>::iterator it = bits.begin(); it != bits.end(); ++it) {
+    floats.push_back( (*it) ? 1.0f : -1.0f );
+  }
+  cout << "tfb 9 " << endl;
+  return floats;
+}
+
+void testReedSolomonMsg(RsCodec &codec, string msg, int blockBits, int expectedBlocks) {
+  vector<bool> encoded, decoded;
+
+  encoded.clear();
+  codec.encode(strToBits(msg), encoded);
+  assertEquals(blockBits * expectedBlocks, (int) encoded.size());
+
+  decoded.clear();
+  vector<float> floatBits = toFloatBits(encoded);
+  for (int i = 0; i < expectedBlocks; ++i) {
+    vector<float> section(&floatBits[i * blockBits], &floatBits[i * blockBits] + blockBits);
+    codec.decode(section, decoded); 
+  }
+  assertEquals(msg, bitsToStr(decoded).substr(0, msg.length()));
+}
+
+void testReedSolomon() {
+  {
+    RsCodec codec(
+        20, // encoded size (symbols)
+        10, // message size (symbols)
+        8   // symbols size (bits)
+        );
+
+    int blockSize = 20 * 8;
+    testReedSolomonMsg(codec, "hello", blockSize, 1);
+    testReedSolomonMsg(codec, "hello67890", blockSize, 1);
+    testReedSolomonMsg(codec, "hello678901", blockSize, 2);
+  }
+
+  {
+    RsCodec codec(
+        20, // encoded size (symbols)
+        10, // message size (symbols)
+        6   // symbols size (bits)
+        );
+
+    int blockSize = 20 * 6;
+    testReedSolomonMsg(codec, "hello", blockSize, 1);
+    testReedSolomonMsg(codec, "hello67890", blockSize, 2);
+    testReedSolomonMsg(codec, "hello678901", blockSize, 2);
+    testReedSolomonMsg(codec, "hello6789012", blockSize, 2);
+    testReedSolomonMsg(codec, "hello67890123", blockSize, 2);
+    testReedSolomonMsg(codec, "hello678901234", blockSize, 2);
+    testReedSolomonMsg(codec, "hello6789012345", blockSize, 2);
+    testReedSolomonMsg(codec, "hello67890123456", blockSize, 3);
+
+    cout << " OK -------" << endl;
+  }
+
+  {
+    RsCodec codec(
+        15, // encoded size (symbols)
+        8,  // message size (symbols)
+        4   // symbols size (bits)
+        );
+
+    int blockSize = 15 * 4;
+    testReedSolomonMsg(codec, "hi", blockSize, 1);
+    testReedSolomonMsg(codec, "hello", blockSize, 2);
+    testReedSolomonMsg(codec, "hello678", blockSize, 2);
+    testReedSolomonMsg(codec, "hello6789", blockSize, 3);
+  }
+
+}
+
+int doTests() {
+  testBuffer();
+  testBitPacking();
+  testReedSolomon();
 
   cout << "TESTS PASSED" << endl;
   return 0;

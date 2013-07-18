@@ -4,6 +4,7 @@
 #include "packeter.h"
 #include "sync.h"
 #include "stream.h"
+#include "util.h"
 
 #include <cassert>
 #include <iostream>
@@ -40,7 +41,7 @@ int Receiver::receiveAudio() {
         cerr << "synced " << endl;
         state = RECEIVING_MESSAGE;
         progress = 1;
-        assert(partialMessage.size() == 0);
+        assert(partialMessageBits.size() == 0);
       } else {
         //cerr << "didn't sync" << endl;
         break;
@@ -61,18 +62,20 @@ int Receiver::receiveAudio() {
         vector<vector<float> > chips;
         receiveChips(chunkChips, chips);
         cerr << "Recieved " << chunkChips << " chips, remaining samples " << source.size() << endl;
-        int result = packeter->decodePartial(chips, partialMessage);
+        int result = packeter->decodePartial(chips, partialMessageBits);
         if (result < 0) { // Failed
           messageDone = true;
         } else if (result == 0) { // Complete
-          messages.push(partialMessage);
+          vector<char> finishedMessage;
+          toByteSequence(partialMessageBits, finishedMessage);
+          messages.push(finishedMessage);
           messageDone = true;
         } else {
           // Need more chunks
         }
 
         if (messageDone) {
-          partialMessage.clear();
+          partialMessageBits.clear();
           state = WAITING_SYNC;
           progress = 0;
         }

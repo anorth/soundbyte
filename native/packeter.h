@@ -22,11 +22,13 @@ public:
    * Chip elements are bit likelihoods, [-1.0..1.0].
    * Returns:
    *   negative number  -> decode failure.
-   *   zero-or-positive -> number of chunks remaining to complete the message.
+   *   zero             -> complete
+   *   positive         -> more chunks needed
    *
    * WARNING: STATEFUL (only decode 1 at a time per packeter).
+   * TODO: make not stateful
    */
-  int decodePartial(std::vector<std::vector<float> > &chips, std::vector<char> &target);
+  int decodePartial(std::vector<std::vector<float> > &chips, std::vector<bool> &target);
 
   /**
    * Returns the number of chips the packeter will accept at a time for decoding.
@@ -39,7 +41,7 @@ private:
   Assigner *assigner;
 
   // state
-  int remaining;
+  int remainingBits;
 };
 
 #endif
