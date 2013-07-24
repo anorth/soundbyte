@@ -5,6 +5,7 @@
 #include "sync.h"
 #include "stream.h"
 #include "util.h"
+#include "log.h"
 
 #include <cassert>
 #include <iostream>
@@ -15,6 +16,7 @@
 
 using namespace std;
 
+static const char *TAG = "SoundbyteReceiver";
 static const int WAITING_SYNC = 0;
 static const int RECEIVING_MESSAGE = 1;
 static const int SUB_PROGRESS_PARTS = 5;
@@ -31,26 +33,25 @@ Receiver::Receiver(Config *cfg, Stream<float>& source, Sync *sync, Packeter *pac
 
 int Receiver::receiveAudio() {
   while (true) {
-    cerr << "while true" << endl;
     // If not yet synced, try
     if (state == WAITING_SYNC) {
-      //cerr << "waiting sync" << endl;
+      ll(LOG_DEBUG, TAG, "Awaiting sync");
       bool synced = sync->sync();
 
       if (synced) {
-        cerr << "synced " << endl;
+        ll(LOG_INFO, TAG, "Synced");
         state = RECEIVING_MESSAGE;
         progress = 1;
         assert(partialMessageBits.size() == 0);
       } else {
-        //cerr << "didn't sync" << endl;
+        ll(LOG_DEBUG, TAG, "Didn't sync");
         break;
       }
     }
 
     // If synced, start/continue decoding message
     if (state == RECEIVING_MESSAGE) {
-      cerr << "Receving message with " << source.size() << " samples" << endl;
+      ll(LOG_DEBUG, TAG, "Receiving message with %d samples", source.size());
       int chunkChips = packeter->chunkChips();
       int chunkSamples = chunkChips * cfg->chipSamples;
       bool messageDone = false;
@@ -61,7 +62,7 @@ int Receiver::receiveAudio() {
         subProgress = 0;
         vector<vector<float> > chips;
         receiveChips(chunkChips, chips);
-        cerr << "Recieved " << chunkChips << " chips, remaining samples " << source.size() << endl;
+        ll(LOG_DEBUG, TAG, "Received %d chips, remaining samples %d", chunkChips, source.size());
         int result = packeter->decodePartial(chips, partialMessageBits);
         if (result < 0) { // Failed
           messageDone = true;
@@ -69,6 +70,8 @@ int Receiver::receiveAudio() {
           vector<char> finishedMessage;
           toByteSequence(partialMessageBits, finishedMessage);
           messages.push(finishedMessage);
+          string msgString(finishedMessage.data(), finishedMessage.size());
+          ll(LOG_INFO, TAG, "Message received: %s", msgString.c_str());
           messageDone = true;
         } else {
           // Need more chunks
@@ -80,7 +83,7 @@ int Receiver::receiveAudio() {
           progress = 0;
         }
       } else {
-        cerr << "Need more samples than " << source.size() << endl;
+        ll(LOG_DEBUG, TAG, "Need more samples than %d", source.size());
         break;
       }
     }

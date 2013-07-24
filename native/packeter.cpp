@@ -10,6 +10,8 @@ using namespace std;
 // TODO: configuration constant
 #define SIZE_BITS 8
 
+static const char* TAG = "SoundbytePacketer";
+
 Packeter::Packeter(Config *cfg, Codec *codec, Assigner *assigner) :
     cfg(cfg),
     codec(codec),
@@ -40,8 +42,8 @@ void Packeter::encodeMessage(vector<char> &message, vector<vector<bool> > &targe
   assert(packetBits.size() % block == 0);
 
   codec->encode(packetBits, encodedBits);
-  cerr << "Encoded " << packetBits.size() << " bites into " << encodedBits.size() << " bits" << endl;
-  cerr << encodedBits << endl;
+  ll(LOG_INFO, TAG, "Encoded %ld bits into %ld bits", packetBits.size(), encodedBits.size());
+//  cerr << encodedBits << endl;
 
   // TODO: use iterator ranges or whatever
   int bitBlock = codec->blockEncodedBits();
@@ -56,46 +58,45 @@ void Packeter::encodeMessage(vector<char> &message, vector<vector<bool> > &targe
     tmp.insert(tmp.end(), it2, it + bitBlock);
 
     assigner->chipify(tmp, target);
-    cerr << "Cooked " << tmp.size() << " bits into " << target.size() << " chips" << endl;
+    ll(LOG_DEBUG, TAG, "Cooked %ld bits into %ld chips", tmp.size(), target.size());
   }
 
-  for (int i = 0; i < target.size(); ++i) {
-    cerr << i << ": " << target[i] << endl;
-  }
+//  for (int i = 0; i < target.size(); ++i) {
+//    cerr << i << ": " << target[i] << endl;
+//  }
 }
 
 int Packeter::decodePartial(vector<vector<float> > &chips, vector<bool> &target) {
   assert(chips.size() == chunkChips());
 
   vector<float> encodedBits;
-  cerr << "Decoding " << chips.size() << " chips" << endl;
-  for (int i = 0; i < chips.size(); ++i) {
-    cerr << i << ": " << chips[i] << endl;
-  }
+  ll(LOG_DEBUG, TAG, "Decoding %ld chips", chips.size());
+//  for (int i = 0; i < chips.size(); ++i) {
+//    cerr << i << ": " << chips[i] << endl;
+//  }
+
   assigner->unchipify(chips, encodedBits);
   assert(encodedBits.size() >= codec->blockEncodedBits());
   assert(encodedBits.size() < codec->blockEncodedBits() * 2); // This upper bound can be tightened but i cbb
   encodedBits.resize(codec->blockEncodedBits());
-  cerr << "Recovered " << encodedBits.size() 
-       << " bits from " << chips.size() << " chips" << endl;
-  cerr << encodedBits << endl;
+  ll(LOG_DEBUG, TAG, "Recovered %ld bits from %ld chips", encodedBits.size(), chips.size());
+//  cerr << encodedBits << endl;
 
   vector<bool> decoded;
   int error =  codec->decode(encodedBits, decoded);
   if (error) {
-    ll(LOG_INFO, "SCOM", "Packet Dropped\n");
+    ll(LOG_INFO, TAG, "Packet Dropped\n");
     return -1;
   }
-  ll(LOG_INFO, "SCOM", "Chunk received\n");
-  cerr << "Decoded " << decoded.size() << " bits from " 
-       << encodedBits.size() << " bits" << endl;
-
+  ll(LOG_INFO, TAG, "Chunk received\n");
+  ll(LOG_DEBUG, TAG, "Decoded %ld bits from %ld bits", decoded.size(), encodedBits.size());
   vector<bool>::const_iterator it = decoded.begin();
   if (remainingBits == 0) {
     remainingBits = nextInt(decoded, it, SIZE_BITS) << 3;
-    cerr << "First chunk, bits remaining =========================== " << remainingBits << endl;
+    ll(LOG_DEBUG, TAG, "First chunk, %d bits remaining =============", remainingBits);
+
   } else {
-    cerr << "Subsequent chunk, bits remaining " << remainingBits << endl;
+    ll(LOG_DEBUG, TAG, "Subsequent chunk, %d bits remaining", remainingBits);
   }
 
   while (it != decoded.end() && remainingBits > 0) {

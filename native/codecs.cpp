@@ -1,5 +1,6 @@
 #include "codecs.h"
 #include "util.h"
+#include "log.h"
 
 #include "int.h"  // rs
 
@@ -13,6 +14,7 @@
 
 using namespace std;
 
+static const char* TAG = "SoundbyteCodec";
 
 ///// Identity codec
 
@@ -129,7 +131,6 @@ int RsCodec::decode(const vector<float> &floatBits, vector<bool> &target) const 
   assert(floatBits.size() == blockEncodedBits());
 
   vector<bool> bits;
-   int i = 0;
   for (vector<float>::const_iterator it = floatBits.begin(); it != floatBits.end(); it++) {
     bits.push_back( (*it) > 0.0f );
   }
@@ -142,19 +143,19 @@ int RsCodec::decode(const vector<float> &floatBits, vector<bool> &target) const 
   int count = decode_rs_int(params, rawSymbols.data(), erasures, 0);
 
   if (count < 0) {
-    cerr << "Too many errors " << count << endl;
+    ll(LOG_INFO, TAG, "Too many errors (%d)", count);
     return -1;
   }
 
   for (int i = 0; i < count; i++) {
     int index = erasures[i] - pad;
     if (index < 0) {
-      cerr << "Corrupted input\n";
+      ll(LOG_INFO, TAG, "Corrupted input");
       return -1;
     }
   }
 
-  cerr << "Block OK\n";
+  ll(LOG_DEBUG, TAG, "Block OK");
 
   errors += count;
 

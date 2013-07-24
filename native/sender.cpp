@@ -7,8 +7,11 @@
 #include "constants.h"
 #include "packeter.h"
 #include "sync.h"
+#include "log.h"
 
 using namespace std;
+
+static const char* TAG = "SoundbyteSender";
 
 Sender::Sender(Config *cfg, Sync *sync, Packeter *packeter) :
   cfg(cfg),
@@ -29,5 +32,5 @@ void Sender::encodeMessage(std::vector<char> &message, std::vector<float> &targe
     nsamples += cfg->chipSamples;
   }
 
-  cerr << "Generated " << nsamples << " samples for " << chips.size() << " chips" << endl;
+  ll(LOG_DEBUG, TAG, "Generated %d samples for %ld chips", nsamples, chips.size());
 }

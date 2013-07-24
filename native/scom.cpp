@@ -31,7 +31,7 @@ static Stream<char> *audioInput = 0;
 
 void scomInit() {
   scomInit(
-    16000, //base
+    12000, //base
     50,    //rate
     2,     //spacing 
     8      //channels

@@ -13,6 +13,7 @@
 using namespace std;
 
 static const int MAX_BUFFER_SAMPLES = SAMPLE_RATE * 10; // num in seconds
+static const char* TAG = "SoundbyteSync";
 
 //void printArray(float* values, int length) {
 //  cerr << "\n[";
@@ -218,22 +219,22 @@ bool Sync::sync() {
           // XXX return actual alignment
           int offset = readySignalStart + (int)(samplesPerMetaSample*shortMetaSpectrumLength) + cfg->chipSize;
           if (offset < 0) {
-            ll(LOG_WARN, "SCOM", "input offset before sample start, probably bad sync");
+            ll(LOG_WARN, TAG, "Input offset before sample start, probably bad sync");
             reset(true);
             return false;
           }
           if (offset > source.size()) {
-            ll(LOG_WARN, "SCOM", "input offset after sample end, probably bad sync");
+            ll(LOG_WARN, TAG, "Input offset after sample end, probably bad sync");
             reset(true);
             return false;
           }
-          cerr << "\n\nSUCCESS " << offset << "\n\n";
-          ll(LOG_INFO, "SCOM", "SUCCESS %d", offset);
+          ll(LOG_INFO, TAG, "Sync success %d", offset);
           reset(false);
           source.consume(offset);
           return true;
         } else {
           state = -1;
+          ll(LOG_INFO, TAG, "Lost sync");
         }
       }
       

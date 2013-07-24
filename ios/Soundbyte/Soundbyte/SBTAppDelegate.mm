@@ -168,15 +168,13 @@ OSStatus performThru(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
   OSStatus err = AudioUnitRender(THIS->rioUnit, ioActionFlags, inTimeStamp, 1, inNumberFrames, ioData);
   if (err) { printf("PerformThru: error %d\n", (int)err); return err; }
 
-  NSLog(@"Received %d frames in %d buffers, bus %d", (unsigned)inNumberFrames,
-        (unsigned) ioData->mNumberBuffers, (unsigned)inBusNumber);
+//  NSLog(@"Received %d frames in %d buffers, bus %d", (unsigned)inNumberFrames,
+//        (unsigned) ioData->mNumberBuffers, (unsigned)inBusNumber);
   for (int i = 0; i < ioData->mNumberBuffers; ++i) {
     // FIXME avoid this copy
     NSData *data = [NSData dataWithBytes:ioData->mBuffers[i].mData length:ioData->mBuffers[i].mDataByteSize];
     [engine receiveAudio:data];
   }
-
-
   
   if ([engine messageAvailable]) {
     NSLog(@"Holy shit, got a message!");
