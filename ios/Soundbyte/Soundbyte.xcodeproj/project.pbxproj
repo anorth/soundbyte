@@ -25,6 +25,7 @@
 		FAA2D8491797A4EA00DEF1B0 /* SBTTetheredEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = FAA2D8481797A4EA00DEF1B0 /* SBTTetheredEngine.m */; };
 		FAA2D84C1797A64100DEF1B0 /* SBTNativeEngine.mm in Sources */ = {isa = PBXBuildFile; fileRef = FAA2D84B1797A64100DEF1B0 /* SBTNativeEngine.mm */; };
 		FAA2D84E1797AA4E00DEF1B0 /* SBTLog.mm in Sources */ = {isa = PBXBuildFile; fileRef = FAA2D84D1797AA4E00DEF1B0 /* SBTLog.mm */; };
+		FAA2D853179FB92100DEF1B0 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B650170FED57003EFF19 /* AVFoundation.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,6 +88,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAA2D853179FB92100DEF1B0 /* AVFoundation.framework in Frameworks */,
 				FA77B612170F77A6003EFF19 /* UIKit.framework in Frameworks */,
 				FA77B614170F77A6003EFF19 /* Foundation.framework in Frameworks */,
 				FA77B657171004A5003EFF19 /* CoreAudio.framework in Frameworks */,

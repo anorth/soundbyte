@@ -8,6 +8,7 @@
 
 #import <AudioToolbox/AudioToolbox.h>
 #import <AudioToolbox/AudioSession.h>
+#import <AVFoundation/AVAudioSession.h>
 #import <AudioUnit/AudioUnit.h>
 
 #import "CADebugMacros.h"
@@ -34,20 +35,45 @@ static const float SAMPLE_RATE = 44100;
 @implementation SBTAppDelegate
 
 @synthesize rioUnit;
-@synthesize inputProc;
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+//  [self configureAudio];
+  [self configureAudio2];
 
+//  engine = [[SBTTetheredEngine alloc] init];
+  engine = [[SBTNativeEngine alloc] init];
+  [engine start];
+
+  return YES;
+}
+							
+- (void)applicationWillResignActive:(UIApplication *)application {
+}
+
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+}
+
+- (void)configureAudio {
+  AURenderCallbackStruct inputProc;
   inputProc.inputProc = performThru;
   inputProc.inputProcRefCon = (__bridge void *)self;
-  
+
   // Initialize and configure the audio session
   NSLog(@"Initialising audio session");
   XThrowIfError(AudioSessionInitialize(NULL, NULL, rioInterruptionListener, (__bridge void *)self), "couldn't initialize audio session");
 
   UInt32 audioCategory = kAudioSessionCategory_RecordAudio; // RecordAudio?
   XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(audioCategory), &audioCategory), "couldn't set audio category");
-//  XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, self), "couldn't set property listener");
+  //  XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, self), "couldn't set property listener");
 
   Float32 preferredBufferSize = .005; // Seconds
   NSLog(@"Setting hardware buffer duration %f", preferredBufferSize);
@@ -71,27 +97,84 @@ static const float SAMPLE_RATE = 44100;
   NSLog(@"Audio session initialised");
 
   XThrowIfError(AudioOutputUnitStart(rioUnit), "couldn't start remote i/o unit");
-
-//  engine = [[SBTTetheredEngine alloc] init];
-  engine = [[SBTNativeEngine alloc] init];
-  [engine start];
-
-  return YES;
-}
-							
-- (void)applicationWillResignActive:(UIApplication *)application {
 }
 
-- (void)applicationDidEnterBackground:(UIApplication *)application {
-}
+- (void)configureAudio2 {
+  enum : AudioUnitElement {
+    kOutputElement = 0,
+    kInputElement = 1
+  };
+  const UInt32 disableFlag = 0;
+  const UInt32 enableFlag = 1;
 
-- (void)applicationWillEnterForeground:(UIApplication *)application {
-}
+  OSStatus err = noErr;
+  NSError *error = nil;
 
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-}
 
-- (void)applicationWillTerminate:(UIApplication *)application {
+  // Configure & activate audio session
+
+  AVAudioSession *session = [AVAudioSession sharedInstance];
+
+  if (![session setCategory:AVAudioSessionCategoryRecord error:&error]) NSLog(@"Error configuring session category: %@", error);
+  if (![session setMode:AVAudioSessionModeMeasurement error:&error]) NSLog(@"Error configuring session mode: %@", error);
+  if (![session setActive:YES error:&error]) NSLog(@"Error activating audio session: %@", error);
+
+  NSLog(@"Session activated. sample rate %f", session.sampleRate);
+  NSLog(@"Number of channels %d", session.inputNumberOfChannels);
+
+
+  // Set up Remote I/O audio unit for audio capture
+  AudioComponentDescription desc;
+  desc.componentType = kAudioUnitType_Output;
+  desc.componentSubType = kAudioUnitSubType_RemoteIO;
+  desc.componentManufacturer = kAudioUnitManufacturer_Apple;
+  desc.componentFlags = 0;
+  desc.componentFlagsMask = 0;
+  AudioComponent component = AudioComponentFindNext(NULL, &desc);
+
+  AudioComponentInstance unit;
+
+  // Create audio component
+  err = AudioComponentInstanceNew(component, &unit);
+  if (err != noErr) NSLog(@"Error instantiating audio unit: %ld", err);
+
+  // Enable input
+  err = AudioUnitSetProperty(unit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, kInputElement, &enableFlag, sizeof(enableFlag));
+  if (err != noErr) NSLog(@"Error enabling input for audio unit: %ld", err);
+
+  // Disable output
+  err = AudioUnitSetProperty(unit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output, kOutputElement, &disableFlag, sizeof(disableFlag));
+  if (err != noErr) NSLog(@"Error disabling output for audio unit: %ld", err);
+
+  AudioStreamBasicDescription streamDesc = {
+    .mSampleRate = session.sampleRate,
+    .mFormatID = kAudioFormatLinearPCM,
+    .mFormatFlags = kAudioFormatFlagsAudioUnitCanonical /*matches AudioUnitSampleType*/ | kAudioFormatFlagIsNonInterleaved,
+    .mBytesPerPacket = sizeof(AudioUnitSampleType),
+    .mFramesPerPacket = 1,
+    .mBytesPerFrame = sizeof(AudioUnitSampleType) * session.inputNumberOfChannels,
+    .mChannelsPerFrame = session.inputNumberOfChannels,
+    .mBitsPerChannel = 8 * sizeof(AudioUnitSampleType),
+    .mReserved = 0,
+  };
+  err = AudioUnitSetProperty(unit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, kOutputElement, &streamDesc, sizeof(streamDesc));
+  if (err != noErr) NSLog(@"Error configuring input stream format for audio unit: %ld", err);
+
+  AURenderCallbackStruct callbacks = {
+    .inputProc = performThru,
+    .inputProcRefCon = (__bridge void *)self
+  };
+  err = AudioUnitSetProperty(unit, kAudioOutputUnitProperty_SetInputCallback, kAudioUnitScope_Input, kOutputElement, &callbacks, sizeof(callbacks));
+  if (err != noErr) NSLog(@"Error configuring input callbacks for audio unit: %ld", err);
+
+  err = AudioUnitInitialize(unit);
+  if (err != noErr) NSLog(@"Error initializing audio unit: %ld", err);
+
+  err = AudioOutputUnitStart(unit);
+  if (err != noErr) NSLog(@"Error starting audio unit: %ld", err);
+
+  //  err = AudioComponentInstanceDispose(unit);
+  //  if (err != noErr) NSLog(@"Error disposing audio unit: %ld", err);
 }
 
 @end
