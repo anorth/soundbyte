@@ -50,13 +50,16 @@ static const float SAMPLE_RATE = 44100;
 //  XThrowIfError(AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, propListener, self), "couldn't set property listener");
 
   Float32 preferredBufferSize = .005; // Seconds
+  NSLog(@"Setting hardware buffer duration %f", preferredBufferSize);
   XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareIOBufferDuration,
                                         sizeof(preferredBufferSize), &preferredBufferSize), "couldn't set i/o buffer duration");
 
   Float64 hwSampleRate = SAMPLE_RATE;
+  NSLog(@"Setting hardware sample rate %f", hwSampleRate);
   XThrowIfError(AudioSessionSetProperty(kAudioSessionProperty_PreferredHardwareSampleRate,
                                         sizeof(hwSampleRate), &hwSampleRate), "Couldn't set HW sample rate");
 
+  NSLog(@"Activating audio session");
   XThrowIfError(AudioSessionSetActive(true), "couldn't set audio session active\n");
 
   CAStreamBasicDescription streamFormat;
@@ -76,31 +79,19 @@ static const float SAMPLE_RATE = 44100;
   return YES;
 }
 							
-- (void)applicationWillResignActive:(UIApplication *)application
-{
-  // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-  // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
+- (void)applicationWillResignActive:(UIApplication *)application {
 }
 
-- (void)applicationDidEnterBackground:(UIApplication *)application
-{
-  // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later. 
-  // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+- (void)applicationDidEnterBackground:(UIApplication *)application {
 }
 
-- (void)applicationWillEnterForeground:(UIApplication *)application
-{
-  // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+- (void)applicationWillEnterForeground:(UIApplication *)application {
 }
 
-- (void)applicationDidBecomeActive:(UIApplication *)application
-{
-  // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+- (void)applicationDidBecomeActive:(UIApplication *)application {
 }
 
-- (void)applicationWillTerminate:(UIApplication *)application
-{
-  // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+- (void)applicationWillTerminate:(UIApplication *)application {
 }
 
 @end
@@ -109,6 +100,7 @@ static const float SAMPLE_RATE = 44100;
 int setupRemoteIO(AudioUnit& inRemoteIOUnit, AURenderCallbackStruct inRenderProc, AudioStreamBasicDescription& outFormat)
 {
   // Open the input/output unit
+  NSLog(@"Creating RemoteIO unit");
   AudioComponentDescription desc;
   desc.componentType = kAudioUnitType_Output;
   desc.componentSubType = kAudioUnitSubType_RemoteIO;
@@ -119,41 +111,52 @@ int setupRemoteIO(AudioUnit& inRemoteIOUnit, AURenderCallbackStruct inRenderProc
   AudioComponent comp = AudioComponentFindNext(NULL, &desc);
   XThrowIfError(AudioComponentInstanceNew(comp, &inRemoteIOUnit), "Couldn't open remote I/O");
 
+  enum : AudioUnitElement {
+    kOutputElement = 0,
+    kInputElement = 1
+  };
+
   // Enable input
   UInt32 one = 1;
   XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioOutputUnitProperty_EnableIO,
-                                              kAudioUnitScope_Input, 1, &one, sizeof(one)),
+                                              kAudioUnitScope_Input, kInputElement, &one, sizeof(one)),
                 "couldn't enable input on the remote I/O unit");
 
+  // Disable output (necessary with kAudioSessionCategory_RecordAudio)
+//  UInt32 zero = 0;
+//  XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioOutputUnitProperty_EnableIO,
+//                                     kAudioUnitScope_Output, kOutputElement, &zero, sizeof(zero)),
+//                "Error disabling output for remote I/O unit");
+
   // Set callback
-  XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_SetRenderCallback,
-                                                 kAudioUnitScope_Input, 0, &inRenderProc,
+  // kAudioOutputUnitProperty_SetInputCallback, kAudioUnitProperty_SetRenderCallback
+  XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_SetRenderCallback,                                                 kAudioUnitScope_Input, kOutputElement, &inRenderProc,
                                                  sizeof(inRenderProc)),
                 "couldn't set remote i/o render callback");
 
   // Set our required format (LPCM non-interleaved 16 bit int) on the inward-facing scopes of
   // the input/output busses.
+  NSLog(@"Configuring RemoteIO");
   UInt32 inFormatID = kAudioFormatLinearPCM;
-  UInt32 bytesPerPacket = 2;
+  UInt32 bytesPerPacket = sizeof(AudioSampleType);
   UInt32 framesPerPacket = 1;
-  UInt32 bytesPerFrame = 2;
+  UInt32 bytesPerFrame = sizeof(AudioSampleType);
   UInt32 channelsPerFrame = 1; // 2?
-  UInt32 bitsPerChannel = 16;
+  UInt32 bitsPerChannel = 8 * sizeof(AudioSampleType);
   UInt32 inFormatFlags = kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked |
       kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsNonInterleaved;
 
   outFormat = CAStreamBasicDescription(SAMPLE_RATE, inFormatID, bytesPerPacket, framesPerPacket,
                                        bytesPerFrame, channelsPerFrame, bitsPerChannel, inFormatFlags);
 
-  int outputBus = 0;
-  int inputBus = 1;
   XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_StreamFormat,
-                                               kAudioUnitScope_Input, outputBus, &outFormat, sizeof(outFormat)),
+                                               kAudioUnitScope_Input, kOutputElement, &outFormat, sizeof(outFormat)),
                 "couldn't set the remote I/O unit's output client format");
   XThrowIfError(AudioUnitSetProperty(inRemoteIOUnit, kAudioUnitProperty_StreamFormat,
-                                      kAudioUnitScope_Output, inputBus, &outFormat, sizeof(outFormat)),
+                                      kAudioUnitScope_Output, kInputElement, &outFormat, sizeof(outFormat)),
                 "couldn't set the remote I/O unit's input client format");
 
+  NSLog(@"Initialising RemoteIO");
   XThrowIfError(AudioUnitInitialize(inRemoteIOUnit), "Couldn't initialize the remote I/O unit");
   
   NSLog(@"RemoteIO initialised");
@@ -166,7 +169,7 @@ OSStatus performThru(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
                      AudioBufferList *ioData) {
   SBTAppDelegate *THIS = (__bridge SBTAppDelegate *)inRefCon;
   OSStatus err = AudioUnitRender(THIS->rioUnit, ioActionFlags, inTimeStamp, 1, inNumberFrames, ioData);
-  if (err) { printf("PerformThru: error %d\n", (int)err); return err; }
+  if (err) { printf("AudioUnitRender: error %d\n", (int)err); return err; }
 
 //  NSLog(@"Received %d frames in %d buffers, bus %d", (unsigned)inNumberFrames,
 //        (unsigned) ioData->mNumberBuffers, (unsigned)inBusNumber);
