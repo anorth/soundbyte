@@ -46,6 +46,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		FA0EC03617A9C34300E771B3 /* SBTConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SBTConstants.h; sourceTree = "<group>"; };
 		FA77B60E170F77A6003EFF19 /* Soundbyte.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Soundbyte.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA77B611170F77A6003EFF19 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		FA77B613170F77A6003EFF19 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -140,6 +141,7 @@
 				FA77B618170F77A6003EFF19 /* Supporting Files */,
 				FA77B620170F77A6003EFF19 /* SBTAppDelegate.h */,
 				FA77B621170F77A6003EFF19 /* SBTAppDelegate.mm */,
+				FA0EC03617A9C34300E771B3 /* SBTConstants.h */,
 				FA77B62C170F77A6003EFF19 /* SBTViewController.h */,
 				FA77B62D170F77A6003EFF19 /* SBTViewController.m */,
 				FA77B629170F77A6003EFF19 /* MainStoryboard.storyboard */,

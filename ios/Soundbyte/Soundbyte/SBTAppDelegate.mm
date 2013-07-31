@@ -16,6 +16,7 @@
 #import "CAXException.h"
 
 #import "SBTAppDelegate.h"
+#import "SBTConstants.h"
 #import "SBTEngine.h"
 #import "SBTNativeEngine.h"
 #import "SBTTetheredEngine.h"
@@ -29,8 +30,6 @@ static OSStatus render(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags
 static void silenceData(AudioBufferList *inData);
 
 static id<SBTEngine> engine;
-
-static const float SAMPLE_RATE = 44100;
 
 static AudioComponentDescription RIO_UNIT_DESC = {
   .componentType = kAudioUnitType_Output,
@@ -197,12 +196,9 @@ OSStatus render(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
   }
   
   if ([engine messageAvailable]) {
-    NSLog(@"Holy shit, got a message!");
-//    NSData *msg = [engine takeMessage];
-//    char buffer[1000];
-//    int messageBytes = takeMessage(buffer, sizeof(buffer) - 1);
-//    buffer[messageBytes] = '\0';
-//    NSLog(@"%s", buffer);
+    NSData *msgData = [engine takeMessage];
+    NSString *strMsg = [[NSString alloc] initWithData:msgData encoding:NSUTF8StringEncoding];
+    NSLog(@"Message received by application: %@", strMsg);
   }
 
   *ioActionFlags |= kAudioUnitRenderAction_OutputIsSilence;

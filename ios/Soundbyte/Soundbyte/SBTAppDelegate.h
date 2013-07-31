@@ -18,7 +18,6 @@
 
 @property (strong, nonatomic) UIWindow *window;
 
-//@property (nonatomic, assign) AudioUnit rioUnit;
 @property (nonatomic, assign) BOOL unitIsRunning;
 @property (nonatomic, assign) BOOL unitHasBeenCreated;
 

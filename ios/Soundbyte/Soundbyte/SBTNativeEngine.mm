@@ -11,49 +11,59 @@
 #import <Scom/scom.h>
 #import <Scom/log.h>
 
+#import "SBTConstants.h"
 
-@interface SBTNativeEngine()
-
-@property BOOL started;
+@interface SBTNativeEngine() {
+  BOOL started;
+  SInt32 progress;
+}
 
 @end
 
+static int RECV_MESSAGE_BUFFER_SIZE = 1000;
+static int SEND_BUFFER_DURATION_SECS = 10;
 
 @implementation SBTNativeEngine
 
 - (void)start {
-  NSAssert(!self.started, @"Already started!");
+  NSAssert(!started, @"Already started!");
   NSLog(@"NativeEngine starting");
   setPriority(LOG_INFO);
   scomInit(18000, 50, 2, 8);
   NSLog(@"Scom initialised");
-  self.started = YES;
+  started = YES;
 }
 
 - (void)stop {
-  NSAssert(!self.started, @"Engine not started!");
+  NSAssert(!started, @"Engine not started!");
   NSLog(@"NativeEngine stopping");
-  self.started = NO;
+  started = NO;
 }
 
 - (NSData *)encodeMessage:(NSData *)payload {
-  return nil;
+  int nbytes = SAMPLE_RATE * BYTES_PER_SAMPLE * SEND_BUFFER_DURATION_SECS;
+  char *buf = (char *)malloc(nbytes);
+  int bytesUsed = encodeMessage((char *)[payload bytes], [payload length], buf, nbytes);
+  NSAssert(bytesUsed > 0, @"Message payload too long");
+  return [NSData dataWithBytesNoCopy:buf length:bytesUsed];
 }
 
 - (void)receiveAudio:(NSData *)audio {
-  decodeAudio((char*)[audio bytes], [audio length]);
+  progress = decodeAudio((char*)[audio bytes], [audio length]);
 }
 
 - (BOOL)messageAvailable {
-  return NO;
+  return messageAvailable();
 }
 
 - (NSInteger)messageProgress {
-  return 0;
+  return progress;
 }
 
 - (NSData *)takeMessage {
-  return nil;
+  void *buffer = malloc(RECV_MESSAGE_BUFFER_SIZE);
+  int messageBytes = takeMessage((char *)buffer, RECV_MESSAGE_BUFFER_SIZE - 1);
+  return [NSData dataWithBytesNoCopy:buffer length:messageBytes];
 }
 
 @end
