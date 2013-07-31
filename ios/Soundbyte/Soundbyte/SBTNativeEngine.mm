@@ -24,7 +24,7 @@
 - (void)start {
   NSAssert(!self.started, @"Already started!");
   NSLog(@"NativeEngine starting");
-  setPriority(LOG_DEBUG);
+  setPriority(LOG_INFO);
   scomInit(18000, 50, 2, 8);
   NSLog(@"Scom initialised");
   self.started = YES;
