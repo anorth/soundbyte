@@ -18,6 +18,7 @@
 @implementation SBTTetheredEngine 
 
 - (void)start {
+  NSAssert(NO, @"Not implemented");
   NSAssert(!self.started, @"Already started!");
   NSLog(@"TetheredEngine starting");
   self.started = YES;

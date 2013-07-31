@@ -20,13 +20,8 @@
 #import "SBTNativeEngine.h"
 #import "SBTTetheredEngine.h"
 
-static void onRenderError(
-                          void                 *inRefCon,
-                          AudioUnit            inUnit,
-                          AudioUnitPropertyID  inID,
-                          AudioUnitScope       inScope,
-                          AudioUnitElement     inElement
-);
+static void onRenderError(void *inRefCon, AudioUnit inUnit, AudioUnitPropertyID inID,
+                          AudioUnitScope inScope, AudioUnitElement inElement);
 static void rioInterruptionListener(void *inClientData, UInt32 inInterruption);
 static OSStatus render(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
                             const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames,
@@ -68,14 +63,9 @@ enum : AudioUnitElement {
   
 @implementation SBTAppDelegate
 
-//@synthesize rioUnit;
-//@synthesize numChannels;
-
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
   [self configureAudio];
-//  [self configureAudio2];
 
-//  engine = [[SBTTetheredEngine alloc] init];
   engine = [[SBTNativeEngine alloc] init];
   [engine start];
 
@@ -183,75 +173,6 @@ enum : AudioUnitElement {
   XThrowIfError(AudioOutputUnitStart(rioUnit), "couldn't start remote i/o unit");
 }
 
-//- (void)configureAudio2 {
-//  NSLog(@"ConfigureAudio2");
-//  const UInt32 disableFlag = 0;
-//  const UInt32 enableFlag = 1;
-//
-//  NSError *error = nil;
-//
-//  // Configure & activate audio session
-//
-//  AVAudioSession *session = [AVAudioSession sharedInstance];
-//
-//  if (![session setCategory:AVAudioSessionCategoryRecord error:&error]) NSLog(@"Error configuring session category: %@", error);
-//  if (![session setMode:AVAudioSessionModeMeasurement error:&error]) NSLog(@"Error configuring session mode: %@", error);
-//  if (![session setActive:YES error:&error]) NSLog(@"Error activating audio session: %@", error);
-//
-//  NSLog(@"Session activated. sample rate %f", session.sampleRate);
-//  NSLog(@"Number of channels %d", session.inputNumberOfChannels);
-//
-//
-//  // Set up Remote I/O audio unit for audio capture
-//  AudioComponent component = AudioComponentFindNext(NULL, &RIO_UNIT_DESC);
-//
-//  // Create audio component
-//  XThrowIfError(AudioComponentInstanceNew(component, &rioUnit), "Error instantiating audio unit");
-//
-//  // Enable input
-//  XThrowIfError(AudioUnitSetProperty(rioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input,
-//                                     kInputElement, &enableFlag, sizeof(enableFlag)),
-//                "Error enabling input for audio unit");
-//
-//  // Disable output
-//  XThrowIfError(AudioUnitSetProperty(rioUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Output,
-//                                     kOutputElement, &disableFlag, sizeof(disableFlag)),
-//                "Error disabling output for audio unit");
-//
-//  AudioStreamBasicDescription streamDesc = {
-//    .mSampleRate = SAMPLE_RATE,
-//    .mFormatID = kAudioFormatLinearPCM,
-//    .mFormatFlags = kAudioFormatFlagsAudioUnitCanonical /*matches AudioUnitSampleType*/ | kAudioFormatFlagIsNonInterleaved,
-//    .mBytesPerPacket = sizeof(AudioUnitSampleType),
-//    .mFramesPerPacket = 1,
-//    .mBytesPerFrame = sizeof(AudioUnitSampleType) * session.inputNumberOfChannels,
-//    .mChannelsPerFrame = session.inputNumberOfChannels,
-//    .mBitsPerChannel = 8 * sizeof(AudioUnitSampleType),
-//    .mReserved = 0,
-//  };
-//
-//  XThrowIfError(AudioUnitSetProperty(rioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input,
-//                                     kOutputElement, &streamDesc, sizeof(streamDesc)),
-//                "Error configuring input stream format for audio unit");
-//  XThrowIfError(AudioUnitSetProperty(rioUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output,
-//                                     kInputElement, &streamDesc, sizeof(streamDesc)),
-//                "Error configuring output stream format for audio unit");
-//
-//
-//  AURenderCallbackStruct callbacks = {
-//    .inputProc = performThru,
-//    .inputProcRefCon = (__bridge void *)self
-//  };
-//  XThrowIfError(AudioUnitSetProperty(rioUnit, kAudioOutputUnitProperty_SetInputCallback,
-//                                     kAudioUnitScope_Input, kOutputElement, &callbacks, sizeof(callbacks)),
-//                "Error configuring input callbacks for audio unit");
-//
-//  XThrowIfError(AudioUnitInitialize(rioUnit), "Error initializing audio unit");
-//
-//  //  err = AudioComponentInstanceDispose(unit);
-//  //  if (err != noErr) NSLog(@"Error disposing audio unit: %ld", err);
-//}
-
 @end
 
 // Remote I/O render callback
@@ -270,9 +191,7 @@ OSStatus render(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 //        (unsigned int)ioData->mBuffers[0].mNumberChannels, inTimeStamp->mSampleTime, *ioActionFlags);
   for (int i = 0; i < ioData->mNumberBuffers; ++i) {
     // FIXME avoid this copy
-    int dataSize = ioData->mBuffers[i].mDataByteSize;// / THIS->numChannels;
-//    unsigned char *b = (unsigned char *)ioData->mBuffers[i].mData;
-//    NSLog(@"First samples: %x %x %x %x %x %x", b[0], b[1], b[2], b[3], b[4], b[5]);
+    int dataSize = ioData->mBuffers[i].mDataByteSize;;
     NSData *data = [NSData dataWithBytes:ioData->mBuffers[i].mData length:dataSize];
     [engine receiveAudio:data];
   }
@@ -286,7 +205,7 @@ OSStatus render(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 //    NSLog(@"%s", buffer);
   }
 
-//  *ioActionFlags |= kAudioUnitRenderAction_OutputIsSilence;
+  *ioActionFlags |= kAudioUnitRenderAction_OutputIsSilence;
   silenceData(ioData);
 
   return err;
