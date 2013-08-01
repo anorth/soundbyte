@@ -35,12 +35,13 @@ static int SEND_BUFFER_DURATION_SECS = 10;
 }
 
 - (void)stop {
-  NSAssert(!started, @"Engine not started!");
+  [self checkStarted];
   NSLog(@"NativeEngine stopping");
   started = NO;
 }
 
 - (NSData *)encodeMessage:(NSData *)payload {
+  [self checkStarted];
   int nbytes = SAMPLE_RATE * BYTES_PER_SAMPLE * SEND_BUFFER_DURATION_SECS;
   char *buf = (char *)malloc(nbytes);
   int bytesUsed = encodeMessage((char *)[payload bytes], [payload length], buf, nbytes);
@@ -49,21 +50,30 @@ static int SEND_BUFFER_DURATION_SECS = 10;
 }
 
 - (void)receiveAudio:(NSData *)audio {
+  [self checkStarted];
   progress = decodeAudio((char*)[audio bytes], [audio length]);
 }
 
 - (BOOL)messageAvailable {
+  [self checkStarted];
   return messageAvailable();
 }
 
 - (NSInteger)messageProgress {
+  [self checkStarted];
   return progress;
 }
 
 - (NSData *)takeMessage {
+  [self checkStarted];
+  NSAssert(messageAvailable(), @"No message available");
   void *buffer = malloc(RECV_MESSAGE_BUFFER_SIZE);
   int messageBytes = takeMessage((char *)buffer, RECV_MESSAGE_BUFFER_SIZE - 1);
   return [NSData dataWithBytesNoCopy:buffer length:messageBytes];
+}
+
+- (void)checkStarted {
+  NSAssert(started, @"Engine not started");
 }
 
 @end
