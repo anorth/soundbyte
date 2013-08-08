@@ -165,18 +165,36 @@ class PyAudioReceiver(object):
     assert len(block) / 2 == numSamples
     return decodePcm(block)
 
+class StreamWrapper(object):
+  """requires self.stream to be set"""
+
+  def __enter__(self):
+    return self
+  
+  def __exit__(self, type_, value, traceback):
+    self.stream.__exit__(type_, value, traceback)
+    
+  
+
 # Receiver which reads from an input stream
-class StreamReceiver(object):
+class StreamReceiver(StreamWrapper):
   def __init__(self, stream):
     self.stream = stream
 
   def receiveBlock(self, numSamples):
+    """
+    if the returned number of samples is less than requested, then the stream has ended.
+    when the stream is still open, blocks until there are enough samples.
+    """
     nBytes = numSamples * 2
     block = ""
     while len(block) < nBytes:
-      block = block + self.stream.read(nBytes - len(block))
-      if len(block) == 0:
-        assert False
+      data = self.stream.read(nBytes - len(block))
+      l = len(data)
+      if l % 2 == 1: data = data[:l-1]
+      block = block + data
+      if len(data) == 0:
+        return decodePcm(block)
     return decodePcm(block)
 
 
@@ -189,7 +207,7 @@ class PyAudioSender(object):
     self.stream.write(encodePcm(waveform))
 
 # Sender which writes to an output stream
-class StreamSender(object):
+class StreamSender(StreamWrapper):
   def __init__(self, stream):
     self.stream = stream
 
