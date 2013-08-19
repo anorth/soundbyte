@@ -7,7 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "SASAudioSocket.h"
 
-@interface SASViewController : UIViewController
+@interface SASViewController : UIViewController <SASAudioSocketDelegate>
+
+- (void)setIpAddress:(NSString *)ipAddr port:(NSString *)port;
 
 @end

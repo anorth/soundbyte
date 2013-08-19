@@ -4,3 +4,6 @@
 
 native/bin
 native/obj
+
+# AppCode
+workspace.xml

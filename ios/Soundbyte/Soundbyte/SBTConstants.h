@@ -9,7 +9,7 @@
 #ifndef Soundbyte_Constants_h
 #define Soundbyte_Constants_h
 
-static const unsigned int SAMPLE_RATE = 44100;
-static const unsigned int BYTES_PER_SAMPLE = 2;
+static const unsigned int SBT_SAMPLE_RATE = 44100;
+static const unsigned int SBT_BYTES_PER_SAMPLE = 2;
 
 #endif

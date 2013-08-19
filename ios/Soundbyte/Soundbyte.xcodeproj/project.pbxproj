@@ -22,6 +22,10 @@
 		FA77B653170FF768003EFF19 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B652170FF767003EFF19 /* AudioToolbox.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		FA77B657171004A5003EFF19 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B656171004A5003EFF19 /* CoreAudio.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		FA77B66117126026003EFF19 /* CAStreamBasicDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA77B65F17126026003EFF19 /* CAStreamBasicDescription.cpp */; };
+		FA8E62C417C2688F00A2EB59 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA77B613170F77A6003EFF19 /* Foundation.framework */; };
+		FA8E62C917C2688F00A2EB59 /* Soundbyte_SDK.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = FA8E62C817C2688F00A2EB59 /* Soundbyte_SDK.h */; };
+		FA8E62CB17C2688F00A2EB59 /* Soundbyte_SDK.m in Sources */ = {isa = PBXBuildFile; fileRef = FA8E62CA17C2688F00A2EB59 /* Soundbyte_SDK.m */; };
+		FA8E62D317C2697D00A2EB59 /* SBTAudioUnit.mm in Sources */ = {isa = PBXBuildFile; fileRef = FA8E62D217C2697D00A2EB59 /* SBTAudioUnit.mm */; };
 		FAA2D8491797A4EA00DEF1B0 /* SBTTetheredEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = FAA2D8481797A4EA00DEF1B0 /* SBTTetheredEngine.m */; };
 		FAA2D84C1797A64100DEF1B0 /* SBTNativeEngine.mm in Sources */ = {isa = PBXBuildFile; fileRef = FAA2D84B1797A64100DEF1B0 /* SBTNativeEngine.mm */; };
 		FAA2D84E1797AA4E00DEF1B0 /* SBTLog.mm in Sources */ = {isa = PBXBuildFile; fileRef = FAA2D84D1797AA4E00DEF1B0 /* SBTLog.mm */; };
@@ -43,7 +47,27 @@
 			remoteGlobalIDString = FA49103A16ED5520005477E3;
 			remoteInfo = Scom;
 		};
+		FA8E62CF17C268D500A2EB59 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA77B640170F7A5A003EFF19 /* Scom.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = FA49103A16ED5520005477E3;
+			remoteInfo = Scom;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FA8E62C117C2688F00A2EB59 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/${PRODUCT_NAME}";
+			dstSubfolderSpec = 16;
+			files = (
+				FA8E62C917C2688F00A2EB59 /* Soundbyte_SDK.h in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		FA0EC03617A9C34300E771B3 /* SBTConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SBTConstants.h; sourceTree = "<group>"; };
@@ -76,6 +100,12 @@
 		FA77B66317126068003EFF19 /* CADebugPrintf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CADebugPrintf.h; path = CoreAudioUtility/PublicUtility/CADebugPrintf.h; sourceTree = SOURCE_ROOT; };
 		FA77B664171261AB003EFF19 /* CAXException.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = CAXException.cpp; path = CoreAudioUtility/PublicUtility/CAXException.cpp; sourceTree = SOURCE_ROOT; };
 		FA77B665171261AB003EFF19 /* CAXException.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CAXException.h; path = CoreAudioUtility/PublicUtility/CAXException.h; sourceTree = SOURCE_ROOT; };
+		FA8E62C317C2688F00A2EB59 /* libSoundbyte SDK.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libSoundbyte SDK.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA8E62C717C2688F00A2EB59 /* Soundbyte SDK-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Soundbyte SDK-Prefix.pch"; sourceTree = "<group>"; };
+		FA8E62C817C2688F00A2EB59 /* Soundbyte_SDK.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Soundbyte_SDK.h; sourceTree = "<group>"; };
+		FA8E62CA17C2688F00A2EB59 /* Soundbyte_SDK.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Soundbyte_SDK.m; sourceTree = "<group>"; };
+		FA8E62D117C2697D00A2EB59 /* SBTAudioUnit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBTAudioUnit.h; sourceTree = "<group>"; };
+		FA8E62D217C2697D00A2EB59 /* SBTAudioUnit.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = SBTAudioUnit.mm; sourceTree = "<group>"; };
 		FAA2D8461797A40800DEF1B0 /* SBTEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SBTEngine.h; sourceTree = "<group>"; };
 		FAA2D8471797A4EA00DEF1B0 /* SBTTetheredEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SBTTetheredEngine.h; sourceTree = "<group>"; };
 		FAA2D8481797A4EA00DEF1B0 /* SBTTetheredEngine.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SBTTetheredEngine.m; sourceTree = "<group>"; };
@@ -99,6 +129,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FA8E62C017C2688F00A2EB59 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA8E62C417C2688F00A2EB59 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -110,6 +148,7 @@
 				FA77B652170FF767003EFF19 /* AudioToolbox.framework */,
 				FA77B650170FED57003EFF19 /* AVFoundation.framework */,
 				FA77B617170F77A6003EFF19 /* Soundbyte */,
+				FA8E62C517C2688F00A2EB59 /* Soundbyte SDK */,
 				FA77B610170F77A6003EFF19 /* Frameworks */,
 				FA77B60F170F77A6003EFF19 /* Products */,
 				FA77B640170F7A5A003EFF19 /* Scom.xcodeproj */,
@@ -120,6 +159,7 @@
 			isa = PBXGroup;
 			children = (
 				FA77B60E170F77A6003EFF19 /* Soundbyte.app */,
+				FA8E62C317C2688F00A2EB59 /* libSoundbyte SDK.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -151,6 +191,8 @@
 				FAA2D84A1797A64100DEF1B0 /* SBTNativeEngine.h */,
 				FAA2D84B1797A64100DEF1B0 /* SBTNativeEngine.mm */,
 				FAA2D84D1797AA4E00DEF1B0 /* SBTLog.mm */,
+				FA8E62D117C2697D00A2EB59 /* SBTAudioUnit.h */,
+				FA8E62D217C2697D00A2EB59 /* SBTAudioUnit.mm */,
 			);
 			path = Soundbyte;
 			sourceTree = "<group>";
@@ -200,12 +242,30 @@
 			name = PublicUtility;
 			sourceTree = "<group>";
 		};
+		FA8E62C517C2688F00A2EB59 /* Soundbyte SDK */ = {
+			isa = PBXGroup;
+			children = (
+				FA8E62C817C2688F00A2EB59 /* Soundbyte_SDK.h */,
+				FA8E62CA17C2688F00A2EB59 /* Soundbyte_SDK.m */,
+				FA8E62C617C2688F00A2EB59 /* Supporting Files */,
+			);
+			path = "Soundbyte SDK";
+			sourceTree = "<group>";
+		};
+		FA8E62C617C2688F00A2EB59 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				FA8E62C717C2688F00A2EB59 /* Soundbyte SDK-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		FA77B60D170F77A6003EFF19 /* Soundbyte */ = {
+		FA77B60D170F77A6003EFF19 /* Soundbyte Listener */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FA77B631170F77A6003EFF19 /* Build configuration list for PBXNativeTarget "Soundbyte" */;
+			buildConfigurationList = FA77B631170F77A6003EFF19 /* Build configuration list for PBXNativeTarget "Soundbyte Listener" */;
 			buildPhases = (
 				FA77B60A170F77A6003EFF19 /* Sources */,
 				FA77B60B170F77A6003EFF19 /* Frameworks */,
@@ -216,10 +276,28 @@
 			dependencies = (
 				FA77B649170F7D83003EFF19 /* PBXTargetDependency */,
 			);
-			name = Soundbyte;
+			name = "Soundbyte Listener";
 			productName = Soundbyte;
 			productReference = FA77B60E170F77A6003EFF19 /* Soundbyte.app */;
 			productType = "com.apple.product-type.application";
+		};
+		FA8E62C217C2688F00A2EB59 /* Soundbyte SDK */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FA8E62CC17C2688F00A2EB59 /* Build configuration list for PBXNativeTarget "Soundbyte SDK" */;
+			buildPhases = (
+				FA8E62BF17C2688F00A2EB59 /* Sources */,
+				FA8E62C017C2688F00A2EB59 /* Frameworks */,
+				FA8E62C117C2688F00A2EB59 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FA8E62D017C268D500A2EB59 /* PBXTargetDependency */,
+			);
+			name = "Soundbyte SDK";
+			productName = "Soundbyte SDK";
+			productReference = FA8E62C317C2688F00A2EB59 /* libSoundbyte SDK.a */;
+			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
 
@@ -249,7 +327,8 @@
 			);
 			projectRoot = "";
 			targets = (
-				FA77B60D170F77A6003EFF19 /* Soundbyte */,
+				FA77B60D170F77A6003EFF19 /* Soundbyte Listener */,
+				FA8E62C217C2688F00A2EB59 /* Soundbyte SDK */,
 			);
 		};
 /* End PBXProject section */
@@ -291,6 +370,15 @@
 				FAA2D8491797A4EA00DEF1B0 /* SBTTetheredEngine.m in Sources */,
 				FAA2D84C1797A64100DEF1B0 /* SBTNativeEngine.mm in Sources */,
 				FAA2D84E1797AA4E00DEF1B0 /* SBTLog.mm in Sources */,
+				FA8E62D317C2697D00A2EB59 /* SBTAudioUnit.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA8E62BF17C2688F00A2EB59 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA8E62CB17C2688F00A2EB59 /* Soundbyte_SDK.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +389,11 @@
 			isa = PBXTargetDependency;
 			name = Scom;
 			targetProxy = FA77B648170F7D83003EFF19 /* PBXContainerItemProxy */;
+		};
+		FA8E62D017C268D500A2EB59 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Scom;
+			targetProxy = FA8E62CF17C268D500A2EB59 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -328,8 +421,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++98";
+				CLANG_CXX_LIBRARY = "libstdc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -349,10 +442,18 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				HEADER_SEARCH_PATHS = (
+					"”$(TARGET_BUILD_DIR)/usr/local/lib/include”",
+					"”$(OBJROOT)/UninstalledProducts/include”",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-all_load",
+				);
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -360,8 +461,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++98";
+				CLANG_CXX_LIBRARY = "libstdc++";
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -374,10 +475,18 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				HEADER_SEARCH_PATHS = (
+					"”$(TARGET_BUILD_DIR)/usr/local/lib/include”",
+					"”$(OBJROOT)/UninstalledProducts/include”",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-all_load",
+				);
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -385,24 +494,10 @@
 		FA77B632170F77A6003EFF19 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++98";
-				CLANG_CXX_LIBRARY = "libstdc++";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Soundbyte/Soundbyte-Prefix.pch";
-				HEADER_SEARCH_PATHS = (
-					"”$(TARGET_BUILD_DIR)/usr/local/lib/include”",
-					"”$(OBJROOT)/UninstalledProducts/include”",
-				);
 				INFOPLIST_FILE = "Soundbyte/Soundbyte-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
-				OTHER_LDFLAGS = (
-					"-read_only_relocs",
-					suppress,
-					"-ObjC",
-					"-all_load",
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = 1;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -410,25 +505,33 @@
 		FA77B633170F77A6003EFF19 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++98";
-				CLANG_CXX_LIBRARY = "libstdc++";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Soundbyte/Soundbyte-Prefix.pch";
-				HEADER_SEARCH_PATHS = (
-					"”$(TARGET_BUILD_DIR)/usr/local/lib/include”",
-					"”$(OBJROOT)/UninstalledProducts/include”",
-				);
 				INFOPLIST_FILE = "Soundbyte/Soundbyte-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
-				OTHER_LDFLAGS = (
-					"-read_only_relocs",
-					suppress,
-					"-ObjC",
-					"-all_load",
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = 1;
 				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		FA8E62CD17C2688F00A2EB59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DSTROOT = /tmp/Soundbyte_SDK.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Soundbyte SDK/Soundbyte SDK-Prefix.pch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		FA8E62CE17C2688F00A2EB59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DSTROOT = /tmp/Soundbyte_SDK.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Soundbyte SDK/Soundbyte SDK-Prefix.pch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
@@ -444,7 +547,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FA77B631170F77A6003EFF19 /* Build configuration list for PBXNativeTarget "Soundbyte" */ = {
+		FA77B631170F77A6003EFF19 /* Build configuration list for PBXNativeTarget "Soundbyte Listener" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FA77B632170F77A6003EFF19 /* Debug */,
@@ -452,6 +555,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		FA8E62CC17C2688F00A2EB59 /* Build configuration list for PBXNativeTarget "Soundbyte SDK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA8E62CD17C2688F00A2EB59 /* Debug */,
+				FA8E62CE17C2688F00A2EB59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};

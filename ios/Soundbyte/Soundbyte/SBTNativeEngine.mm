@@ -42,7 +42,7 @@ static int SEND_BUFFER_DURATION_SECS = 10;
 
 - (NSData *)encodeMessage:(NSData *)payload {
   [self checkStarted];
-  int nbytes = SAMPLE_RATE * BYTES_PER_SAMPLE * SEND_BUFFER_DURATION_SECS;
+  int nbytes = SBT_SAMPLE_RATE * SBT_BYTES_PER_SAMPLE * SEND_BUFFER_DURATION_SECS;
   char *buf = (char *)malloc(nbytes);
   int bytesUsed = encodeMessage((char *)[payload bytes], [payload length], buf, nbytes);
   NSAssert(bytesUsed > 0, @"Message payload too long");

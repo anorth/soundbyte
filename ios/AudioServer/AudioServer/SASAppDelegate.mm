@@ -81,6 +81,7 @@ enum : AudioUnitElement {
   [self configureAudio];
   [self startAudio];
 
+  [self.viewController setIpAddress:[audioSocket getIPAddress] port:[audioSocket getPort]];
   return YES;
 }
 
@@ -101,6 +102,7 @@ enum : AudioUnitElement {
 
 - (void)openSocket {
   audioSocket = [[SASAudioSocket alloc] init];
+  audioSocket->delegate = self.viewController;
   [audioSocket startListening];
 }
 

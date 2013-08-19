@@ -9,16 +9,11 @@
 #import <AudioUnit/AudioUnit.h>
 #import <UIKit/UIKit.h>
 
-@interface SBTAppDelegate : UIResponder <UIApplicationDelegate> {
-@public
-  AudioUnit rioUnit;
-  unsigned int numChannels;
-  Float32 hardwareBufferDuration;
-}
+#import "SBTAudioUnit.h"
+
+@interface SBTAppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
-
-@property (nonatomic, assign) BOOL unitIsRunning;
-@property (nonatomic, assign) BOOL unitHasBeenCreated;
+@property (strong, nonatomic) SBTAudioUnit *soundbyte;
 
 @end

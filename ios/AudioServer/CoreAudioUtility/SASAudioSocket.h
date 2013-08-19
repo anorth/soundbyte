@@ -8,9 +8,21 @@
 
 #import <Foundation/Foundation.h>
 
-@interface SASAudioSocket : NSObject
+@protocol SASAudioSocketDelegate <NSObject>
 
+- (void)statusChanged:(NSString *)status;
+
+@end
+
+@interface SASAudioSocket : NSObject {
+@public
+  __weak id<SASAudioSocketDelegate> delegate;
+
+}
 - (void)startListening;
+
+- (NSString *)getIPAddress;
+- (NSString *)getPort;
 
 - (NSInteger)read:(uint8_t *)buffer maxLength:(NSUInteger)len;
 

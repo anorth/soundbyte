@@ -23,6 +23,7 @@ static const int PORT = 16002;
 @public
   NSInputStream *inputStream;
   NSOutputStream *outputStream;
+
 @private
   BOOL inputStreamHasData;
   BOOL outputStreamHasSpace;
@@ -66,6 +67,7 @@ static const int PORT = 16002;
   CFSocketSetAddress(sockRef, sinData);
   CFRelease(sinData);
   NSLog(@"Socket listening on %@ %d", [self getIPAddress], PORT);
+  [delegate statusChanged:@"Awaiting connection"];
 
   // Add to run loop
   CFRunLoopSourceRef socketSource = CFSocketCreateRunLoopSource(kCFAllocatorDefault, sockRef, 0);
@@ -104,8 +106,10 @@ static const int PORT = 16002;
     outputStreamHasSpace = YES;
   } else if (streamEvent == NSStreamEventEndEncountered) {
     NSLog(@"Stream %@ ended", theStream);
+    [delegate statusChanged:@"Disconnected"];
   } else if (streamEvent == NSStreamEventErrorOccurred) {
     NSLog(@"Stream %@ erred", theStream);
+    [delegate statusChanged:@"Error"];
   } else {
     NSLog(@"Stream event %x on stream %@", streamEvent, theStream);
   }
@@ -137,6 +141,10 @@ static const int PORT = 16002;
   return address;
 }
 
+- (NSString *)getPort {
+  return [NSString stringWithFormat:@"%d", PORT];
+}
+
 @end
 
 void socketCallback (CFSocketRef sock, CFSocketCallBackType callbackType, CFDataRef address,
@@ -159,6 +167,7 @@ void socketCallback (CFSocketRef sock, CFSocketCallBackType callbackType, CFData
     THIS->outputStream.delegate = THIS;
     [THIS->outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     [THIS->outputStream open];
+    [THIS->delegate statusChanged:@"Connected"];
   } else {
     NSLog(@"Unexpected callback type %ld", callbackType);
   }
