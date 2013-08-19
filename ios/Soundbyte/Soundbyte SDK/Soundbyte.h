@@ -6,8 +6,8 @@
 //  Copyright (c) 2013 Soundbyte. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
-
-@interface Soundbyte_SDK : NSObject
-
-@end
+#import "SBTAudioUnit.h"
+#import "SBTConstants.h"
+#import "SBTEngine.h"
+#import "SBTNativeEngine.h"
+#import "SBTTetheredEngine.h"
