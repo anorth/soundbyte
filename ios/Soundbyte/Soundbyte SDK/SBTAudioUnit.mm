@@ -67,12 +67,20 @@ enum : AudioUnitElement {
   unsigned int numChannels;
   Float32 hardwareBufferDuration;
   id<SBTEngine> engine;
+  NSMutableArray *buffersToSend;
 }
 
 @end
 
   
 @implementation SBTAudioUnit
+
+- (id)init {
+  if (self = [super init]) {
+    buffersToSend = [NSMutableArray new];
+  }
+  return self;
+}
 
 - (void)start {
   NSLog(@"Soundbyte configuring audio");
@@ -83,6 +91,19 @@ enum : AudioUnitElement {
 
   [self startAudio];
   NSLog(@"Soundbyte listening");
+}
+
+- (BOOL)messageAvailable {
+  return [engine messageAvailable];
+}
+
+- (NSData *)takeMessage {
+  return [engine takeMessage];
+}
+
+- (void)sendMessage:(NSData *)msgData {
+  NSData *audio = [engine encodeMessage:msgData];
+  [buffersToSend addObject:audio];
 }
 
 - (void)configureAudio {
@@ -132,8 +153,8 @@ enum : AudioUnitElement {
                                      kAudioUnitScope_Input, kInputElement, &one, sizeof(one)),
                 "couldn't enable input on the remote I/O unit");
 
-  XThrowIfError(AudioUnitSetProperty(rioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, kOutputElement, &inputProc,
-                                     sizeof(inputProc)),
+  XThrowIfError(AudioUnitSetProperty(rioUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input,
+                                     kOutputElement, &inputProc, sizeof(inputProc)),
                 "couldn't set remote i/o render callback");
 
   // Set our required format on inward sides of both busses.
@@ -181,20 +202,37 @@ OSStatus render(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
   //        (unsigned) ioData->mNumberBuffers, (unsigned)inBusNumber,
   //        (unsigned int)ioData->mBuffers[0].mNumberChannels, inTimeStamp->mSampleTime, *ioActionFlags);
   for (int i = 0; i < ioData->mNumberBuffers; ++i) {
+    AudioBuffer &buf = ioData->mBuffers[i];
+
+    // Process recorded audio
     // TODO(alex): Avoid this copy of audio buffer.
-    int dataSize = ioData->mBuffers[i].mDataByteSize;;
-    NSData *data = [NSData dataWithBytes:ioData->mBuffers[i].mData length:dataSize];
+    int dataSize = buf.mDataByteSize;;
+    NSData *data = [NSData dataWithBytes:buf.mData length:dataSize];
     [THIS->engine receiveAudio:data];
+
+    // Play generated audio
+    memset(buf.mData, 0, buf.mDataByteSize);
+    if ([THIS->buffersToSend count] > 0) {
+      NSData *audio = THIS->buffersToSend[0];
+      NSUInteger bytesPlayed = MIN(buf.mDataByteSize, audio.length);
+      [audio getBytes:buf.mData length:bytesPlayed];
+      if (bytesPlayed < audio.length) {
+        NSRange rangeRemaining = {
+          .location = bytesPlayed,
+          .length = audio.length - bytesPlayed
+        };
+        THIS->buffersToSend[0] = [audio subdataWithRange:rangeRemaining];
+      } else {
+        [THIS->buffersToSend removeObjectAtIndex:0];
+      }
+    }
   }
 
   if ([THIS->engine messageAvailable]) {
-    NSData *msgData = [THIS->engine takeMessage];
+//    NSData *msgData = [THIS->engine takeMessage];
 //    NSString *strMsg = [[NSString alloc] initWithData:msgData encoding:NSUTF8StringEncoding];
-    NSLog(@"Soundbyte essage received by application");
+    NSLog(@"Soundbyte message received");
   }
-
-  *ioActionFlags |= kAudioUnitRenderAction_OutputIsSilence;
-  silenceData(ioData);
 
   return err;
 }

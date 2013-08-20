@@ -12,4 +12,10 @@
 
 - (void)start;
 
+- (BOOL)messageAvailable;
+
+- (NSData *)takeMessage;
+
+- (void)sendMessage:(NSData *)msgData;
+
 @end
